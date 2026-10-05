@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+/* SmartQR — Gold/Luxury Mobile-First Design System */
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  color-scheme: light;
+  color: #1a1614;
+  background: #f5f0eb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Gold/bronze luxury palette */
+:root {
+  --color-bg: #f5f0eb;
+  --color-surface: #fffaf5;
+  --color-surface-white: #ffffff;
+  --color-gold: #c8963e;
+  --color-gold-light: #f5e6c8;
+  --color-gold-dark: #a07030;
+  --color-gold-gradient-start: #d4a84b;
+  --color-gold-gradient-end: #b8862d;
+  --color-bronze: #8b6914;
+  --color-stone-50: #faf8f6;
+  --color-stone-100: #f0ebe4;
+  --color-stone-200: #e2dbd3;
+  --color-stone-400: #9e958a;
+  --color-stone-500: #7a7067;
+  --color-stone-600: #5c544b;
+  --color-stone-800: #2d2824;
+  --color-stone-900: #1a1614;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-2xl: 28px;
+  --radius-3xl: 32px;
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.06);
+  --shadow-elevated: 0 8px 32px rgba(0,0,0,0.10);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e7e5e4;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #d6d3d1;
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-8px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideInLeft 0.2s ease-out;
+}
+
+/* Hide scrollbar for horizontal scrolling containers */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile-first text utilities */
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Better touch targets for mobile */
+@media (max-width: 640px) {
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
