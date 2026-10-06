@@ -229,6 +229,15 @@ export interface UploadImageResult {
   error: { message: string } | null
 }
 
+/** Cross-browser UUID v4 generator — works in secure & non-secure contexts */
+function _uuidV4(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
 export async function uploadProductImage(
   businessId: string,
   productId: string,
@@ -236,7 +245,8 @@ export async function uploadProductImage(
 ): Promise<UploadImageResult> {
   const supabase = createClient()
   const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-  const fileName = `${businessId}/${productId}/${crypto.randomUUID()}.${fileExt}`
+  // Use _uuidV4() instead of crypto.randomUUID() which is not available in non-secure HTTP contexts
+  const fileName = `${businessId}/${productId}/${_uuidV4()}.${fileExt}`
 
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from(STORAGE_BUCKET)

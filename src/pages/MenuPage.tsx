@@ -109,7 +109,7 @@ export default function MenuPage() {
         if (!error && data) { setCategories(p => [...p, data].sort((a, b) => a.sort_order - b.sort_order)); setIsCategoryModalOpen(false); showToast('Kategori berhasil dibuat.') }
         else setCategoryFormError(error?.message || 'Gagal membuat kategori.')
       }
-    } catch { setCategoryFormError('Terjadi kesalahan sistem.') }
+    } catch (err: any) { console.error('[MenuPage] Save category error:', err); setCategoryFormError(err?.message || 'Terjadi kesalahan sistem.') }
     finally { setCategorySubmitting(false) }
   }
 
@@ -130,7 +130,7 @@ export default function MenuPage() {
     try {
       let imageUrl: string | undefined = editingProduct?.image_url ?? undefined
       if (productImageFile) {
-        const { url, error: uploadError } = await uploadProductImage(currentBusiness.id, editingProduct?.id || crypto.randomUUID(), productImageFile)
+        const { url, error: uploadError } = await uploadProductImage(currentBusiness.id, editingProduct?.id || 'temp-' + Date.now(), productImageFile)
         if (uploadError) { setProductFormError(uploadError.message || 'Gagal mengunggah gambar.'); return }
         imageUrl = url
       }
@@ -143,7 +143,7 @@ export default function MenuPage() {
         if (!error && data) { setProducts(p => [...p, data].sort((a, b) => a.sort_order - b.sort_order)); setIsProductModalOpen(false); showToast('Produk berhasil dibuat.') }
         else setProductFormError(error?.message || 'Gagal membuat produk.')
       }
-    } catch { setProductFormError('Terjadi kesalahan sistem.') }
+    } catch (err: any) { console.error('[MenuPage] Save product error:', err); setProductFormError(err?.message || 'Terjadi kesalahan sistem.') }
     finally { setProductSubmitting(false) }
   }
 
@@ -168,7 +168,7 @@ export default function MenuPage() {
         const { error } = await deleteProduct(deleteConfirm.id, currentBusiness.id)
         if (!error) { setProducts(p => p.filter(p => p.id !== deleteConfirm.id)); showToast('Produk berhasil dihapus.') }
       }
-    } catch {}
+    } catch (err: any) { console.error('[MenuPage] Delete error:', err) }
     finally { setDeleting(false); setDeleteConfirm(null) }
   }
 
