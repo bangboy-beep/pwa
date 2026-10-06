@@ -28,7 +28,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 export default function AdminDashboardPage() {
   const { selectedBusiness, loading, refetch } = useBusiness();
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<'cover' | null>(null);
+  const [editTarget, setEditTarget] = useState<'logo' | 'cover' | null>(null);
   const [uploading, setUploading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -46,14 +46,15 @@ export default function AdminDashboardPage() {
     if (!file || !selectedBusiness || !editTarget) return;
 
     setUploading(true);
-    const { error } = await uploadBusinessImage(selectedBusiness.id, file, 'cover');
+    const { error } = await uploadBusinessImage(selectedBusiness.id, file, editTarget as 'logo' | 'cover');
     setUploading(false);
 
     if (error) {
       showToast('error', error.message);
     } else {
-      showToast('success', 'Banner berhasil diperbarui');
-      showFloatingToast('Banner berhasil diperbarui!');
+      const msg = editTarget === 'logo' ? 'Logo berhasil diperbarui' : 'Banner berhasil diperbarui';
+      showToast('success', msg);
+      showFloatingToast(msg + '!');
       setEditModalOpen(false);
       await refetch();
     }
@@ -144,13 +145,55 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Profile Content Area — overlaps cover slightly, no card border */}
-        <div className="px-6 pb-5 -mt-5 relative z-10">
-          <div className="pt-4">
+        <div className="px-6 pb-5 relative z-10">
+          {/* Logo container overlapping cover */}
+          <div className="flex justify-center -mt-12 mb-3">
+            <div
+              className="relative group cursor-pointer"
+              onClick={() => {
+                setEditTarget('logo');
+                setEditModalOpen(true);
+              }}
+            >
+              <div className="absolute -inset-1 bg-white rounded-[2rem] blur-sm" />
+              <div className="relative w-24 h-24 rounded-[1.75rem] bg-stone-900 text-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
+                {selectedBusiness.logo_url ? (
+                  <img
+                    src={selectedBusiness.logo_url}
+                    alt="Logo"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-3xl font-extrabold">
+                    {selectedBusiness.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Pencil className="w-5 h-5 text-white" />
+                </div>
+              </div>
+              {/* Badge pencil button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditTarget('logo');
+                  fileInputRef.current?.click();
+                }}
+                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#f0883a] text-white shadow-md flex items-center justify-center hover:bg-[#e0792d] active:scale-95 transition-all z-10 border-2 border-white"
+                title="Ganti Logo"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+          <div className="pt-1 text-center">
             <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">{greeting()}</p>
             <h1 className="text-2xl font-extrabold text-gray-900 mt-1 tracking-tight">
               {selectedBusiness.name}
             </h1>
-            <div className="flex items-center gap-2 mt-1.5">
+            <div className="flex items-center justify-center gap-2 mt-1.5">
               <span className={`text-xs font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${statusConfig.bg} ${statusConfig.color}`}>
                 {statusConfig.label}
               </span>
@@ -292,6 +335,31 @@ export default function AdminDashboardPage() {
                 </div>
                 {uploading && editTarget === 'cover' ? (
                   <Loader2 className="w-6 h-6 animate-spin text-[#f0883a]" />
+                ) : (
+                  <ChevronRight className="w-6 h-6 text-gray-400" />
+                )}
+              </button>
+
+              {/* Option 2: Logo */}
+              <button
+                onClick={() => {
+                  setEditTarget('logo');
+                  fileInputRef.current?.click();
+                }}
+                disabled={uploading}
+                className="w-full flex items-center gap-5 p-5 rounded-2xl border border-gray-100 bg-gray-50 hover:bg-gray-100 active:scale-[0.98] transition-all"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-gray-700">
+                  <ImageIcon className="w-6 h-6 text-blue-500" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-[17px] font-bold text-gray-900">
+                    {uploading && editTarget === 'logo' ? 'Mengunggah Logo...' : 'Ganti Logo'}
+                  </p>
+                  <p className="text-[14px] text-gray-500 mt-0.5 font-medium">Format JPG/PNG, maks 5MB</p>
+                </div>
+                {uploading && editTarget === 'logo' ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
                 ) : (
                   <ChevronRight className="w-6 h-6 text-gray-400" />
                 )}
