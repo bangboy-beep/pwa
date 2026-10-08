@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createClient } from '../../lib/supabase/client';
 import { Loading } from '../../components/ui/Loading';
-import { Trash2, Plus, X, ExternalLink } from 'lucide-react';
+import { Trash2, Plus, X, ExternalLink, Settings2 } from 'lucide-react';
 import { createBusiness } from '../../lib/business/service';
 import type { BusinessType } from '../../types';
 
@@ -18,6 +19,7 @@ const BUSINESS_TYPES: { value: BusinessType; label: string; icon: string }[] = [
 ];
 
 export default function SuperAdminPage() {
+  const navigate = useNavigate();
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -149,13 +151,27 @@ export default function SuperAdminPage() {
                     </span>
                   </td>
                   <td className="p-5 text-center">
-                    <button
-                      onClick={() => deleteBusiness(b.id, b.name)}
-                      className="p-2 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
-                      title="Hapus Bisnis"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center justify-center gap-2">
+                      <a
+                        href={`/q/${b.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-lg text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                        title="Lihat Publik"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                      <button
+                        onClick={() => {
+                          sessionStorage.setItem('smartqr_selected_business_id', b.id);
+                          navigate('/admin');
+                        }}
+                        className="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                        title="Masuk Admin"
+                      >
+                        <Settings2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

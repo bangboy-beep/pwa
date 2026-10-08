@@ -5,6 +5,9 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import React from 'react'
 import { useAuthContext } from '../hooks/useAuthContext'
 import { getMyBusinesses, type BusinessWithMember } from '../lib/business/service'
+import { isSuperAdmin } from '../lib/config/admin'
+import { createClient } from '../lib/supabase/client'
+import type { UserRole } from '../types'
 
 const SELECTED_BIZ_KEY = 'smartqr_selected_business_id'
 
@@ -64,16 +67,40 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     setLoading(true)
     setError(null)
 
-    const { data, error: fetchError } = await getMyBusinesses()
+    let list: BusinessWithMember[] = []
+    const isSuper = await isSuperAdmin(user.email)
 
-    if (fetchError) {
-      setError('Failed to load businesses. Please try again.')
-      setBusinesses([])
-      setLoading(false)
-      return
+    if (isSuper) {
+      const supabase = createClient()
+      const { data: allBiz, error: fetchError } = await supabase
+        .from('businesses')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (fetchError) {
+        setError('Failed to load businesses. Please try again.')
+        setBusinesses([])
+        setLoading(false)
+        return
+      }
+
+      list = (allBiz || []).map((b: any) => ({
+        ...b,
+        role: 'owner' as UserRole,
+      }))
+    } else {
+      const { data, error: fetchError } = await getMyBusinesses()
+
+      if (fetchError) {
+        setError('Failed to load businesses. Please try again.')
+        setBusinesses([])
+        setLoading(false)
+        return
+      }
+
+      list = data || []
     }
 
-    const list = data || []
     setBusinesses(list)
     lastFetchedUserIdRef.current = user.id
 
