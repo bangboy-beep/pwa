@@ -79,19 +79,6 @@ export default function SuperAdminPage() {
     }
   };
 
-  const deleteBusiness = async (id: string, name: string) => {
-    if (!confirm(`Yakin ingin menghapus bisnis "${name}" secara permanen?`)) return;
-
-    const supabase = createClient();
-    const { error } = await supabase.from('businesses').delete().eq('id', id);
-
-    if (error) {
-      alert('Gagal menghapus: ' + error.message);
-    } else {
-      setBusinesses(businesses.filter(b => b.id !== id));
-    }
-  };
-
   if (loading) return <Loading />;
 
   return (
