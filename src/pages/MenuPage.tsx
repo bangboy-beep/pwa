@@ -1,11 +1,12 @@
 // SmartQR Menu Management — Storyboard Screens 3 & 4
 // Route: /admin/menu
+// Supports image + optional video uploads for menu products.
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   Plus, Edit2, Trash2, AlertCircle, X, Search,
-  UtensilsCrossed, ShoppingBag, ImagePlus,
+  UtensilsCrossed, ShoppingBag, ImagePlus, Video, VideoOff,
 } from 'lucide-react'
 import { useAuthGuard } from '../hooks/useAuthGuard'
 import { useBusiness } from '../providers/BusinessProvider'
@@ -14,7 +15,8 @@ import { cn } from '../components/ui/utils'
 import {
   getCategories, getProducts, createCategory, updateCategory,
   deleteCategory, createProduct, updateProduct, deleteProduct,
-  uploadProductImage,
+  uploadProductImage, uploadProductVideo, deleteProductVideo,
+  validateVideoFile, getVideoDuration,
 } from '../lib/menu/service'
 import type { MenuCategory, MenuProduct } from '../types'
 
@@ -63,6 +65,10 @@ export default function MenuPage() {
   const [productFormError, setProductFormError] = useState<string | null>(null)
   const [productImageFile, setProductImageFile] = useState<File | null>(null)
   const [productImagePreview, setProductImagePreview] = useState<string | null>(null)
+  const [productVideoFile, setProductVideoFile] = useState<File | null>(null)
+  const [productVideoPreview, setProductVideoPreview] = useState<string | null>(null)
+  const [productVideoWarning, setProductVideoWarning] = useState<string | null>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'category' | 'product'; id: string; name: string } | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -116,32 +122,82 @@ export default function MenuPage() {
   const handleOpenAddProduct = (defaultCatId?: string) => {
     if (isStaff) return
     if (categories.length === 0) { showToast('Buat kategori terlebih dahulu.'); return }
-    setEditingProduct(null); setProductCategoryId(defaultCatId || categories[0]?.id || ''); setProductName(''); setProductDesc(''); setProductPrice(''); setProductSort('0'); setProductActive(true); setProductFormError(null); setProductImageFile(null); setProductImagePreview(null); setIsProductModalOpen(true)
+    setEditingProduct(null); setProductCategoryId(defaultCatId || categories[0]?.id || '');
+    setProductName(''); setProductDesc(''); setProductPrice(''); setProductSort('0'); setProductActive(true);
+    setProductFormError(null); setProductImageFile(null); setProductImagePreview(null);
+    setProductVideoFile(null); setProductVideoPreview(null); setProductVideoWarning(null);
+    setIsProductModalOpen(true)
   }
-  const handleOpenEditProduct = (prod: MenuProduct) => { if (isStaff) return; setEditingProduct(prod); setProductCategoryId(prod.category_id); setProductName(prod.name); setProductDesc(prod.description || ''); setProductPrice(String(prod.price)); setProductSort(String(prod.sort_order)); setProductActive(prod.is_active); setProductFormError(null); setProductImageFile(null); setProductImagePreview(prod.image_url || null); setIsProductModalOpen(true) }
+  const handleOpenEditProduct = (prod: MenuProduct) => {
+    if (isStaff) return
+    setEditingProduct(prod)
+    setProductCategoryId(prod.category_id)
+    setProductName(prod.name)
+    setProductDesc(prod.description || '')
+    setProductPrice(String(prod.price))
+    setProductSort(String(prod.sort_order))
+    setProductActive(prod.is_active)
+    setProductFormError(null)
+    setProductImageFile(null)
+    setProductImagePreview(prod.image_url || null)
+    setProductVideoFile(null)
+    setProductVideoPreview(prod.video_url || null)
+    setProductVideoWarning(null)
+    setIsProductModalOpen(true)
+  }
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!currentBusiness || isStaff) return
     if (!productName.trim()) { setProductFormError('Nama produk wajib diisi.'); return }
     if (!productCategoryId) { setProductFormError('Kategori wajib dipilih.'); return }
-    const parsedPrice = parseFloat(productPrice); if (isNaN(parsedPrice) || parsedPrice < 0) { setProductFormError('Harga harus angka valid.'); return }
+    const parsedPrice = parseFloat(productPrice)
+    if (isNaN(parsedPrice) || parsedPrice < 0) { setProductFormError('Harga harus angka valid.'); return }
+
     setProductSubmitting(true); setProductFormError(null)
     try {
       let imageUrl: string | undefined = editingProduct?.image_url ?? undefined
       if (productImageFile) {
-        const { url, error: uploadError } = await uploadProductImage(currentBusiness.id, editingProduct?.id || 'temp-' + Date.now(), productImageFile)
+        const { url, error: uploadError } = await uploadProductImage(
+          currentBusiness.id, editingProduct?.id || 'temp-' + Date.now(), productImageFile
+        )
         if (uploadError) { setProductFormError(uploadError.message || 'Gagal mengunggah gambar.'); return }
         imageUrl = url
       }
+
+      let videoUrl: string | undefined | null = editingProduct?.video_url ?? null
+      const tempId = editingProduct?.id || 'temp-' + Date.now()
+      if (productVideoFile) {
+        const { url, error: uploadError } = await uploadProductVideo(
+          currentBusiness.id, tempId, productVideoFile
+        )
+        if (uploadError) { setProductFormError(uploadError.message || 'Gagal mengunggah video.'); return }
+        videoUrl = url
+      }
+
       if (editingProduct) {
-        const { data, error } = await updateProduct(editingProduct.id, currentBusiness.id, { category_id: productCategoryId, name: productName, description: productDesc, price: parsedPrice, sort_order: parseInt(productSort) || 0, is_active: productActive, image_url: imageUrl })
-        if (!error && data) { setProducts(p => p.map(pr => pr.id === data.id ? data : pr).sort((a, b) => a.sort_order - b.sort_order)); setIsProductModalOpen(false); showToast('Produk berhasil diperbarui.') }
-        else setProductFormError(error?.message || 'Gagal memperbarui.')
+        const { data, error } = await updateProduct(editingProduct.id, currentBusiness.id, {
+          category_id: productCategoryId, name: productName, description: productDesc,
+          price: parsedPrice, sort_order: parseInt(productSort) || 0, is_active: productActive,
+          image_url: imageUrl, video_url: videoUrl,
+        })
+        if (!error && data) {
+          setProducts(p => p.map(pr => pr.id === data.id ? data : pr).sort((a, b) => a.sort_order - b.sort_order))
+          setIsProductModalOpen(false)
+          showToast('Produk berhasil diperbarui.')
+        } else setProductFormError(error?.message || 'Gagal memperbarui.')
       } else {
-        const { data, error } = await createProduct({ business_id: currentBusiness.id, category_id: productCategoryId, name: productName, description: productDesc, price: parsedPrice, sort_order: parseInt(productSort) || 0, is_active: productActive, image_url: imageUrl })
-        if (!error && data) { setProducts(p => [...p, data].sort((a, b) => a.sort_order - b.sort_order)); setIsProductModalOpen(false); showToast('Produk berhasil dibuat.') }
-        else setProductFormError(error?.message || 'Gagal membuat produk.')
+        const { data, error } = await createProduct({
+          business_id: currentBusiness.id, category_id: productCategoryId,
+          name: productName, description: productDesc, price: parsedPrice,
+          sort_order: parseInt(productSort) || 0, is_active: productActive,
+          image_url: imageUrl, video_url: videoUrl ?? undefined,
+        })
+        if (!error && data) {
+          setProducts(p => [...p, data].sort((a, b) => a.sort_order - b.sort_order))
+          setIsProductModalOpen(false)
+          showToast('Produk berhasil dibuat.')
+        } else setProductFormError(error?.message || 'Gagal membuat produk.')
       }
     } catch (err: any) { console.error('[MenuPage] Save product error:', err); setProductFormError(err?.message || 'Terjadi kesalahan sistem.') }
     finally { setProductSubmitting(false) }
@@ -149,12 +205,36 @@ export default function MenuPage() {
 
   const handleProductImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return
-    if (!file.type.startsWith('image/') || !['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) { setProductFormError('Format gambar harus PNG atau JPEG.'); return }
+    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) { setProductFormError('Format gambar harus PNG, JPEG, atau WebP.'); return }
     if (file.size > 5 * 1024 * 1024) { setProductFormError('Ukuran gambar maksimal 5 MB.'); return }
     setProductFormError(null); setProductImageFile(file)
     const reader = new FileReader()
     reader.onloadend = () => setProductImagePreview(reader.result as string)
     reader.readAsDataURL(file)
+  }
+
+  const handleProductVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const validation = validateVideoFile(file)
+    if (!validation.valid) { setProductFormError(validation.error); return }
+    setProductFormError(null); setProductVideoFile(file)
+    // Preview
+    const previewUrl = URL.createObjectURL(file)
+    setProductVideoPreview(previewUrl)
+    // Check duration for warning
+    const duration = await getVideoDuration(file)
+    if (duration && duration > 10) {
+      setProductVideoWarning(`Video ${Math.round(duration)} detik. Disarankan 5–10 detik untuk performa terbaik.`)
+    } else {
+      setProductVideoWarning(null)
+    }
+  }
+
+  const handleDeleteVideo = () => {
+    if (productVideoPreview) URL.revokeObjectURL(productVideoPreview)
+    setProductVideoFile(null)
+    setProductVideoPreview(null)
+    setProductVideoWarning(null)
   }
 
   const handleDeleteConfirm = async () => {
@@ -165,6 +245,11 @@ export default function MenuPage() {
         const { error } = await deleteCategory(deleteConfirm.id, currentBusiness.id)
         if (!error) { setCategories(p => p.filter(c => c.id !== deleteConfirm.id)); setProducts(p => p.filter(p => p.category_id !== deleteConfirm.id)); showToast('Kategori berhasil dihapus.') }
       } else {
+        // Delete video from storage when deleting product
+        const prod = products.find(p => p.id === deleteConfirm.id)
+        if (prod?.video_url) {
+          await deleteProductVideo(currentBusiness.id, deleteConfirm.id).catch(() => {})
+        }
         const { error } = await deleteProduct(deleteConfirm.id, currentBusiness.id)
         if (!error) { setProducts(p => p.filter(p => p.id !== deleteConfirm.id)); showToast('Produk berhasil dihapus.') }
       }
@@ -251,7 +336,7 @@ export default function MenuPage() {
             const catProducts = searchedProducts.filter(p => p.category_id === category.id)
             return (
               <div key={category.id} className="space-y-3">
-                {/* Category header — Solid MD3 style */}
+                {/* Category header */}
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <h2 className="font-bold text-stone-900 text-[16px]">{category.name}</h2>
@@ -284,9 +369,20 @@ export default function MenuPage() {
                     <div className="grid gap-3">
                       {catProducts.map(product => (
                         <div key={product.id} className="bg-white rounded-2xl border border-stone-200 p-3 flex items-center gap-3 active:bg-stone-50 transition-colors group">
-                          {/* Product image thumbnail */}
-                          <div className="w-16 h-16 rounded-xl border border-stone-100 flex items-center justify-center bg-stone-50 shrink-0 overflow-hidden">
-                            {product.image_url ? <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" /> : <ShoppingBag className="w-7 h-7 text-stone-300" />}
+                          {/* Product media thumbnail */}
+                          <div className="w-16 h-16 rounded-xl border border-stone-100 flex items-center justify-center bg-stone-50 shrink-0 overflow-hidden relative">
+                            {product.video_url ? (
+                              <video src={product.video_url} className="w-full h-full object-cover" muted loop playsInline />
+                            ) : product.image_url ? (
+                              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <ShoppingBag className="w-7 h-7 text-stone-300" />
+                            )}
+                            {product.video_url && (
+                              <div className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center">
+                                <Video className="w-3 h-3 text-white" />
+                              </div>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5">
@@ -317,21 +413,18 @@ export default function MenuPage() {
         </div>
       )}
 
-      {/* Add Menu FAB — Proper Material FAB style */}
+      {/* Add Menu FAB */}
       {!isStaff && (
         <button
           onClick={() => handleOpenAddProduct()}
           className="fixed z-40 h-14 w-14 rounded-full text-white shadow-lg active:scale-90 transition-all flex items-center justify-center bg-[#f0883a]"
-          style={{
-            bottom: 'calc(5rem + env(safe-area-inset-bottom, 16px))',
-            right: '16px'
-          }}
+          style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 16px))', right: '16px' }}
         >
           <Plus className="w-7 h-7" />
         </button>
       )}
 
-      {/* Category Modal — MD3 Centered Dialog */}
+      {/* Category Modal */}
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm" onClick={() => setIsCategoryModalOpen(false)} />
@@ -383,13 +476,13 @@ export default function MenuPage() {
         </div>
       )}
 
-      {/* Product Modal — MD3 Centered Dialog */}
+      {/* Product Modal */}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm" onClick={() => setIsProductModalOpen(false)} />
           <div className="relative w-full max-w-sm bg-white rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-100">
-            {/* Image upload area */}
-            <div className="relative h-48 bg-stone-100 overflow-hidden">
+            {/* Media preview area */}
+            <div className="relative h-52 bg-stone-100 overflow-hidden">
               {productImagePreview || editingProduct?.image_url ? (
                 <img src={productImagePreview || editingProduct?.image_url || ''} alt="Preview" className="w-full h-full object-cover" />
               ) : (
@@ -398,13 +491,27 @@ export default function MenuPage() {
                   <span className="text-xs font-bold uppercase tracking-wider">Upload Foto Menu</span>
                 </div>
               )}
+              {/* Video overlay indicator */}
+              {productVideoPreview && (
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <video src={productVideoPreview} className="w-full h-full object-cover" muted loop playsInline />
+                  <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/60 text-white text-xs font-bold px-3 py-1.5 rounded-full">
+                    <Video className="w-3.5 h-3.5" /> Video Menu
+                  </div>
+                </div>
+              )}
               <button onClick={() => setIsProductModalOpen(false)} className="absolute top-3 right-3 p-2 rounded-full bg-black/50 text-white active:bg-black/70 transition-colors">
                 <X className="w-4 h-4" />
               </button>
-              <label className="absolute bottom-3 right-3 flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-lg cursor-pointer text-xs font-bold text-stone-900 active:bg-stone-50 transition-all border border-stone-100">
-                <ImagePlus className="w-4 h-4 text-[#f0883a]" />
-                <span>{productImagePreview || editingProduct?.image_url ? 'Ganti' : 'Upload'}</span>
-                <input type="file" accept="image/png,image/jpeg,image/jpg" className="hidden" onChange={handleProductImageChange} />
+              <label className="absolute bottom-3 right-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white shadow-lg cursor-pointer text-xs font-bold text-stone-900 active:bg-stone-50 transition-all border border-stone-100">
+                <ImagePlus className="w-3.5 h-3.5 text-[#f0883a]" />
+                <span>{productImagePreview || editingProduct?.image_url ? 'Ganti Foto' : 'Upload Foto'}</span>
+                <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleProductImageChange} />
+              </label>
+              <label className="absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f0883a] shadow-lg cursor-pointer text-xs font-bold text-white active:bg-[#e0792d] transition-all">
+                <Video className="w-3.5 h-3.5" />
+                <span>{productVideoPreview || editingProduct?.video_url ? 'Ganti Video' : 'Upload Video'}</span>
+                <input ref={videoInputRef} type="file" accept="video/mp4,video/webm" className="hidden" onChange={handleProductVideoChange} />
               </label>
             </div>
 
@@ -415,6 +522,36 @@ export default function MenuPage() {
               </div>
 
               {productFormError && <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-100 text-red-700 text-xs flex items-center gap-2 font-bold"><AlertCircle className="w-4 h-4 shrink-0" /><span>{productFormError}</span></div>}
+
+              {/* Video warning */}
+              {productVideoWarning && (
+                <div className="mb-5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs flex items-start gap-2 font-medium">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{productVideoWarning}</span>
+                </div>
+              )}
+
+              {/* Video section */}
+              {(productVideoPreview || editingProduct?.video_url) && (
+                <div className="mb-5 rounded-xl overflow-hidden border border-stone-200 bg-stone-50">
+                  <div className="relative aspect-video">
+                    <video src={productVideoPreview || editingProduct!.video_url!} className="w-full h-full object-cover" muted loop playsInline controls />
+                  </div>
+                  <div className="p-3 flex items-center justify-between">
+                    <span className="text-xs text-stone-500 font-medium flex items-center gap-1.5">
+                      <Video className="w-3.5 h-3.5 text-[#f0883a]" /> Video Menu
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleDeleteVideo}
+                      className="text-xs text-red-500 font-bold hover:text-red-700 active:bg-red-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                    >
+                      <VideoOff className="w-3.5 h-3.5" /> Hapus Video
+                    </button>
+                  </div>
+                  <p className="px-3 pb-3 text-[10px] text-stone-400">MP4 / WebM · Maks 20 MB · Disarankan 5–10 detik</p>
+                </div>
+              )}
 
               <form onSubmit={handleSaveProduct} className="space-y-4">
                 <div>
@@ -463,7 +600,7 @@ export default function MenuPage() {
         </div>
       )}
 
-      {/* Delete Modal — MD3 Dialog style */}
+      {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
           <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
@@ -473,11 +610,13 @@ export default function MenuPage() {
             </div>
             <h3 className="text-[17px] font-bold text-stone-900 mb-2">Hapus {deleteConfirm.type === 'category' ? 'Kategori' : 'Produk'}?</h3>
             <p className="text-sm text-stone-500 mb-6 leading-relaxed font-medium">
-              {deleteConfirm.type === 'category' ? `Menghapus "${deleteConfirm.name}" juga akan menghapus semua produk di dalamnya.` : `Anda akan menghapus "${deleteConfirm.name}" dari menu.`}
+              {deleteConfirm.type === 'category'
+                ? `Menghapus "${deleteConfirm.name}" juga akan menghapus semua produk di dalamnya.`
+                : `Anda akan menghapus "${deleteConfirm.name}" dari menu.`}
             </p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConfirm(null)} className="flex-1 h-12 rounded-xl border border-stone-200 text-stone-700 font-bold text-sm active:bg-stone-50 transition-colors">Batal</button>
-              <button onClick={handleDeleteConfirm} disabled={deleting} className="flex-1 h-12 rounded-xl bg-red-500 text-white font-bold text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
+              <button onClick={handleDeleteConfirm} disabled={deleting} className="flex-1 h-12 rounded-xl bg-red-500 text-white font-bold text-sm active:bg-red-600 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
                 {deleting && <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>}
                 Hapus
               </button>
