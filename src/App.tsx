@@ -1,7 +1,7 @@
 // SmartQR App Component
 // Main router with authentication and business context
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './providers/AuthProvider'
 import { BusinessProvider } from './providers/BusinessProvider'
 import AdminLoginPage from './pages/admin/AdminLoginPage'
