@@ -104,6 +104,7 @@ export async function createProduct(input: {
   sort_order?: number
   is_active?: boolean
   image_url?: string
+  video_url?: string
 }): Promise<{
   data: MenuProduct | null
   error: { message: string } | null
@@ -119,6 +120,7 @@ export async function createProduct(input: {
       sort_order: input.sort_order ?? 0,
       is_active: input.is_active ?? true,
       image_url: input.image_url?.trim() || null,
+      video_url: input.video_url?.trim() || null,
     })
     .select()
     .single()
@@ -143,6 +145,7 @@ export async function updateProduct(
   if (updates.sort_order !== undefined) payload.sort_order = updates.sort_order
   if (updates.is_active !== undefined) payload.is_active = updates.is_active
   if (updates.image_url !== undefined) payload.image_url = updates.image_url?.trim() || null
+  if (updates.video_url !== undefined) payload.video_url = updates.video_url?.trim() || null
 
   const { data, error } = await (supabase.from('menu_products') as any)
     .update(payload)
@@ -263,5 +266,75 @@ export async function deleteProductImage(businessId: string, productId: string):
   const { error } = await supabase.storage
     .from(STORAGE_BUCKET)
     .remove([`${businessId}/${productId}/*`])
+  return { error }
+}
+
+// ─── Video Upload / Delete ────────────────────────────────────────────────────
+
+const VIDEO_STORAGE_BUCKET = 'menu-media'
+const MAX_VIDEO_SIZE = 20 * 1024 * 1024 // 20 MB
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm']
+
+export interface UploadVideoResult {
+  path: string | null
+  url: string | undefined
+  error: { message: string } | null
+}
+
+export interface VideoValidationResult {
+  valid: boolean
+  error: string | null
+  duration?: number | null
+}
+
+export function validateVideoFile(file: File): VideoValidationResult {
+  if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+    return { valid: false, error: 'Format video harus MP4 atau WebM.' }
+  }
+  if (file.size > MAX_VIDEO_SIZE) {
+    return { valid: false, error: 'Ukuran video maksimal 20 MB.' }
+  }
+  return { valid: true, error: null }
+}
+
+export async function getVideoDuration(file: File): Promise<number | null> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video')
+    video.preload = 'metadata'
+    video.onloadedmetadata = () => {
+      const duration = isNaN(video.duration) ? null : video.duration
+      URL.revokeObjectURL(video.src)
+      resolve(duration)
+    }
+    video.onerror = () => { URL.revokeObjectURL(video.src); resolve(null) }
+    video.src = URL.createObjectURL(file)
+  })
+}
+
+export async function uploadProductVideo(
+  businessId: string,
+  productId: string,
+  file: File
+): Promise<UploadVideoResult> {
+  const supabase = createClient()
+  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'mp4'
+  const fileName = `${businessId}/products/${productId}.${fileExt}`
+
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from(VIDEO_STORAGE_BUCKET)
+    .upload(fileName, file, { upsert: false })
+
+  if (uploadError) return { path: null, url: undefined, error: { message: uploadError.message } }
+
+  const { data: urlData } = supabase.storage.from(VIDEO_STORAGE_BUCKET).getPublicUrl(fileName)
+  return { path: uploadData.path, url: urlData.publicUrl, error: null }
+}
+
+export async function deleteProductVideo(businessId: string, productId: string): Promise<{ error: { message: string } | null }> {
+  const supabase = createClient()
+  // Delete any video files for this product (keep image files in menu-images bucket)
+  const { error } = await supabase.storage
+    .from(VIDEO_STORAGE_BUCKET)
+    .remove([`${businessId}/products/${productId}.*`])
   return { error }
 }

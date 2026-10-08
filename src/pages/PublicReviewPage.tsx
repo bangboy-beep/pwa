@@ -72,7 +72,7 @@ export default function PublicReviewPage() {
   const hasReview = review?.google_review_url && review.is_active
 
   return (
-    <div className="min-h-screen bg-stone-50 py-8 px-4 flex justify-center">
+    <div className="fixed inset-0 bg-stone-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl border-[8px] border-white overflow-hidden h-[92vh] flex flex-col">
 
         {/* Back Header */}

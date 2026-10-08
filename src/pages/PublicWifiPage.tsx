@@ -86,7 +86,7 @@ export default function PublicWifiPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 py-8 px-4 flex justify-center">
+    <div className="fixed inset-0 bg-stone-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl border-[8px] border-white overflow-hidden flex flex-col">
 
         {/* Back Header */}

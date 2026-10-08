@@ -75,7 +75,7 @@ export default function PublicCustomerHubPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
+    <div className="fixed inset-0 bg-stone-50 flex flex-col items-center justify-center p-4">
       {/* Phone Frame */}
       <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl border-[8px] border-white overflow-hidden h-[92vh] flex flex-col relative animate-fade-in">
 
@@ -183,7 +183,7 @@ export default function PublicCustomerHubPage() {
         </div>
 
         {/* Footer */}
-        <div className="p-6 text-center shrink-0">
+        <div className="p-6 text-center shrink-0 border-t border-stone-100 bg-white">
           <p className="text-[10px] uppercase tracking-widest text-stone-300 font-bold">
             Powered by <span className="text-stone-400">SmartQR</span>
           </p>
@@ -192,4 +192,3 @@ export default function PublicCustomerHubPage() {
     </div>
   )
 }
-

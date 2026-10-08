@@ -99,6 +99,7 @@ export interface Database {
           description: string | null
           price: number
           image_url: string | null
+          video_url: string | null
           sort_order: number
           is_active: boolean
           created_at: string
