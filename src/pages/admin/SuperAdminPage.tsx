@@ -4,6 +4,7 @@ import { createClient } from '../../lib/supabase/client';
 import { Loading } from '../../components/ui/Loading';
 import { Plus, X, ExternalLink, Settings2 } from 'lucide-react';
 import { createBusiness } from '../../lib/business/service';
+import { useBusiness } from '../../providers/BusinessProvider';
 import type { BusinessType } from '../../types';
 
 const BUSINESS_TYPES: { value: BusinessType; label: string; icon: string }[] = [
@@ -20,6 +21,7 @@ const BUSINESS_TYPES: { value: BusinessType; label: string; icon: string }[] = [
 
 export default function SuperAdminPage() {
   const navigate = useNavigate();
+  const { setSelectedBusiness } = useBusiness();
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -163,6 +165,8 @@ export default function SuperAdminPage() {
                       </a>
                       <button
                         onClick={() => {
+                          const biz = businesses.find((b2: any) => b2.id === b.id);
+                          if (biz) setSelectedBusiness({ ...biz, role: 'owner' as any });
                           sessionStorage.setItem('smartqr_selected_business_id', b.id);
                           navigate('/admin');
                         }}
