@@ -30,6 +30,7 @@ export default function App() {
         <BusinessProvider>
           <Routes>
             {/* Public routes */}
+            <Route path="/" element={<Navigate to="/super" replace />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route path="/m/:slug" element={<PublicMenuPage />} />
             <Route path="/q/:slug" element={<PublicCustomerHubPage />} />
