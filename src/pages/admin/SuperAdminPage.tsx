@@ -124,15 +124,18 @@ export default function SuperAdminPage() {
                   </td>
                   <td className="p-5 text-stone-500 capitalize">{b.business_type}</td>
                   <td className="p-5">
-                    <a
-                      href={`/q/${b.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-amber-600 hover:underline font-medium"
+                    <button
+                      onClick={() => {
+                        const biz = businesses.find((b2: any) => b2.id === b.id);
+                        if (biz) setSelectedBusiness({ ...biz, role: 'owner' as any });
+                        sessionStorage.setItem('smartqr_selected_business_id', b.id);
+                        navigate('/admin');
+                      }}
+                      className="inline-flex items-center gap-1.5 text-amber-600 hover:text-amber-700 hover:underline font-medium transition-colors"
                     >
                       {b.slug}
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                      <Settings2 className="w-3 h-3" />
+                    </button>
                   </td>
                   <td className="p-5">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 capitalize">
@@ -140,29 +143,15 @@ export default function SuperAdminPage() {
                     </span>
                   </td>
                   <td className="p-5 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <a
-                        href={`/q/${b.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 rounded-lg text-amber-600 hover:bg-amber-50 hover:text-amber-700 transition-colors"
-                        title="Lihat Publik"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                      <button
-                        onClick={() => {
-                          const biz = businesses.find((b2: any) => b2.id === b.id);
-                          if (biz) setSelectedBusiness({ ...biz, role: 'owner' as any });
-                          sessionStorage.setItem('smartqr_selected_business_id', b.id);
-                          navigate('/admin');
-                        }}
-                        className="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
-                        title="Masuk Admin"
-                      >
-                        <Settings2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <a
+                      href={`/q/${b.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-lg text-stone-400 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                      title="预览客户页面"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
                   </td>
                 </tr>
               ))
