@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '../../lib/supabase/client';
 import { Loading } from '../../components/ui/Loading';
-import { Trash2, Plus, X, ExternalLink, Settings2 } from 'lucide-react';
+import { Plus, X, ExternalLink, Settings2 } from 'lucide-react';
 import { createBusiness } from '../../lib/business/service';
 import type { BusinessType } from '../../types';
 
