@@ -215,7 +215,7 @@ export default function WifiPage() {
         className={cn(
           "rounded-2xl px-5 py-4 flex items-center justify-between border shadow-sm transition-all duration-300",
           (showAddForm ? form.is_active : activeNetwork?.is_active !== false)
-            ? "bg-orange-50 border-orange-200"
+            ? "bg-primary-50 border-primary-200"
             : "bg-stone-50 border-stone-200"
         )}
       >
@@ -223,7 +223,7 @@ export default function WifiPage() {
           <div className={cn(
             "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
             (showAddForm ? form.is_active : activeNetwork?.is_active !== false)
-              ? "bg-[#f0883a] text-white shadow-sm"
+              ? "bg-primary text-white shadow-sm"
               : "bg-stone-200 text-stone-400"
           )}>
             <Wifi className="w-6 h-6" />
@@ -237,7 +237,7 @@ export default function WifiPage() {
             </p>
             <p className={cn(
               "text-[11px] mt-0.5 font-bold uppercase tracking-wider",
-              (showAddForm ? form.is_active : activeNetwork?.is_active !== false) ? "text-[#f0883a]" : "text-stone-400"
+              (showAddForm ? form.is_active : activeNetwork?.is_active !== false) ? "text-primary" : "text-stone-400"
             )}>
               {showAddForm
                 ? (form.is_active ? 'WiFi Aktif' : 'WiFi Nonaktif')
@@ -261,7 +261,7 @@ export default function WifiPage() {
               })
               setShowAddForm(true)
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-[#f0883a] text-white text-xs font-bold rounded-xl active:bg-orange-600 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl active:bg-primary-600 transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Tambah WiFi
@@ -278,15 +278,15 @@ export default function WifiPage() {
             className={cn(
               "rounded-2xl p-4 border cursor-pointer transition-all duration-200",
               selectedNetwork === network.id
-                ? "bg-orange-50 border-orange-300 shadow-sm"
-                : "bg-white border-stone-200 hover:border-orange-200"
+                ? "bg-primary-50 border-primary-300 shadow-sm"
+                : "bg-white border-stone-200 hover:border-primary-200"
             )}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 min-w-0">
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                  network.is_active ? "bg-orange-100 text-[#f0883a]" : "bg-stone-100 text-stone-400"
+                  network.is_active ? "bg-primary-100 text-primary" : "bg-stone-100 text-stone-400"
                 )}>
                   <Wifi className="w-5 h-5" />
                 </div>
@@ -341,7 +341,7 @@ export default function WifiPage() {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Contoh: WiFi Tamu"
                 disabled={isReadOnly}
-                className="w-full h-12 px-4 rounded-xl border border-[#79747E] text-sm bg-transparent focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] transition-all disabled:opacity-60"
+                className="w-full h-12 px-4 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-60"
               />
             </div>
 
@@ -356,7 +356,7 @@ export default function WifiPage() {
                 onChange={(e) => setForm({ ...form, ssid: e.target.value })}
                 placeholder="KopiKita_Guest"
                 disabled={isReadOnly}
-                className="w-full h-12 px-4 rounded-xl border border-[#79747E] text-sm bg-transparent focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] transition-all disabled:opacity-60"
+                className="w-full h-12 px-4 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-60"
               />
             </div>
 
@@ -372,7 +372,7 @@ export default function WifiPage() {
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder="Masukkan password WiFi"
                   disabled={isReadOnly}
-                  className="w-full h-12 px-4 pr-24 rounded-xl border border-[#79747E] text-sm bg-transparent focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] transition-all disabled:opacity-60"
+                  className="w-full h-12 px-4 pr-24 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-60"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                   <button
@@ -407,7 +407,7 @@ export default function WifiPage() {
                   value={form.security_type}
                   onChange={(e) => setForm({ ...form, security_type: e.target.value as SecurityType })}
                   disabled={isReadOnly}
-                  className="w-full h-12 px-4 rounded-xl border border-[#79747E] text-sm bg-transparent focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] appearance-none disabled:opacity-60 transition-all cursor-pointer"
+                  className="w-full h-12 px-4 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none disabled:opacity-60 transition-all cursor-pointer"
                 >
                   <option value="WPA2">WPA2 (Recommended)</option>
                   <option value="WPA">WPA</option>
@@ -433,7 +433,7 @@ export default function WifiPage() {
                     onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#f0883a] shadow-inner" />
+                  <div className="w-11 h-6 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-inner" />
                 </label>
               </div>
             )}
@@ -446,7 +446,7 @@ export default function WifiPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-8 h-[48px] rounded-[12px] bg-[#f0883a] text-white text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60 shadow-sm"
+                className="px-8 h-[48px] rounded-[12px] bg-primary text-white text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60 shadow-sm"
               >
                 {saving && (
                   <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
@@ -469,7 +469,7 @@ export default function WifiPage() {
       {form.ssid && (
         <div className="bg-white rounded-2xl shadow-sm p-6 border border-stone-200">
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-orange-50 text-[#f0883a] mb-3 shadow-sm">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary-50 text-primary mb-3 shadow-sm">
               <QrCode className="w-6 h-6" />
             </div>
             <span className="text-[17px] font-bold text-stone-900">
@@ -493,7 +493,7 @@ export default function WifiPage() {
                 onClick={handleCopyPassword}
                 className="mt-6 w-full h-11 rounded-xl border border-stone-200 text-stone-700 text-[14px] font-bold flex items-center justify-center gap-2 active:bg-stone-50 transition-all bg-white shadow-sm"
               >
-                {copied === form.password ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-[#f0883a]" />}
+                {copied === form.password ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-primary" />}
                 {copied === form.password ? 'Password Tersalin' : 'Salin Password'}
               </button>
             )}

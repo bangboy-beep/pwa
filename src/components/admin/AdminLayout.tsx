@@ -1,250 +1,232 @@
-// SmartQR Admin Layout — Mobile top bar with back nav + Desktop sidebar
+// SmartQR Admin Layout — Android-style top app bar, navigation drawer & bottom navigation bar
 // Route: /admin/*
 
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ExternalLink, ChevronLeft } from 'lucide-react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Menu,
+  X,
+  ExternalLink,
+  ArrowLeft,
+  LogOut,
+  Home,
+  Utensils,
+  Wifi,
+  Star,
+  QrCode,
+  Printer,
+  QrCode as Logo,
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '../../hooks/useAuthContext';
 import { useBusiness } from '../../providers/BusinessProvider';
+import { AdminBottomNav } from '../ui/BottomNav';
+import { BusinessTypeIcon, getBusinessTypeMeta } from '../ui/BusinessTypeIcon';
 import { cn } from '../ui/utils';
 
 const NAV_ITEMS = [
-  { name: 'Home', path: '/admin', icon: '🏠' },
-  { name: 'Menu', path: '/admin/menu', icon: '📋' },
-  { name: 'WiFi', path: '/admin/wifi', icon: '📶' },
-  { name: 'Review', path: '/admin/review', icon: '⭐' },
-  { name: 'QR', path: '/admin/qr', icon: '🔲' },
+  { name: 'Beranda', path: '/admin', icon: Home },
+  { name: 'Kelola Menu', path: '/admin/menu', icon: Utensils },
+  { name: 'Akses WiFi', path: '/admin/wifi', icon: Wifi },
+  { name: 'Google Review', path: '/admin/review', icon: Star },
+  { name: 'QR Code', path: '/admin/qr', icon: QrCode },
+  { name: 'Cetak QR', path: '/admin/qr/print', icon: Printer },
 ];
-
 
 const PAGE_TITLES: Record<string, string> = {
   '/admin/menu': 'Kelola Menu',
-  '/admin/wifi': 'Kelola WiFi',
+  '/admin/wifi': 'Akses WiFi',
   '/admin/review': 'Google Review',
   '/admin/qr': 'QR Code',
   '/admin/qr/print': 'Cetak QR',
+  '/onboarding': 'Buat Bisnis',
 };
 
-export function AdminLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location = useLocation();
+function DrawerContent({ onNavigate }: { onNavigate?: () => void }) {
   const navigate = useNavigate();
   const { user, signOut } = useAuthContext();
   const { businesses, selectedBusiness } = useBusiness();
-
   const currentBusiness = selectedBusiness || businesses[0] || null;
-  const isSubpage = !['/admin', '/admin/'].includes(location.pathname);
-  const currentPageName = PAGE_TITLES[location.pathname] || NAV_ITEMS.find(n => n.path !== '/admin' && location.pathname.startsWith(n.path))?.name || 'SmartQR';
-
-  useEffect(() => {
-    const handleResize = () => { if (window.innerWidth >= 1024) setSidebarOpen(false) };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const handleLogout = async () => {
     await signOut();
     navigate('/admin/login');
   };
 
-  const isActive = (path: string) => {
-    if (path === '/admin') return location.pathname === '/admin';
-    return location.pathname.startsWith(path);
-  };
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-3 px-5 h-16 shrink-0">
+        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-md shadow-primary/30">
+          <Logo className="w-5 h-5 text-white" />
+        </div>
+        <div className="leading-tight">
+          <p className="font-extrabold text-ink tracking-tight">SmartQR</p>
+          <p className="text-[11px] font-medium text-ink-muted">Panel Admin</p>
+        </div>
+      </div>
 
-  const handleBack = () => navigate(-1);
+      {currentBusiness && (
+        <div className="mx-4 mt-2 mb-3 p-3 rounded-3xl bg-primary-50 flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-white text-primary flex items-center justify-center shrink-0 overflow-hidden">
+            {currentBusiness.logo_url ? (
+              <img src={currentBusiness.logo_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <BusinessTypeIcon type={currentBusiness.business_type} />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-ink truncate">{currentBusiness.name}</p>
+            <p className="text-xs text-ink-muted">{getBusinessTypeMeta(currentBusiness.business_type).label}</p>
+          </div>
+        </div>
+      )}
+
+      <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-0.5" aria-label="Menu admin">
+        {NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            end
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3.5 px-4 h-12 rounded-full text-sm transition-colors',
+                isActive ? 'bg-primary-100 text-primary-800 font-bold' : 'text-ink-muted font-medium hover:bg-surface'
+              )
+            }
+          >
+            <item.icon className="w-5 h-5 shrink-0" />
+            <span className="truncate">{item.name}</span>
+          </NavLink>
+        ))}
+        {currentBusiness && (
+          <a
+            href={`/q/${currentBusiness.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3.5 px-4 h-12 rounded-full text-sm font-medium text-ink-muted hover:bg-surface"
+          >
+            <ExternalLink className="w-5 h-5 shrink-0" />
+            <span>Lihat Halaman Publik</span>
+          </a>
+        )}
+      </nav>
+
+      <div className="p-4 shrink-0">
+        <div className="flex items-center gap-3 p-2 pl-3 rounded-full bg-surface">
+          <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shrink-0">
+            {(user?.email || 'U').charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-ink truncate">{user?.email || 'Owner'}</p>
+            <p className="text-[11px] text-ink-muted">Administrator</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-ink-muted hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+            aria-label="Keluar"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function AdminLayout() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { businesses, selectedBusiness } = useBusiness();
+
+  const currentBusiness = selectedBusiness || businesses[0] || null;
+  const isHome = ['/admin', '/admin/'].includes(location.pathname);
+  const title = isHome ? currentBusiness?.name || 'SmartQR' : PAGE_TITLES[location.pathname] || 'SmartQR';
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) setDrawerOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
-    <div className="min-h-[100dvh] bg-[#f5f0eb] print:bg-white antialiased flex flex-col">
-      {/* Mobile top bar */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-stone-200" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-        <div className="relative flex items-center h-14 px-4 max-w-[420px] mx-auto">
-          {isSubpage ? (
-            <button onClick={handleBack} className="flex h-10 w-10 items-center justify-center rounded-full text-stone-700 active:bg-stone-100 transition-colors z-10 -ml-2" aria-label="Kembali">
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-          ) : (
-            <button onClick={() => setSidebarOpen(true)} className="flex h-10 w-10 items-center justify-center rounded-full text-stone-700 active:bg-stone-100 transition-colors z-10 -ml-2" aria-label="Menu">
+    <div className="min-h-[100dvh] bg-surface print:bg-white flex flex-col">
+      {/* Top app bar (mobile) */}
+      <header
+        className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-surface/90 backdrop-blur-lg print:hidden"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div className="flex items-center gap-1 h-16 px-2 max-w-md mx-auto">
+          {isHome ? (
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="w-12 h-12 rounded-full flex items-center justify-center text-ink active:bg-primary-100 transition-colors"
+              aria-label="Buka menu"
+            >
               <Menu className="w-6 h-6" />
             </button>
+          ) : (
+            <button
+              onClick={() => navigate(-1)}
+              className="w-12 h-12 rounded-full flex items-center justify-center text-ink active:bg-primary-100 transition-colors"
+              aria-label="Kembali"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
           )}
-
-          <div className="flex-1 flex flex-col items-center justify-center px-4 text-center">
-            <h1 className="text-[16px] font-bold text-stone-900 truncate tracking-tight">
-              {isSubpage ? currentPageName : (currentBusiness?.name || 'SmartQR')}
-            </h1>
-          </div>
-
-          <div className="w-8 h-8 shrink-0" />
+          <h1 className="flex-1 min-w-0 text-lg font-bold text-ink truncate tracking-tight">{title}</h1>
+          {currentBusiness && (
+            <a
+              href={`/q/${currentBusiness.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-12 h-12 rounded-full flex items-center justify-center text-ink-muted active:bg-primary-100 transition-colors"
+              aria-label="Lihat halaman publik"
+            >
+              <ExternalLink className="w-5 h-5" />
+            </a>
+          )}
         </div>
       </header>
 
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:w-64 border-r border-stone-200" style={{ background: '#ffffff' }}>
-        <div className="h-14 flex items-center gap-2.5 px-4 border-b border-stone-100 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-[#f0883a] flex items-center justify-center shadow-sm">
-            <span className="text-white text-[11px] font-black">QR</span>
-          </div>
-          <span className="font-bold text-base text-stone-900 tracking-tight">SmartQR</span>
-          <span className="ml-auto text-[10px] text-stone-400 font-medium">Admin</span>
-        </div>
-
-
-        <nav className="flex-1 overflow-y-auto px-3 space-y-1 py-2">
-          {currentBusiness && (
-            <a href={`/q/${currentBusiness.slug}`} target="_blank" rel="noopener noreferrer"
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-all duration-200">
-              <ExternalLink className="w-4 h-4 shrink-0" />
-              <span className="text-sm leading-5 font-medium">Lihat Publik</span>
-            </a>
-          )}
-        </nav>
-
-        <div className="p-4 border-t border-stone-100 shrink-0">
-          <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-stone-50">
-            <div className="w-8 h-8 rounded-lg bg-[#f0883a] flex items-center justify-center text-white text-xs font-bold shrink-0">
-              {(user?.email || 'U').charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-bold text-stone-900 truncate">{user?.email || 'Owner'}</p>
-              <p className="text-[9px] text-stone-500 uppercase font-bold tracking-tighter">Administrator</p>
-            </div>
-            <button onClick={handleLogout} className="p-1.5 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0" title="Logout">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
-          </div>
-        </div>
+      {/* Permanent drawer (desktop) */}
+      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:w-72 bg-white border-r border-outline/50 print:hidden">
+        <DrawerContent />
       </aside>
 
       {/* Main content */}
-      <div className="lg:ml-64 flex-1 flex flex-col">
+      <div className="lg:ml-72 flex-1 flex flex-col">
         <main
-          className="flex-1 lg:pt-0"
-          style={{
-            paddingTop: 'calc(3.5rem + env(safe-area-inset-top, 0px))',
-          }}
+          className="flex-1 pt-[calc(4rem+env(safe-area-inset-top,0px))] lg:pt-0 print:pt-0"
         >
           <div
-            className="w-full max-w-[420px] mx-auto px-4 py-6 lg:px-8 lg:py-8"
-            style={{
-              paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
-            }}
+            className="w-full max-w-md lg:max-w-3xl mx-auto px-4 pt-2 lg:px-8 lg:py-8 animate-fade-in pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-10 print:p-0"
+            key={location.pathname}
           >
             <Outlet />
           </div>
         </main>
-
-        {/* Mobile bottom nav — MD3 Navigation Bar style */}
-        <div
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200"
-          style={{
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          }}
-        >
-          <div className="flex items-center justify-around h-16 max-w-[420px] mx-auto px-2">
-            {NAV_ITEMS.slice(0, 4).map((item) => (
-              <button key={item.path} onClick={() => navigate(item.path)}
-                className={cn(
-                  'flex flex-col items-center gap-1 py-1 px-2 min-w-[64px] transition-all duration-200',
-                  isActive(item.path) ? 'text-stone-900' : 'text-stone-500'
-                )}>
-                <div className={cn(
-                  'px-5 py-1 rounded-xl transition-colors',
-                  isActive(item.path) ? 'bg-orange-100 text-[#f0883a]' : 'active:bg-stone-100'
-                )}>
-                  <span className="text-xl leading-none">{item.icon}</span>
-                </div>
-                <span className={cn(
-                  'text-[11px] leading-none tracking-tight font-medium',
-                  isActive(item.path) && 'font-bold'
-                )}>{item.name}</span>
-              </button>
-            ))}
-            <button onClick={() => navigate('/admin/qr')}
-              className={cn(
-                'flex flex-col items-center gap-1 py-1 px-2 min-w-[64px] transition-all duration-200',
-                location.pathname.startsWith('/admin/qr') ? 'text-stone-900' : 'text-stone-500'
-              )}>
-              <div className={cn(
-                'px-5 py-1 rounded-xl transition-colors',
-                location.pathname.startsWith('/admin/qr') ? 'bg-orange-100 text-[#f0883a]' : 'active:bg-stone-100'
-              )}>
-                <span className="text-xl leading-none">⚙️</span>
-              </div>
-              <span className={cn(
-                'text-[11px] leading-none tracking-tight font-medium',
-                location.pathname.startsWith('/admin/qr') && 'font-bold'
-              )}>Lainnya</span>
-            </button>
-          </div>
-        </div>
       </div>
 
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-50">
-          <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <aside className="fixed inset-y-0 left-0 z-50 w-72 bg-white flex flex-col shadow-2xl">
-            <div className="h-14 flex items-center gap-2.5 px-4 border-b border-stone-100 shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-[#f0883a] flex items-center justify-center shadow-sm">
-                <span className="text-white text-[11px] font-black">QR</span>
-              </div>
-              <span className="font-bold text-base text-stone-900 tracking-tight">SmartQR</span>
-              <button onClick={() => setSidebarOpen(false)} className="p-2 -mr-1 rounded-full text-stone-400 active:bg-stone-100 ml-auto" aria-label="Tutup">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <div className="print:hidden">
+        <AdminBottomNav />
+      </div>
 
-            {currentBusiness && (
-              <div className="mx-4 my-4 px-3 py-3 rounded-xl bg-stone-50 border border-stone-100">
-                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Bisnis Aktif</p>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-lg bg-white border border-stone-100 flex items-center justify-center text-lg shrink-0">
-                    {currentBusiness.business_type === 'cafe' && '☕'}
-                    {currentBusiness.business_type === 'restaurant' && '🍽️'}
-                    {currentBusiness.business_type === 'hotel' && '🏨'}
-                    {currentBusiness.business_type === 'bar' && '🍸'}
-                    {currentBusiness.business_type === 'salon' && '💇'}
-                    {currentBusiness.business_type === 'barbershop' && '💈'}
-                    {currentBusiness.business_type === 'other' && '📋'}
-                    {['homestay', 'villa'].includes(currentBusiness.business_type || '') && '🏠'}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-stone-900 truncate">{currentBusiness.name}</p>
-                    <p className="text-[10px] text-stone-500 capitalize">{currentBusiness.business_type}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <nav className="flex-1 overflow-y-auto px-3 space-y-1 py-2">
-              {currentBusiness && (
-                <a href={`/q/${currentBusiness.slug}`} target="_blank" rel="noopener noreferrer"
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-all duration-200">
-                  <ExternalLink className="w-4 h-4 shrink-0" />
-                  <span className="text-sm leading-5 font-medium">Lihat Publik</span>
-                </a>
-              )}
-            </nav>
-
-            <div className="p-4 border-t border-stone-100 shrink-0">
-              <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-stone-50">
-                <div className="w-8 h-8 rounded-lg bg-[#f0883a] flex items-center justify-center text-white text-xs font-bold shrink-0">
-                  {(user?.email || 'U').charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-bold text-stone-900 truncate">{user?.email || 'Owner'}</p>
-                  <p className="text-[9px] text-stone-500 uppercase font-bold tracking-tighter">Administrator</p>
-                </div>
-                <button onClick={handleLogout} className="p-1.5 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0" title="Logout">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+      {/* Modal navigation drawer (mobile) */}
+      {drawerOpen && (
+        <div className="lg:hidden fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Menu navigasi">
+          <div className="absolute inset-0 bg-ink/40 animate-scrim" onClick={() => setDrawerOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 w-[86%] max-w-[320px] bg-white rounded-r-[28px] shadow-2xl animate-slide-in overflow-hidden">
+            <button
+              onClick={() => setDrawerOpen(false)}
+              className="absolute top-3 right-3 z-10 w-10 h-10 rounded-full flex items-center justify-center text-ink-muted hover:bg-surface"
+              aria-label="Tutup menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <DrawerContent onNavigate={() => setDrawerOpen(false)} />
           </aside>
         </div>
       )}

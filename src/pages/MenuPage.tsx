@@ -277,7 +277,7 @@ export default function MenuPage() {
           className={cn(
             'px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border',
             selectedCategoryId === 'all'
-              ? 'bg-orange-100 border-orange-200 text-[#f0883a]'
+              ? 'bg-primary-100 border-primary-200 text-primary'
               : 'bg-white border-stone-200 text-stone-600 active:bg-stone-50'
           )}>
           Semua ({products.length})
@@ -289,7 +289,7 @@ export default function MenuPage() {
               className={cn(
                 'px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border',
                 selectedCategoryId === cat.id
-                  ? 'bg-orange-100 border-orange-200 text-[#f0883a]'
+                  ? 'bg-primary-100 border-primary-200 text-primary'
                   : 'bg-white border-stone-200 text-stone-600 active:bg-stone-50'
               )}>
               {cat.name} <span className={cn(
@@ -307,7 +307,7 @@ export default function MenuPage() {
         <input
           type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Cari menu..."
-          className="w-full h-12 pl-11 pr-11 rounded-xl border border-[#79747E] text-sm bg-transparent focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] transition-all placeholder:text-stone-400"
+          className="w-full h-12 pl-11 pr-11 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-stone-400"
         />
         {searchQuery && (
           <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-stone-400 hover:text-stone-600 active:bg-stone-100 transition-colors">
@@ -319,12 +319,12 @@ export default function MenuPage() {
       {/* Product list */}
       {categories.length === 0 ? (
         <div className="rounded-2xl border border-stone-200 p-8 text-center bg-white shadow-sm">
-          <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center mx-auto mb-4">
-            <UtensilsCrossed className="w-8 h-8 text-[#f0883a]" />
+          <div className="w-16 h-16 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4">
+            <UtensilsCrossed className="w-8 h-8 text-primary" />
           </div>
           <h3 className="text-[15px] font-bold text-stone-900">Belum ada kategori</h3>
           <p className="text-xs text-stone-500 mt-1 leading-relaxed px-4">Buat kategori untuk mulai menambahkan produk ke menu Anda.</p>
-          {!isStaff && <button onClick={handleOpenAddCategory} className="mt-6 w-full h-11 rounded-xl bg-[#f0883a] text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm">
+          {!isStaff && <button onClick={handleOpenAddCategory} className="mt-6 w-full h-11 rounded-xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm">
             <Plus className="w-5 h-5" /> Tambah Kategori
           </button>}
         </div>
@@ -360,7 +360,7 @@ export default function MenuPage() {
                     <div className="py-8 text-center text-stone-400 text-xs border border-dashed border-stone-200 rounded-2xl bg-stone-50/50">
                       {searchQuery ? 'Tidak ada produk yang cocok.' : 'Belum ada produk di kategori ini.'}
                       {!isStaff && !searchQuery && (
-                        <button onClick={() => handleOpenAddProduct(category.id)} className="block mx-auto mt-2 font-bold text-[#f0883a] hover:underline">
+                        <button onClick={() => handleOpenAddProduct(category.id)} className="block mx-auto mt-2 font-bold text-primary hover:underline">
                           Tambah produk
                         </button>
                       )}
@@ -390,11 +390,11 @@ export default function MenuPage() {
                               {!product.is_active && <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-500 font-bold uppercase shrink-0">Off</span>}
                             </div>
                             <p className="text-[11px] text-stone-500 line-clamp-1 mt-0.5 font-medium">{product.description || 'Tidak ada deskripsi'}</p>
-                            <p className="text-[13px] font-bold text-[#f0883a] mt-1">{formatRupiah(product.price)}</p>
+                            <p className="text-[13px] font-bold text-primary mt-1">{formatRupiah(product.price)}</p>
                           </div>
                           {!isStaff && (
                             <div className="flex items-center gap-1 shrink-0">
-                              <button onClick={() => handleOpenEditProduct(product)} className="p-2 rounded-full text-stone-400 active:bg-orange-50 active:text-[#f0883a] transition-colors">
+                              <button onClick={() => handleOpenEditProduct(product)} className="p-2 rounded-full text-stone-400 active:bg-primary-50 active:text-primary transition-colors">
                                 <Edit2 className="w-4 h-4" />
                               </button>
                               <button onClick={() => setDeleteConfirm({ type: 'product', id: product.id, name: product.name })} className="p-2 rounded-full text-stone-400 active:bg-red-50 active:text-red-500 transition-colors">
@@ -417,7 +417,7 @@ export default function MenuPage() {
       {!isStaff && (
         <button
           onClick={() => handleOpenAddProduct()}
-          className="fixed z-40 h-14 w-14 rounded-full text-white shadow-lg active:scale-90 transition-all flex items-center justify-center bg-[#f0883a]"
+          className="fixed z-40 h-14 w-14 rounded-full text-white shadow-lg active:scale-90 transition-all flex items-center justify-center bg-primary"
           style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 16px))', right: '16px' }}
         >
           <Plus className="w-7 h-7" />
@@ -445,27 +445,27 @@ export default function MenuPage() {
               <form onSubmit={handleSaveCategory} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Nama Kategori *</label>
-                  <input type="text" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="Makanan, Minuman, dll" className="w-full h-12 px-4 rounded-xl border border-[#79747E] text-sm focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] bg-transparent transition-all" required />
+                  <input type="text" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="Makanan, Minuman, dll" className="w-full h-12 px-4 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all" required />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Deskripsi (Opsional)</label>
-                  <textarea value={categoryDesc} onChange={(e) => setCategoryDesc(e.target.value)} rows={2} placeholder="Keterangan singkat..." className="w-full px-4 py-3 rounded-xl border border-[#79747E] text-sm focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] bg-transparent transition-all resize-none" />
+                  <textarea value={categoryDesc} onChange={(e) => setCategoryDesc(e.target.value)} rows={2} placeholder="Keterangan singkat..." className="w-full px-4 py-3 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all resize-none" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Urutan</label>
-                    <input type="number" value={categorySort} onChange={(e) => setCategorySort(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-[#79747E] text-sm focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] bg-transparent transition-all" />
+                    <input type="number" value={categorySort} onChange={(e) => setCategorySort(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all" />
                   </div>
                   <div className="flex items-center pt-7">
                     <label className="flex items-center gap-3 cursor-pointer group">
-                      <input type="checkbox" checked={categoryActive} onChange={(e) => setCategoryActive(e.target.checked)} className="w-5 h-5 accent-[#f0883a] rounded-lg border-2 border-stone-300 transition-all" />
+                      <input type="checkbox" checked={categoryActive} onChange={(e) => setCategoryActive(e.target.checked)} className="w-5 h-5 accent-primary rounded-lg border-2 border-stone-300 transition-all" />
                       <span className="text-sm font-bold text-stone-800">Aktif</span>
                     </label>
                   </div>
                 </div>
                 <div className="flex gap-3 pt-4">
                   <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="flex-1 h-12 rounded-xl border border-stone-300 text-stone-600 font-bold text-[15px] active:bg-stone-50 transition-colors">Batal</button>
-                  <button type="submit" disabled={categorySubmitting} className="flex-1 h-12 rounded-xl bg-[#f0883a] text-white font-bold text-[15px] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
+                  <button type="submit" disabled={categorySubmitting} className="flex-1 h-12 rounded-xl bg-primary text-white font-bold text-[15px] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
                     {categorySubmitting && <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>}
                     Simpan
                   </button>
@@ -504,11 +504,11 @@ export default function MenuPage() {
                 <X className="w-4 h-4" />
               </button>
               <label className="absolute bottom-3 right-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white shadow-lg cursor-pointer text-xs font-bold text-stone-900 active:bg-stone-50 transition-all border border-stone-100">
-                <ImagePlus className="w-3.5 h-3.5 text-[#f0883a]" />
+                <ImagePlus className="w-3.5 h-3.5 text-primary" />
                 <span>{productImagePreview || editingProduct?.image_url ? 'Ganti Foto' : 'Upload Foto'}</span>
                 <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleProductImageChange} />
               </label>
-              <label className="absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f0883a] shadow-lg cursor-pointer text-xs font-bold text-white active:bg-[#e0792d] transition-all">
+              <label className="absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary shadow-lg cursor-pointer text-xs font-bold text-white active:bg-primary-dark transition-all">
                 <Video className="w-3.5 h-3.5" />
                 <span>{productVideoPreview || editingProduct?.video_url ? 'Ganti Video' : 'Upload Video'}</span>
                 <input ref={videoInputRef} type="file" accept="video/mp4,video/webm" className="hidden" onChange={handleProductVideoChange} />
@@ -525,7 +525,7 @@ export default function MenuPage() {
 
               {/* Video warning */}
               {productVideoWarning && (
-                <div className="mb-5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs flex items-start gap-2 font-medium">
+                <div className="mb-5 p-3 rounded-xl bg-primary-50 border border-primary-200 text-primary-700 text-xs flex items-start gap-2 font-medium">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{productVideoWarning}</span>
                 </div>
@@ -539,7 +539,7 @@ export default function MenuPage() {
                   </div>
                   <div className="p-3 flex items-center justify-between">
                     <span className="text-xs text-stone-500 font-medium flex items-center gap-1.5">
-                      <Video className="w-3.5 h-3.5 text-[#f0883a]" /> Video Menu
+                      <Video className="w-3.5 h-3.5 text-primary" /> Video Menu
                     </span>
                     <button
                       type="button"
@@ -557,7 +557,7 @@ export default function MenuPage() {
                 <div>
                   <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Kategori *</label>
                   <div className="relative">
-                    <select value={productCategoryId} onChange={(e) => setProductCategoryId(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-[#79747E] text-sm bg-transparent focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] appearance-none" required>
+                    <select value={productCategoryId} onChange={(e) => setProductCategoryId(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none" required>
                       {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400">
@@ -567,29 +567,29 @@ export default function MenuPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Nama Produk *</label>
-                  <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Contoh: Nasi Goreng Spesial" className="w-full h-12 px-4 rounded-xl border border-[#79747E] text-sm focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] bg-transparent transition-all" required />
+                  <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Contoh: Nasi Goreng Spesial" className="w-full h-12 px-4 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all" required />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Deskripsi (Opsional)</label>
-                  <textarea value={productDesc} onChange={(e) => setProductDesc(e.target.value)} rows={2} className="w-full px-4 py-3 rounded-xl border border-[#79747E] text-sm focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] bg-transparent transition-all resize-none" placeholder="Deskripsi singkat menu..." />
+                  <textarea value={productDesc} onChange={(e) => setProductDesc(e.target.value)} rows={2} className="w-full px-4 py-3 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all resize-none" placeholder="Deskripsi singkat menu..." />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Harga (Rp) *</label>
-                    <input type="number" min="0" step="any" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} placeholder="25000" className="w-full h-12 px-4 rounded-xl border border-[#79747E] text-sm focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] bg-transparent transition-all" required />
+                    <input type="number" min="0" step="any" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} placeholder="25000" className="w-full h-12 px-4 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all" required />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Urutan</label>
-                    <input type="number" value={productSort} onChange={(e) => setProductSort(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-[#79747E] text-sm focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] bg-transparent transition-all" />
+                    <input type="number" value={productSort} onChange={(e) => setProductSort(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all" />
                   </div>
                 </div>
                 <div className="flex items-center gap-3 py-1 cursor-pointer group" onClick={() => setProductActive(!productActive)}>
-                  <input type="checkbox" checked={productActive} onChange={() => setProductActive(!productActive)} className="w-5 h-5 accent-[#f0883a] rounded-lg border-2 border-stone-300 transition-all" />
+                  <input type="checkbox" checked={productActive} onChange={() => setProductActive(!productActive)} className="w-5 h-5 accent-primary rounded-lg border-2 border-stone-300 transition-all" />
                   <span className="text-sm font-bold text-stone-800">Menu Tersedia</span>
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setIsProductModalOpen(false)} className="flex-1 h-12 rounded-xl border border-stone-300 text-stone-600 font-bold text-[15px] active:bg-stone-50 transition-colors">Batal</button>
-                  <button type="submit" disabled={productSubmitting} className="flex-1 h-12 rounded-xl bg-[#f0883a] text-white font-bold text-[15px] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
+                  <button type="submit" disabled={productSubmitting} className="flex-1 h-12 rounded-xl bg-primary text-white font-bold text-[15px] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
                     {productSubmitting && <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>}
                     Simpan
                   </button>

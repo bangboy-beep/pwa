@@ -88,7 +88,7 @@ function VideoProductCard({
           <p className="text-stone-500 text-xs mt-1 line-clamp-2 leading-relaxed w-full">{product.description}</p>
         )}
         {product.price > 0 && (
-          <p className="text-amber-600 font-bold text-[15px] mt-2">
+          <p className="text-primary-600 font-bold text-[15px] mt-2">
             Rp {product.price.toLocaleString('id-ID')}
           </p>
         )}
@@ -119,7 +119,7 @@ function ProductImageCard({
           <p className="text-stone-500 text-xs mt-0.5 line-clamp-1">{product.description}</p>
         )}
         {product.price > 0 && (
-          <p className="text-amber-600 font-bold text-[15px] mt-1">
+          <p className="text-primary-600 font-bold text-[15px] mt-1">
             Rp {product.price.toLocaleString('id-ID')}
           </p>
         )}
@@ -190,7 +190,7 @@ export default function PublicMenuPage() {
           </div>
           <h1 className="text-lg font-bold text-stone-900 mb-2">Menu Tidak Ditemukan</h1>
           <p className="text-stone-500 text-sm leading-relaxed mb-6">{error || 'Bisnis yang Anda cari tidak tersedia.'}</p>
-          <Link to={`/q/${slug || ''}`} className="inline-block px-5 py-3 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-colors w-full">
+          <Link to={`/q/${slug || ''}`} className="inline-block px-5 py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm hover:bg-primary-600 transition-colors w-full">
             Kembali ke Hub
           </Link>
         </div>

@@ -12,7 +12,7 @@ export default function AdminQrPrintPage() {
   const print = () => window.print()
 
   return (
-    <main className="min-h-screen bg-[#f5f0eb] text-stone-900 pb-24 lg:pb-6">
+    <main className="min-h-screen bg-surface text-stone-900 pb-24 lg:pb-6">
       {/* Top bar */}
       <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3">
         <div className="mx-auto flex max-w-xl items-center justify-between">
@@ -25,7 +25,7 @@ export default function AdminQrPrintPage() {
               <div className="font-extrabold text-sm">Kartu QR</div>
             </div>
           </div>
-          <button onClick={print} className="flex h-10 items-center gap-2 rounded-2xl bg-gradient-to-r from-[#f0883a] to-[#e06c18] px-4 text-xs font-bold text-white shadow-lg shadow-orange-200">
+          <button onClick={print} className="flex h-10 items-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primary-dark px-4 text-xs font-bold text-white shadow-lg shadow-primary-200">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
             Print
           </button>
@@ -34,7 +34,7 @@ export default function AdminQrPrintPage() {
 
 
       <div className="mx-auto max-w-xl px-4 pb-6 pt-4">
-        <div className="rounded-2xl bg-orange-50 border border-orange-100 p-4 text-xs text-stone-600 leading-relaxed">
+        <div className="rounded-2xl bg-primary-50 border border-primary-100 p-4 text-xs text-stone-600 leading-relaxed">
           Preview ukuran kartu <strong>A6</strong> (105 × 148 mm). Saat dicetak, area di bawah akan menjadi satu kartu QR bersih.
         </div>
       </div>
@@ -44,7 +44,7 @@ export default function AdminQrPrintPage() {
         <div className="mt-4">
           {selectedBusiness.logo_url
             ? <img src={selectedBusiness.logo_url} alt="" className="mx-auto h-14 w-14 rounded-2xl object-cover" />
-            : <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#f0883a] to-[#e06c18] text-white text-lg font-black">QR</div>}
+            : <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-dark text-white text-lg font-black">QR</div>}
           <h1 className="mt-4 text-lg font-extrabold tracking-tight text-stone-900">{selectedBusiness.name}</h1>
           <p className="mt-1 text-xs text-stone-400">Menu Digital</p>
         </div>
@@ -56,15 +56,15 @@ export default function AdminQrPrintPage() {
         <div className="mb-2">
           <div className="text-base font-extrabold text-stone-900">Scan untuk buka Menu</div>
           <p className="mt-1 text-[10px] leading-5 text-stone-400">Arahkan kamera smartphone ke QR code di atas</p>
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-100">
-            <span className="text-[9px] font-bold text-[#f0883a]">Powered by SmartQR</span>
+          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-50 border border-primary-100">
+            <span className="text-[9px] font-bold text-primary">Powered by SmartQR</span>
           </div>
         </div>
       </section>
 
       {/* Bottom action buttons */}
       <div className="no-print mx-auto flex max-w-xl gap-3 px-4 py-5">
-        <button onClick={print} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#f0883a] to-[#e06c18] text-sm font-bold text-white shadow-lg shadow-orange-200 active:scale-[0.98] transition-all">
+        <button onClick={print} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-sm font-bold text-white shadow-lg shadow-primary-200 active:scale-[0.98] transition-all">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
           Cetak
         </button>

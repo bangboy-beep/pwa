@@ -68,14 +68,14 @@ export default function ReviewPage() {
         className={cn(
           "rounded-xl px-4 py-3 flex items-center justify-between border transition-all duration-300",
           isActive
-            ? "bg-orange-50 border-orange-200"
+            ? "bg-primary-50 border-primary-200"
             : "bg-stone-50 border-stone-200"
         )}
       >
         <div className="flex items-center gap-3 min-w-0">
           <div className={cn(
             "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors",
-            isActive ? "bg-[#f0883a] text-white" : "bg-stone-200 text-stone-400"
+            isActive ? "bg-primary text-white" : "bg-stone-200 text-stone-400"
           )}>
             <Star className="w-4 h-4" />
           </div>
@@ -88,7 +88,7 @@ export default function ReviewPage() {
             </p>
             <p className={cn(
               "text-[10px] font-bold uppercase tracking-wider",
-              isActive ? "text-[#f0883a]" : "text-stone-400"
+              isActive ? "text-primary" : "text-stone-400"
             )}>
               {isActive ? 'Link Aktif' : 'Link Nonaktif'}
             </p>
@@ -103,7 +103,7 @@ export default function ReviewPage() {
               onChange={(e) => setIsActive(e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#f0883a]" />
+            <div className="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
           </label>
         )}
       </div>
@@ -119,7 +119,7 @@ export default function ReviewPage() {
             onChange={(e) => setGoogleReviewUrl(e.target.value)}
             placeholder="https://search.google.com/local/writereview?placeid=..."
             disabled={isReadOnly}
-            className="w-full h-[48px] min-w-0 max-w-full box-border pl-4 pr-14 rounded-lg border border-[#79747E] text-sm bg-white text-stone-900 focus:outline-none focus:border-[#f0883a] focus:ring-1 focus:ring-[#f0883a] transition-all disabled:opacity-60"
+            className="w-full h-[48px] min-w-0 max-w-full box-border pl-4 pr-14 rounded-lg border border-outline text-sm bg-white text-stone-900 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-60"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 bg-white pl-1">
           </div>
@@ -134,7 +134,7 @@ export default function ReviewPage() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-10 h-[48px] rounded-full bg-[#f0883a] text-white text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60 shadow-md shadow-orange-200"
+              className="px-10 h-[48px] rounded-full bg-primary text-white text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60 shadow-md shadow-primary-200"
             >
               {saving && (
                 <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
@@ -154,7 +154,7 @@ export default function ReviewPage() {
 
       {/* ── TIPS ── */}
       {googleReviewUrl && (
-        <div className="bg-orange-50 rounded-2xl p-5 border border-orange-100 flex items-start gap-4 shadow-sm">
+        <div className="bg-primary-50 rounded-2xl p-5 border border-primary-100 flex items-start gap-4 shadow-sm">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 bg-white shadow-xs">
             💡
           </div>

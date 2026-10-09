@@ -8,10 +8,10 @@ import type { ToastData } from './toastStore'
 
 export { toast }
 
-const COLORS: Record<ToastData['type'], string> = {
-  success: 'bg-green-50 border-green-200 text-green-800',
-  error: 'bg-red-50 border-red-200 text-red-800',
-  info: 'bg-blue-50 border-blue-200 text-blue-800',
+const ICON_COLORS: Record<ToastData['type'], string> = {
+  success: 'text-emerald-400',
+  error: 'text-red-400',
+  info: 'text-primary-300',
 }
 
 const ICONS: Record<ToastData['type'], typeof CheckCircle> = {
@@ -31,16 +31,20 @@ export function ToastContainer() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
-      {toastList.map((toast) => (
-        <div key={toast.id} className="pointer-events-auto">
-          <div className={`flex items-start gap-3 px-4 py-3 rounded-xl border shadow-md ${COLORS[toast.type]}`}>
-            {h(ICONS[toast.type], { className: 'w-5 h-5 flex-shrink-0 mt-0.5' })}
-            <p className="flex-1 text-sm font-medium">{toast.message}</p>
+    <div
+      className="fixed left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-sm pointer-events-none"
+      style={{ bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))' }}
+      aria-live="polite"
+    >
+      {toastList.map((t) => (
+        <div key={t.id} className="pointer-events-auto animate-fade-in">
+          <div className="flex items-center gap-3 pl-4 pr-2 py-3 rounded-2xl bg-ink text-white shadow-xl">
+            {h(ICONS[t.type], { className: `w-5 h-5 shrink-0 ${ICON_COLORS[t.type]}` })}
+            <p className="flex-1 text-sm font-medium">{t.message}</p>
             <button
-              onClick={() => dismiss(toast.id)}
-              className="flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors"
-              aria-label="Dismiss"
+              onClick={() => dismiss(t.id)}
+              className="shrink-0 p-1.5 rounded-full hover:bg-white/10 transition-colors"
+              aria-label="Tutup"
             >
               <X className="w-4 h-4" />
             </button>

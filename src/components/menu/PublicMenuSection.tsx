@@ -108,13 +108,13 @@ export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
     return (
       <section className="space-y-3" aria-label="Daftar Menu">
         <div className="border-b border-stone-100 pb-2">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-amber-700">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-primary-700">
             Menu
           </h2>
           <p className="text-lg font-bold text-stone-900">Daftar Menu</p>
         </div>
         <div className="p-6 rounded-2xl bg-stone-50 border border-stone-200/60 text-center flex flex-col items-center">
-          <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-2">
+          <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mb-2">
             <AlertCircle className="w-5 h-5" />
           </div>
           <p className="text-sm font-semibold text-stone-800">
@@ -141,7 +141,7 @@ export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
     return (
       <section className="space-y-3" aria-label="Daftar Menu">
         <div className="border-b border-stone-100 pb-2">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-amber-700">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-primary-700">
             Menu
           </h2>
           <p className="text-lg font-bold text-stone-900">Daftar Menu</p>
@@ -171,7 +171,7 @@ export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
     <section className="space-y-4" aria-label="Daftar Menu">
       {/* Section Title */}
       <div className="border-b border-stone-100 pb-1">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-amber-700">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-primary-700">
           Menu
         </h2>
         <p className="text-lg font-bold text-stone-900">Daftar Menu</p>
@@ -185,7 +185,7 @@ export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
             onClick={() => setSelectedCategoryId('all')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
               selectedCategoryId === 'all'
-                ? 'bg-amber-600 text-white shadow-sm ring-1 ring-amber-600'
+                ? 'bg-primary-600 text-white shadow-sm ring-1 ring-primary-600'
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900'
             }`}
             aria-label="Tampilkan semua menu"
@@ -199,7 +199,7 @@ export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
               onClick={() => setSelectedCategoryId(category.id)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
                 selectedCategoryId === category.id
-                  ? 'bg-amber-600 text-white shadow-sm ring-1 ring-amber-600'
+                  ? 'bg-primary-600 text-white shadow-sm ring-1 ring-primary-600'
                   : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900'
               }`}
               aria-label={`Filter menu ${category.name}`}
@@ -249,7 +249,7 @@ export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
                           {product.description}
                         </p>
                       )}
-                      <span className="text-sm font-extrabold text-amber-700 mt-2 block">
+                      <span className="text-sm font-extrabold text-primary-700 mt-2 block">
                         {formatCurrency(product.price)}
                       </span>
                     </div>

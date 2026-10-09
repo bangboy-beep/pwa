@@ -87,7 +87,7 @@ export default function PublicReviewPage() {
 
           {/* Star Icon */}
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center">
               <Star className="w-9 h-9 text-amber-500 fill-amber-500" />
             </div>
           </div>
@@ -121,7 +121,7 @@ export default function PublicReviewPage() {
                 href={review.google_review_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full py-3 rounded-2xl bg-amber-500 text-white text-sm font-bold hover:bg-amber-600 transition-colors text-center flex items-center justify-center gap-2 shadow-sm active:scale-95"
+                className="block w-full py-3 rounded-2xl bg-primary-500 text-white text-sm font-bold hover:bg-primary-600 transition-colors text-center flex items-center justify-center gap-2 shadow-sm active:scale-95"
               >
                 Leave a Google Review
                 <ExternalLink className="w-4 h-4" />
