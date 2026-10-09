@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Mail, Lock, ArrowRight, QrCode, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase/client'
+import { isSuperAdmin } from '../../lib/config/admin'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 
@@ -19,9 +20,10 @@ export default function AdminLoginPage() {
     setMessage(null)
     try {
       if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        window.location.href = '/admin'
+        const superAdmin = await isSuperAdmin(data.user?.email)
+        window.location.href = superAdmin ? '/super' : '/admin'
       } else {
         const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
