@@ -167,7 +167,7 @@ export default function SuperAdminPage() {
                 >
                   <span className="w-12 h-12 rounded-2xl bg-primary-100 text-primary-800 flex items-center justify-center shrink-0 overflow-hidden">
                     {b.logo_url ? (
-                      <img src={b.logo_url} alt="" className="w-full h-full object-cover" />
+                      <img src={b.logo_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                     ) : (
                       <BusinessTypeIcon type={b.business_type} />
                     )}

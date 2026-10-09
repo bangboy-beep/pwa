@@ -108,7 +108,7 @@ export default function AdminDashboardPage() {
       <section className="bg-white rounded-[28px] overflow-hidden shadow-[0_4px_20px_rgba(23,22,31,0.06)]">
         <div className="relative h-32 bg-primary-100">
           {selectedBusiness.cover_url ? (
-            <img src={selectedBusiness.cover_url} alt="" className="w-full h-full object-cover" />
+            <img src={selectedBusiness.cover_url} alt="" className="w-full h-full object-cover" decoding="async" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-700" />
           )}
@@ -128,7 +128,7 @@ export default function AdminDashboardPage() {
               aria-label="Ganti logo"
             >
               {selectedBusiness.logo_url ? (
-                <img src={selectedBusiness.logo_url} alt="" className="w-full h-full object-cover" />
+                <img src={selectedBusiness.logo_url} alt="" className="w-full h-full object-cover" decoding="async" />
               ) : (
                 <span className="text-2xl font-extrabold">{selectedBusiness.name.charAt(0).toUpperCase()}</span>
               )}

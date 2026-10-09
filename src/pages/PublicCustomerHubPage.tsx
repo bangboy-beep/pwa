@@ -108,7 +108,7 @@ export default function PublicCustomerHubPage() {
         {/* Cover */}
         <div className="relative h-52 shrink-0 bg-primary-100">
           {business.cover_url ? (
-            <img src={business.cover_url} alt="" className="w-full h-full object-cover" />
+            <img src={business.cover_url} alt="" className="w-full h-full object-cover" decoding="async" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-800" />
           )}
@@ -121,8 +121,9 @@ export default function PublicCustomerHubPage() {
             {business.logo_url ? (
               <img
                 src={business.logo_url}
-                alt={business.name}
-                className="w-[88px] h-[88px] rounded-[28px] object-cover border-4 border-surface shadow-lg bg-white"
+  alt={business.name}
+  decoding="async"
+  className="w-[88px] h-[88px] rounded-[28px] object-cover border-4 border-surface shadow-lg bg-white"
               />
             ) : (
               <div className="w-[88px] h-[88px] rounded-[28px] bg-ink text-white flex items-center justify-center border-4 border-surface shadow-lg">

@@ -20,6 +20,7 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
         alt={alt}
         className="w-full h-full object-cover"
         loading="lazy"
+        decoding="async"
         onError={() => setImageError(true)}
       />
     </div>

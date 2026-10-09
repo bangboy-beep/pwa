@@ -108,9 +108,9 @@ function ProductImageCard({
     <div className="flex items-center gap-4 bg-stone-50 rounded-2xl p-4 hover:bg-stone-100 transition-colors group">
       <div className="w-20 h-20 shrink-0 rounded-full overflow-hidden bg-stone-200 shadow-sm">
         {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" loading="lazy" />
+          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" loading="lazy" decoding="async" />
         ) : (
-          <img src={getRandomFoodImage(index)} alt="" className="w-full h-full object-cover transition-transform duration-300" loading="lazy" />
+          <img src={getRandomFoodImage(index)} alt="" className="w-full h-full object-cover transition-transform duration-300" loading="lazy" decoding="async" />
         )}
       </div>
       <div className="flex-1 min-w-0">

@@ -372,9 +372,9 @@ export default function MenuPage() {
                           {/* Product media thumbnail */}
                           <div className="w-16 h-16 rounded-xl border border-stone-100 flex items-center justify-center bg-stone-50 shrink-0 overflow-hidden relative">
                             {product.video_url ? (
-                              <video src={product.video_url} className="w-full h-full object-cover" muted loop playsInline />
-                            ) : product.image_url ? (
-                              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+<video src={product.video_url} poster={product.image_url || undefined} className="w-full h-full object-cover" muted loop playsInline preload="metadata" />
+  ) : product.image_url ? (
+  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                             ) : (
                               <ShoppingBag className="w-7 h-7 text-stone-300" />
                             )}
@@ -494,7 +494,7 @@ export default function MenuPage() {
               {/* Video overlay indicator */}
               {productVideoPreview && (
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                  <video src={productVideoPreview} className="w-full h-full object-cover" muted loop playsInline />
+                  <video src={productVideoPreview} className="w-full h-full object-cover" muted loop playsInline preload="metadata" />
                   <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/60 text-white text-xs font-bold px-3 py-1.5 rounded-full">
                     <Video className="w-3.5 h-3.5" /> Video Menu
                   </div>
@@ -535,7 +535,7 @@ export default function MenuPage() {
               {(productVideoPreview || editingProduct?.video_url) && (
                 <div className="mb-5 rounded-xl overflow-hidden border border-stone-200 bg-stone-50">
                   <div className="relative aspect-video">
-                    <video src={productVideoPreview || editingProduct!.video_url!} className="w-full h-full object-cover" muted loop playsInline controls />
+                    <video src={productVideoPreview || editingProduct!.video_url!} className="w-full h-full object-cover" muted loop playsInline controls preload="metadata" />
                   </div>
                   <div className="p-3 flex items-center justify-between">
                     <span className="text-xs text-stone-500 font-medium flex items-center gap-1.5">

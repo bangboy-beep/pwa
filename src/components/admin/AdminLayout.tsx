@@ -68,7 +68,7 @@ function DrawerContent({ onNavigate }: { onNavigate?: () => void }) {
         <div className="mx-4 mt-2 mb-3 p-3 rounded-3xl bg-primary-50 flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-white text-primary flex items-center justify-center shrink-0 overflow-hidden">
             {currentBusiness.logo_url ? (
-              <img src={currentBusiness.logo_url} alt="" className="w-full h-full object-cover" />
+              <img src={currentBusiness.logo_url} alt="" className="w-full h-full object-cover" decoding="async" />
             ) : (
               <BusinessTypeIcon type={currentBusiness.business_type} />
             )}
