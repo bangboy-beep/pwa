@@ -7,6 +7,7 @@ const isProd = process.env.NODE_ENV === 'production'
 
 // https://vite.dev/config/
 export default defineConfig({
+  envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
   plugins: [
     react(),
     tailwindcss(),
