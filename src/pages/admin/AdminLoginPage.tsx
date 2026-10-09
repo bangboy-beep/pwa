@@ -18,7 +18,7 @@ export default function AdminLoginPage() {
       if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        window.location.href = '/admin'
+        window.location.href = '/super'
       } else {
         const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
