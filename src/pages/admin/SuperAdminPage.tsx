@@ -39,6 +39,7 @@ export default function SuperAdminPage() {
   const [editingBiz, setEditingBiz] = useState<BusinessRow | null>(null);
   const [editPinInput, setEditPinInput] = useState('');
   const [isSavingPin, setIsSavingPin] = useState(false);
+  const [isResyncingAll, setIsResyncingAll] = useState(false);
 
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -253,18 +254,42 @@ export default function SuperAdminPage() {
 
     setIsSavingPin(true);
     const res = await setBusinessPin(editingBiz.id, cleanPin);
-    setIsSavingPin(false);
 
     if (!res.success) {
+      setIsSavingPin(false);
       toast.error(res.error || 'Gagal memperbarui PIN');
       return;
     }
 
+    // Resync auth.users password agar PIN bisa digunakan login
+    try {
+      const supabase = createClient();
+      await (supabase as any).rpc('resync_business_pin', { p_business_id: editingBiz.id });
+    } catch (err) {
+      console.warn('resync_business_pin warning:', err);
+    }
+
+    setIsSavingPin(false);
     setPinsMap((prev) => ({ ...prev, [editingBiz.id]: cleanPin }));
     setRevealedPins((prev) => ({ ...prev, [editingBiz.id]: true }));
-    toast.success(`PIN ${editingBiz.name} berhasil diperbarui!`);
+    toast.success(`PIN ${editingBiz.name} berhasil diperbarui & disinkronisasi!`);
     setEditingBiz(null);
   };
+
+  const handleResyncAll = async () => {
+    setIsResyncingAll(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await (supabase as any).rpc('resync_all_business_pins');
+      if (error) throw error;
+      toast.success(`${data} akun PIN berhasil disinkronisasi ke sistem login!`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Gagal resync PIN. Pastikan SQL migration 015 sudah dijalankan.');
+    } finally {
+      setIsResyncingAll(false);
+    }
+  };
+
 
   if (loading) return <Loading />;
 
@@ -283,6 +308,23 @@ export default function SuperAdminPage() {
           <p className="mt-1 text-xs font-medium text-ink-muted">Bisnis aktif</p>
         </div>
       </section>
+
+      {/* Resync PIN Banner */}
+      <div className="rounded-2xl bg-amber-50 border border-amber-200 p-3.5 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold text-amber-900">🔑 Sinkronisasi Akun Login</p>
+          <p className="text-[11px] text-amber-700 mt-0.5">Jika PIN cafe tidak bisa login, klik tombol ini untuk resync semua PIN ke sistem auth.</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleResyncAll}
+          disabled={isResyncingAll}
+          className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold active:scale-95 transition-all disabled:opacity-60"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isResyncingAll ? 'animate-spin' : ''}`} />
+          {isResyncingAll ? 'Proses...' : 'Resync PIN'}
+        </button>
+      </div>
 
       {/* Search */}
       <div className="relative">

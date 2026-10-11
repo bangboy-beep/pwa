@@ -165,25 +165,64 @@ export default function AdminSlugPage() {
 
     try {
       const emailToUse = `${business.slug}@smartqr.app`
+
+      // Step 1: Coba login langsung via Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
         email: emailToUse,
         password: pinValue,
       })
 
-      if (error || !data.user) {
+      if (!error && data.user) {
+        // Auth login berhasil
+        if (rememberMe) {
+          localStorage.setItem(`smartqr_pin_${business.slug}`, pinValue)
+        } else {
+          localStorage.removeItem(`smartqr_pin_${business.slug}`)
+        }
+        setSelectedBusiness({ ...business, role: 'owner' } as any)
+        sessionStorage.setItem('smartqr_selected_business_id', business.id)
+        await refetch()
+        navigate('/admin', { replace: true })
+        return
+      }
+
+      // Step 2: Fallback — verifikasi PIN via RPC (cek tabel business_pins)
+      const { data: pinOk, error: rpcErr } = await (supabase as any).rpc('verify_business_pin', {
+        p_slug: business.slug,
+        p_pin: pinValue,
+      })
+
+      if (rpcErr || !pinOk) {
+        // PIN benar-benar salah
         throw new Error('PIN salah untuk bisnis ini. Silakan periksa kembali.')
       }
 
-      if (rememberMe) {
-        localStorage.setItem(`smartqr_pin_${business.slug}`, pinValue)
-      } else {
-        localStorage.removeItem(`smartqr_pin_${business.slug}`)
+      // PIN cocok di DB tapi auth password tidak sinkron
+      // Coba auto-resync via RPC (hanya berhasil jika Super Admin login)
+      try {
+        await (supabase as any).rpc('resync_business_pin', { p_business_id: business.id })
+        // Coba login lagi setelah resync
+        const { data: data2, error: err2 } = await supabase.auth.signInWithPassword({
+          email: emailToUse,
+          password: pinValue,
+        })
+        if (!err2 && data2.user) {
+          if (rememberMe) localStorage.setItem(`smartqr_pin_${business.slug}`, pinValue)
+          else localStorage.removeItem(`smartqr_pin_${business.slug}`)
+          setSelectedBusiness({ ...business, role: 'owner' } as any)
+          sessionStorage.setItem('smartqr_selected_business_id', business.id)
+          await refetch()
+          navigate('/admin', { replace: true })
+          return
+        }
+      } catch {
+        // resync gagal (bukan super admin), lanjut ke pesan error
       }
 
-      setSelectedBusiness({ ...business, role: 'owner' } as any)
-      sessionStorage.setItem('smartqr_selected_business_id', business.id)
-      await refetch()
-      navigate('/admin', { replace: true })
+      // PIN benar tapi tidak bisa login otomatis — minta Super Admin sync
+      throw new Error(
+        'PIN benar, tapi akun belum tersinkronisasi. Minta Super Admin untuk klik "Ganti PIN" sekali lagi agar akun ter-reset.'
+      )
     } catch (err: any) {
       setErrorMsg(err.message || 'Gagal masuk. Periksa PIN Anda.')
       setPin('')

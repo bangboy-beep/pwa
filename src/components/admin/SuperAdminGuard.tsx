@@ -55,7 +55,7 @@ export function SuperAdminGuard() {
   }
 
   if (!user || !isAdmin) {
-    return <Navigate to="/admin/login" replace />
+    return <Navigate to="/super/login" replace />
   }
 
   return <Outlet />
