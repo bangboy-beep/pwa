@@ -6,16 +6,19 @@
 
 -- RPC: verify_business_pin
 -- Returns TRUE if the provided PIN matches the stored PIN for the business slug
--- Can be called by anon/authenticated to verify PIN without exposing plain text
+-- When matched, automatically ensures auth.users, auth.identities, and business_members
+-- are synchronized so the user can immediately log in with signInWithPassword.
 CREATE OR REPLACE FUNCTION public.verify_business_pin(p_slug TEXT, p_pin TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, auth, extensions
 AS $$
 DECLARE
   v_stored_pin TEXT;
   v_business_id UUID;
+  v_email TEXT;
+  v_user_id UUID;
 BEGIN
   -- Lookup business by slug
   SELECT id INTO v_business_id
@@ -33,12 +36,64 @@ BEGIN
   WHERE business_id = v_business_id
   LIMIT 1;
 
-  IF v_stored_pin IS NULL THEN
+  IF v_stored_pin IS NULL OR v_stored_pin != p_pin THEN
     RETURN FALSE;
   END IF;
 
-  -- Compare PIN (plain text comparison)
-  RETURN v_stored_pin = p_pin;
+  -- PIN is valid! Auto-sync auth.users & auth.identities so Supabase Auth accepts login
+  v_email := p_slug || '@smartqr.app';
+
+  SELECT id INTO v_user_id FROM auth.users WHERE email = v_email LIMIT 1;
+
+  IF v_user_id IS NULL THEN
+    v_user_id := gen_random_uuid();
+    INSERT INTO auth.users (
+      instance_id, id, aud, role, email,
+      encrypted_password, email_confirmed_at,
+      created_at, updated_at,
+      raw_app_meta_data, raw_user_meta_data,
+      is_super_admin, confirmation_token,
+      recovery_token, email_change_token_new, email_change
+    ) VALUES (
+      '00000000-0000-0000-0000-000000000000',
+      v_user_id,
+      'authenticated', 'authenticated',
+      v_email,
+      extensions.crypt(p_pin, extensions.gen_salt('bf')),
+      NOW(), NOW(), NOW(),
+      '{"provider":"email","providers":["email"]}'::jsonb,
+      '{}'::jsonb,
+      false, '', '', '', ''
+    );
+  ELSE
+    UPDATE auth.users
+    SET encrypted_password = extensions.crypt(p_pin, extensions.gen_salt('bf')),
+        email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
+        updated_at = NOW(),
+        raw_app_meta_data = '{"provider":"email","providers":["email"]}'::jsonb
+    WHERE id = v_user_id;
+  END IF;
+
+  -- Ensure identity exists in auth.identities
+  IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id) THEN
+    INSERT INTO auth.identities (
+      id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
+    ) VALUES (
+      v_user_id::text,
+      v_user_id,
+      json_build_object('sub', v_user_id::text, 'email', v_email)::jsonb,
+      'email',
+      v_email,
+      NOW(), NOW(), NOW()
+    );
+  END IF;
+
+  -- Ensure user is linked as owner in business_members
+  INSERT INTO public.business_members (business_id, user_id, role)
+  VALUES (v_business_id, v_user_id, 'owner')
+  ON CONFLICT (business_id, user_id) DO UPDATE SET role = 'owner';
+
+  RETURN TRUE;
 END;
 $$;
 
@@ -48,8 +103,7 @@ GRANT EXECUTE ON FUNCTION public.verify_business_pin(TEXT, TEXT) TO authenticate
 
 
 -- RPC: resync_business_pin
--- Super Admin only: re-sync a business's stored PIN to auth.users password
--- Useful when auth.users password gets out of sync with business_pins
+-- Super Admin only: re-sync a business's stored PIN to auth.users password & identities
 CREATE OR REPLACE FUNCTION public.resync_business_pin(p_business_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -79,11 +133,10 @@ BEGIN
 
   v_email := v_slug || '@smartqr.app';
 
-  -- Check if auth user exists
-  SELECT id INTO v_user_id FROM auth.users WHERE email = v_email;
+  SELECT id INTO v_user_id FROM auth.users WHERE email = v_email LIMIT 1;
 
   IF v_user_id IS NULL THEN
-    -- Create auth user
+    v_user_id := gen_random_uuid();
     INSERT INTO auth.users (
       instance_id, id, aud, role, email,
       encrypted_password, email_confirmed_at,
@@ -93,7 +146,7 @@ BEGIN
       recovery_token, email_change_token_new, email_change
     ) VALUES (
       '00000000-0000-0000-0000-000000000000',
-      gen_random_uuid(),
+      v_user_id,
       'authenticated', 'authenticated',
       v_email,
       extensions.crypt(v_pin, extensions.gen_salt('bf')),
@@ -103,12 +156,32 @@ BEGIN
       false, '', '', '', ''
     );
   ELSE
-    -- Update password
     UPDATE auth.users
     SET encrypted_password = extensions.crypt(v_pin, extensions.gen_salt('bf')),
-        updated_at = NOW()
+        email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
+        updated_at = NOW(),
+        raw_app_meta_data = '{"provider":"email","providers":["email"]}'::jsonb
     WHERE id = v_user_id;
   END IF;
+
+  -- Ensure identity exists in auth.identities
+  IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id) THEN
+    INSERT INTO auth.identities (
+      id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
+    ) VALUES (
+      v_user_id::text,
+      v_user_id,
+      json_build_object('sub', v_user_id::text, 'email', v_email)::jsonb,
+      'email',
+      v_email,
+      NOW(), NOW(), NOW()
+    );
+  END IF;
+
+  -- Ensure member link exists in business_members
+  INSERT INTO public.business_members (business_id, user_id, role)
+  VALUES (p_business_id, v_user_id, 'owner')
+  ON CONFLICT (business_id, user_id) DO UPDATE SET role = 'owner';
 
   RETURN TRUE;
 END;
@@ -119,7 +192,7 @@ GRANT EXECUTE ON FUNCTION public.resync_business_pin(UUID) TO authenticated;
 
 
 -- RPC: resync_all_business_pins
--- Super Admin: batch resync all business PINs to auth.users
+-- Super Admin: batch resync all business PINs to auth.users & identities
 CREATE OR REPLACE FUNCTION public.resync_all_business_pins()
 RETURNS INTEGER
 LANGUAGE plpgsql
@@ -143,9 +216,10 @@ BEGIN
   LOOP
     v_email := v_record.slug || '@smartqr.app';
 
-    SELECT id INTO v_user_id FROM auth.users WHERE email = v_email;
+    SELECT id INTO v_user_id FROM auth.users WHERE email = v_email LIMIT 1;
 
     IF v_user_id IS NULL THEN
+      v_user_id := gen_random_uuid();
       INSERT INTO auth.users (
         instance_id, id, aud, role, email,
         encrypted_password, email_confirmed_at,
@@ -155,7 +229,7 @@ BEGIN
         recovery_token, email_change_token_new, email_change
       ) VALUES (
         '00000000-0000-0000-0000-000000000000',
-        gen_random_uuid(),
+        v_user_id,
         'authenticated', 'authenticated',
         v_email,
         extensions.crypt(v_record.pin, extensions.gen_salt('bf')),
@@ -167,9 +241,30 @@ BEGIN
     ELSE
       UPDATE auth.users
       SET encrypted_password = extensions.crypt(v_record.pin, extensions.gen_salt('bf')),
-          updated_at = NOW()
+          email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
+          updated_at = NOW(),
+          raw_app_meta_data = '{"provider":"email","providers":["email"]}'::jsonb
       WHERE id = v_user_id;
     END IF;
+
+    -- Ensure identity exists in auth.identities
+    IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id) THEN
+      INSERT INTO auth.identities (
+        id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
+      ) VALUES (
+        v_user_id::text,
+        v_user_id,
+        json_build_object('sub', v_user_id::text, 'email', v_email)::jsonb,
+        'email',
+        v_email,
+        NOW(), NOW(), NOW()
+      );
+    END IF;
+
+    -- Ensure member link exists in business_members
+    INSERT INTO public.business_members (business_id, user_id, role)
+    VALUES (v_record.business_id, v_user_id, 'owner')
+    ON CONFLICT (business_id, user_id) DO UPDATE SET role = 'owner';
 
     v_count := v_count + 1;
   END LOOP;

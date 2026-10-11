@@ -186,7 +186,7 @@ export default function AdminSlugPage() {
         return
       }
 
-      // Step 2: Fallback — verifikasi PIN via RPC (cek tabel business_pins)
+      // Step 2: Fallback — verifikasi PIN via RPC (dan auto-sync di database)
       const { data: pinOk, error: rpcErr } = await (supabase as any).rpc('verify_business_pin', {
         p_slug: business.slug,
         p_pin: pinValue,
@@ -197,31 +197,47 @@ export default function AdminSlugPage() {
         throw new Error('PIN salah untuk bisnis ini. Silakan periksa kembali.')
       }
 
-      // PIN cocok di DB tapi auth password tidak sinkron
-      // Coba auto-resync via RPC (hanya berhasil jika Super Admin login)
-      try {
-        await (supabase as any).rpc('resync_business_pin', { p_business_id: business.id })
-        // Coba login lagi setelah resync
-        const { data: data2, error: err2 } = await supabase.auth.signInWithPassword({
-          email: emailToUse,
-          password: pinValue,
-        })
-        if (!err2 && data2.user) {
-          if (rememberMe) localStorage.setItem(`smartqr_pin_${business.slug}`, pinValue)
-          else localStorage.removeItem(`smartqr_pin_${business.slug}`)
-          setSelectedBusiness({ ...business, role: 'owner' } as any)
-          sessionStorage.setItem('smartqr_selected_business_id', business.id)
-          await refetch()
-          navigate('/admin', { replace: true })
-          return
-        }
-      } catch {
-        // resync gagal (bukan super admin), lanjut ke pesan error
+      // PIN cocok! verify_business_pin otomatis men-sync auth.users dan identities di DB.
+      // Coba signInWithPassword sekali lagi sekarang:
+      const { data: retryData, error: retryErr } = await supabase.auth.signInWithPassword({
+        email: emailToUse,
+        password: pinValue,
+      })
+
+      if (!retryErr && retryData.user) {
+        if (rememberMe) localStorage.setItem(`smartqr_pin_${business.slug}`, pinValue)
+        else localStorage.removeItem(`smartqr_pin_${business.slug}`)
+        setSelectedBusiness({ ...business, role: 'owner' } as any)
+        sessionStorage.setItem('smartqr_selected_business_id', business.id)
+        await refetch()
+        navigate('/admin', { replace: true })
+        return
       }
 
-      // PIN benar tapi tidak bisa login otomatis — minta Super Admin sync
+      // Step 3: Jika akun auth belum ada sama sekali di GoTrue, buat akun via signUp
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        email: emailToUse,
+        password: pinValue,
+      })
+
+      if (!signUpErr && signUpData.user) {
+        // Pastikan relasi dan password ter-sync ulang setelah sign up
+        await (supabase as any).rpc('verify_business_pin', {
+          p_slug: business.slug,
+          p_pin: pinValue,
+        })
+        if (rememberMe) localStorage.setItem(`smartqr_pin_${business.slug}`, pinValue)
+        else localStorage.removeItem(`smartqr_pin_${business.slug}`)
+        setSelectedBusiness({ ...business, role: 'owner' } as any)
+        sessionStorage.setItem('smartqr_selected_business_id', business.id)
+        await refetch()
+        navigate('/admin', { replace: true })
+        return
+      }
+
+      // Jika masih gagal (misal email confirmation tertahan di dashboard Supabase)
       throw new Error(
-        'PIN benar, tapi akun belum tersinkronisasi. Minta Super Admin untuk klik "Ganti PIN" sekali lagi agar akun ter-reset.'
+        retryErr?.message || signUpErr?.message || 'Gagal masuk akun. Minta Super Admin untuk klik "Resync PIN" di dashboard.'
       )
     } catch (err: any) {
       setErrorMsg(err.message || 'Gagal masuk. Periksa PIN Anda.')
