@@ -192,6 +192,9 @@ export async function createBusinessWithOwner(input: {
     console.error('Failed to create owner user:', err)
   }
 
+  // 4. Save PIN to business_pins table so Super Admin can always view and manage it
+  await setBusinessPin(business.id, ownerPin)
+
   return {
     data: {
       business,
@@ -199,6 +202,62 @@ export async function createBusinessWithOwner(input: {
       ownerPin,
     },
     error: null,
+  }
+}
+
+export async function setBusinessPin(
+  businessId: string,
+  newPin: string
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = createClient()
+  try {
+    // 1. Try RPC which updates both business_pins table and auth.users password
+    const { error: rpcError } = await (supabase as any).rpc('set_business_pin', {
+      p_business_id: businessId,
+      p_new_pin: newPin,
+    })
+
+    if (!rpcError) {
+      return { success: true, error: null }
+    }
+
+    console.warn('RPC set_business_pin notice:', rpcError.message)
+
+    // 2. Fallback direct upsert to business_pins table
+    const { error: upsertError } = await (supabase.from('business_pins') as any).upsert(
+      {
+        business_id: businessId,
+        pin: newPin,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'business_id' }
+    )
+
+    if (upsertError) {
+      return { success: false, error: upsertError.message }
+    }
+
+    return { success: true, error: null }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Gagal menyimpan PIN'
+    return { success: false, error: msg }
+  }
+}
+
+export async function getBusinessPins(): Promise<Record<string, string>> {
+  const supabase = createClient()
+  try {
+    const { data, error } = await (supabase.from('business_pins') as any).select('business_id, pin')
+    if (error || !data) return {}
+    const map: Record<string, string> = {}
+    data.forEach((item: { business_id: string; pin: string }) => {
+      if (item.business_id && item.pin) {
+        map[item.business_id] = item.pin
+      }
+    })
+    return map
+  } catch {
+    return {}
   }
 }
 

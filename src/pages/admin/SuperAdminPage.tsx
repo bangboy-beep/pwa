@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '../../lib/supabase/client';
 import { Loading } from '../../components/ui/Loading';
-import { Plus, X, ExternalLink, Search, Store, CheckCircle2, ChevronRight, RefreshCw, Copy, Check, Key, KeyRound, Share2 } from 'lucide-react';
-import { createBusinessWithOwner, generateRandomPin } from '../../lib/business/service';
+import { Plus, X, ExternalLink, Search, Store, CheckCircle2, ChevronRight, RefreshCw, Copy, Check, Key, KeyRound, Share2, Eye, EyeOff } from 'lucide-react';
+import { createBusinessWithOwner, generateRandomPin, getBusinessPins, setBusinessPin } from '../../lib/business/service';
 import { useBusiness } from '../../providers/BusinessProvider';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -29,9 +29,16 @@ export default function SuperAdminPage() {
   const navigate = useNavigate();
   const { setSelectedBusiness } = useBusiness();
   const [businesses, setBusinesses] = useState<BusinessRow[]>([]);
+  const [pinsMap, setPinsMap] = useState<Record<string, string>>({});
+  const [revealedPins, setRevealedPins] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [showAddSheet, setShowAddSheet] = useState(false);
+
+  // Edit / Set PIN state
+  const [editingBiz, setEditingBiz] = useState<BusinessRow | null>(null);
+  const [editPinInput, setEditPinInput] = useState('');
+  const [isSavingPin, setIsSavingPin] = useState(false);
 
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -53,9 +60,14 @@ export default function SuperAdminPage() {
   const fetchAll = async () => {
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.from('businesses').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-      setBusinesses((data as BusinessRow[]) || []);
+      const [bizRes, pins] = await Promise.all([
+        supabase.from('businesses').select('*').order('created_at', { ascending: false }),
+        getBusinessPins(),
+      ]);
+
+      if (bizRes.error) throw bizRes.error;
+      setBusinesses((bizRes.data as BusinessRow[]) || []);
+      setPinsMap(pins || {});
     } catch (err) {
       console.error('SuperAdmin Error:', err);
     } finally {
@@ -129,6 +141,7 @@ export default function SuperAdminPage() {
       setOwnerEmail('');
       setOwnerPin(generateRandomPin(6));
       setShowAddSheet(false);
+      setPinsMap((prev) => ({ ...prev, [data.business.id]: data.ownerPin }));
       fetchAll();
 
       // Tampilkan modal kredensial owner yang baru dibuat
@@ -211,6 +224,48 @@ export default function SuperAdminPage() {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
+  const toggleRevealPin = (bizId: string) => {
+    setRevealedPins((prev) => ({ ...prev, [bizId]: !prev[bizId] }));
+  };
+
+  const handleCopyPinText = async (pinText: string, bizName: string) => {
+    const success = await copyTextToClipboard(pinText);
+    if (success) {
+      toast.success(`PIN ${bizName} disalin!`);
+    } else {
+      toast.error('Gagal menyalin PIN');
+    }
+  };
+
+  const openEditPinModal = (b: BusinessRow) => {
+    setEditingBiz(b);
+    setEditPinInput(pinsMap[b.id] || generateRandomPin(6));
+  };
+
+  const handleSaveEditPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBiz) return;
+    const cleanPin = editPinInput.trim();
+    if (cleanPin.length < 4) {
+      toast.error('PIN minimal 4 digit (rekomendasi 6 digit)');
+      return;
+    }
+
+    setIsSavingPin(true);
+    const res = await setBusinessPin(editingBiz.id, cleanPin);
+    setIsSavingPin(false);
+
+    if (!res.success) {
+      toast.error(res.error || 'Gagal memperbarui PIN');
+      return;
+    }
+
+    setPinsMap((prev) => ({ ...prev, [editingBiz.id]: cleanPin }));
+    setRevealedPins((prev) => ({ ...prev, [editingBiz.id]: true }));
+    toast.success(`PIN ${editingBiz.name} berhasil diperbarui!`);
+    setEditingBiz(null);
+  };
+
   if (loading) return <Loading />;
 
   return (
@@ -259,58 +314,125 @@ export default function SuperAdminPage() {
             </p>
           </div>
         ) : (
-          <ul className="grid gap-2 lg:grid-cols-2">
-            {filtered.map((b) => (
-              <li key={b.id} className="bg-white rounded-3xl p-2 pr-2 flex items-center gap-1 shadow-[0_2px_12px_rgba(23,22,31,0.04)]">
-                <button
-                  onClick={() => manageBusiness(b)}
-                  className="flex-1 min-w-0 flex items-center gap-3 p-1.5 rounded-2xl text-left active:bg-surface transition-colors"
+          <ul className="grid gap-3 lg:grid-cols-2">
+            {filtered.map((b) => {
+              const currentPin = pinsMap[b.id];
+              const isRevealed = !!revealedPins[b.id];
+
+              return (
+                <li
+                  key={b.id}
+                  className="bg-white rounded-3xl p-3 shadow-[0_2px_12px_rgba(23,22,31,0.04)] hover:shadow-md transition-shadow flex flex-col justify-between gap-2.5"
                 >
-                  <span className="w-12 h-12 rounded-2xl bg-primary-100 text-primary-800 flex items-center justify-center shrink-0 overflow-hidden">
-                    {b.logo_url ? (
-                      <img src={b.logo_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                    ) : (
-                      <BusinessTypeIcon type={b.business_type} />
-                    )}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-ink truncate">{b.name}</span>
-                    <span className="flex items-center gap-1.5 mt-0.5">
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${b.status === 'active' ? 'bg-emerald-500' : 'bg-stone-400'}`}
-                        aria-hidden="true"
-                      />
-                      <span className="text-xs text-ink-muted truncate">
-                        {getBusinessTypeMeta(b.business_type).label} · /{b.slug}
+                  <div className="flex items-center gap-3">
+                    {/* Clickable info to open management */}
+                    <div
+                      onClick={() => manageBusiness(b)}
+                      className="flex-1 min-w-0 flex items-center gap-3 cursor-pointer group"
+                    >
+                      <span className="w-12 h-12 rounded-2xl bg-primary-100 text-primary-800 flex items-center justify-center shrink-0 overflow-hidden group-hover:scale-105 transition-transform">
+                        {b.logo_url ? (
+                          <img src={b.logo_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                        ) : (
+                          <BusinessTypeIcon type={b.business_type} />
+                        )}
                       </span>
-                    </span>
-                  </span>
-                  <ChevronRight className="w-5 h-5 text-ink-muted shrink-0" />
-                </button>
-                <div className="flex items-center gap-0.5 shrink-0">
-                  <a
-                    href={`/admin/${b.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-ink-muted hover:text-primary hover:bg-primary-50"
-                    title={`Buka Link Admin /admin/${b.slug}`}
-                    aria-label={`Buka link admin ${b.name}`}
-                  >
-                    <KeyRound className="w-4 h-4" />
-                  </a>
-                  <a
-                    href={`/q/${b.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-ink-muted hover:text-primary hover:bg-primary-50"
-                    title={`Buka Halaman Pelanggan /q/${b.slug}`}
-                    aria-label={`Buka halaman pelanggan ${b.name}`}
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-              </li>
-            ))}
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-bold text-ink truncate group-hover:text-primary transition-colors">
+                          {b.name}
+                        </span>
+                        <span className="flex items-center gap-1.5 mt-0.5">
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${b.status === 'active' ? 'bg-emerald-500' : 'bg-stone-400'}`}
+                            aria-hidden="true"
+                          />
+                          <span className="text-xs text-ink-muted truncate">
+                            {getBusinessTypeMeta(b.business_type).label} · /{b.slug}
+                          </span>
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* Quick action buttons */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => manageBusiness(b)}
+                        className="h-8 px-2.5 rounded-xl bg-primary-50 text-primary hover:bg-primary-100 text-xs font-bold flex items-center gap-1 transition-colors"
+                        title="Buka Dashboard Admin Toko"
+                      >
+                        <span>Kelola</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                      <a
+                        href={`/admin/${b.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 rounded-xl flex items-center justify-center text-ink-muted hover:text-primary hover:bg-surface transition-colors"
+                        title={`Buka Link Admin /admin/${b.slug}`}
+                        aria-label={`Buka link admin ${b.name}`}
+                      >
+                        <KeyRound className="w-4 h-4" />
+                      </a>
+                      <a
+                        href={`/q/${b.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 rounded-xl flex items-center justify-center text-ink-muted hover:text-primary hover:bg-surface transition-colors"
+                        title={`Buka Halaman Pelanggan /q/${b.slug}`}
+                        aria-label={`Buka halaman pelanggan ${b.name}`}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* PIN Bar - Permanently saved in Super Admin */}
+                  <div className="flex items-center justify-between pt-2 border-t border-outline/40 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-semibold text-ink-muted flex items-center gap-1">
+                        <Key className="w-3.5 h-3.5 text-primary" />
+                        PIN Admin:
+                      </span>
+                      {currentPin ? (
+                        <div className="inline-flex items-center gap-1 bg-surface px-2 py-0.5 rounded-lg border border-outline/50">
+                          <span className="font-mono text-xs font-bold text-ink">
+                            {isRevealed ? currentPin : '••••••'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleRevealPin(b.id)}
+                            className="text-ink-muted hover:text-ink p-0.5 transition-colors"
+                            title={isRevealed ? 'Sembunyikan PIN' : 'Tampilkan PIN'}
+                          >
+                            {isRevealed ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyPinText(currentPin, b.name)}
+                            className="text-ink-muted hover:text-primary p-0.5 transition-colors"
+                            title="Salin PIN"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md font-medium border border-amber-200/60">
+                          Belum tercatat
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => openEditPinModal(b)}
+                      className="text-[11px] font-bold text-primary hover:text-primary-700 hover:underline px-1 py-0.5 transition-colors"
+                    >
+                      {currentPin ? 'Ganti PIN' : '+ Atur PIN'}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -548,6 +670,99 @@ export default function SuperAdminPage() {
                 Tutup
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit / Atur PIN Toko */}
+      {editingBiz && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Atur PIN Toko"
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-ink/50 backdrop-blur-xs animate-scrim"
+            onClick={() => !isSavingPin && setEditingBiz(null)}
+          />
+
+          {/* Modal Card */}
+          <div className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl z-10 animate-sheet-up space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary-100 text-primary flex items-center justify-center shrink-0">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-ink leading-tight">
+                    {pinsMap[editingBiz.id] ? 'Ubah PIN Toko' : 'Atur PIN Toko'}
+                  </h3>
+                  <p className="text-xs text-ink-muted">{editingBiz.name} (/{editingBiz.slug})</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isSavingPin}
+                onClick={() => setEditingBiz(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-ink-muted hover:bg-surface transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditPin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-ink-muted mb-1.5 ml-1">
+                  PIN Baru (6 digit angka)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    required
+                    value={editPinInput}
+                    onChange={(e) => setEditPinInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="Contoh: 123456"
+                    className="flex-1 h-12 px-4 rounded-2xl bg-surface text-ink font-mono text-base font-bold tracking-wider border-2 border-transparent focus:border-primary focus:bg-white focus:outline-none transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setEditPinInput(generateRandomPin(6))}
+                    className="h-12 px-3.5 rounded-2xl bg-surface hover:bg-primary-50 text-ink-muted hover:text-primary font-semibold text-xs flex items-center gap-1.5 border border-outline/50 transition-colors"
+                    title="Buat PIN acak baru"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Acak
+                  </button>
+                </div>
+                <p className="text-[11px] text-ink-muted mt-2 ml-1 leading-relaxed">
+                  PIN ini akan disimpan permanen di Super Admin dan otomatis disinkronkan ke akun login toko ({editingBiz.slug}@smartqr.app).
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  disabled={isSavingPin}
+                  onClick={() => setEditingBiz(null)}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  isLoading={isSavingPin}
+                  disabled={editPinInput.length < 4}
+                >
+                  {isSavingPin ? 'Menyimpan...' : 'Simpan PIN'}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

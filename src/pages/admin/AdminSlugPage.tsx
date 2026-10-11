@@ -1,14 +1,18 @@
 // SmartQR Admin Slug Access Page
 // Route: /admin/:slug
-// Direct access to business admin with 6-digit PIN authentication & auto-login
+// Direct access to business admin with 6-digit PIN authentication
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowRight,
   AlertCircle,
   Delete,
   ExternalLink,
+  ShieldCheck,
+  CheckCircle2,
+  LogOut,
+  Lock,
 } from 'lucide-react'
 import { getBusinessBySlug } from '../../lib/business/service'
 import { isSuperAdmin } from '../../lib/config/admin'
@@ -24,12 +28,18 @@ export default function AdminSlugPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
   const { user, loading: authLoading } = useAuthContext()
-  const { businesses, setSelectedBusiness, refetch } = useBusiness()
+  const { setSelectedBusiness, refetch } = useBusiness()
 
   const [business, setBusiness] = useState<Business | null>(null)
   const [pageLoading, setPageLoading] = useState(true)
   const [businessError, setBusinessError] = useState<string | null>(null)
 
+  // Auth state inspection
+  const [isSuper, setIsSuper] = useState(false)
+  const [isCurrentOwner, setIsCurrentOwner] = useState(false)
+  const [autoLoggingIn, setAutoLoggingIn] = useState(false)
+
+  // PIN Form state
   const [pin, setPin] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -42,16 +52,23 @@ export default function AdminSlugPage() {
 
   const hiddenInputRef = useRef<HTMLInputElement>(null)
 
-  // 1. Load business by slug
+  // Load business & check session
   useEffect(() => {
+    let isMounted = true
+
     async function init() {
       if (!slug) {
-        setBusinessError('Slug bisnis tidak valid')
-        setPageLoading(false)
+        if (isMounted) {
+          setBusinessError('Slug bisnis tidak valid')
+          setPageLoading(false)
+        }
         return
       }
 
+      setPageLoading(true)
       const { data, error } = await getBusinessBySlug(slug)
+      if (!isMounted) return
+
       if (error || !data) {
         setBusinessError(`Bisnis dengan slug "${slug}" tidak ditemukan.`)
         setPageLoading(false)
@@ -59,90 +76,86 @@ export default function AdminSlugPage() {
       }
 
       setBusiness(data)
-      setPageLoading(false)
-    }
 
-    init()
-  }, [slug])
-
-  // 2. Check if already authenticated or auto-login with saved PIN
-  const handleAutoAccess = useCallback(async (currentBiz: Business) => {
-    if (authLoading) return
-
-    // If user is already logged in
-    if (user) {
-      const isSuper = await isSuperAdmin(user.email)
-      if (isSuper) {
-        // Super admin can manage any business
-        setSelectedBusiness({ ...currentBiz, role: 'owner' } as any)
-        sessionStorage.setItem('smartqr_selected_business_id', currentBiz.id)
-        navigate('/admin', { replace: true })
+      // If already logged in, check role
+      if (user) {
+        const superCheck = await isSuperAdmin(user.email)
+        if (isMounted) {
+          setIsSuper(superCheck)
+          setIsCurrentOwner(user.email === `${data.slug}@smartqr.app`)
+          setPageLoading(false)
+        }
         return
       }
 
-      // Check if current user is owner/member of this business
-      const matched = businesses.find((b) => b.id === currentBiz.id || b.slug === currentBiz.slug)
-      if (matched) {
-        setSelectedBusiness(matched)
-        sessionStorage.setItem('smartqr_selected_business_id', currentBiz.id)
-        navigate('/admin', { replace: true })
-        return
+      // If not logged in, check if saved PIN exists in localStorage
+      const savedPin = localStorage.getItem(`smartqr_pin_${data.slug}`)
+      if (savedPin) {
+        setAutoLoggingIn(true)
+        const emailToUse = `${data.slug}@smartqr.app`
+        const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+          email: emailToUse,
+          password: savedPin,
+        })
+
+        if (!isMounted) return
+
+        if (!authErr && authData.user) {
+          setSelectedBusiness({ ...data, role: 'owner' } as any)
+          sessionStorage.setItem('smartqr_selected_business_id', data.id)
+          await refetch()
+          navigate('/admin', { replace: true })
+          return
+        } else {
+          // Saved PIN is no longer valid, remove it
+          localStorage.removeItem(`smartqr_pin_${data.slug}`)
+          setAutoLoggingIn(false)
+          setErrorMsg('PIN tersimpan sudah kadaluarsa. Silakan masukkan PIN kembali.')
+        }
+      }
+
+      if (isMounted) {
+        setPageLoading(false)
       }
     }
 
-    // Try auto-login if PIN is saved in localStorage
-    const savedPin = localStorage.getItem(`smartqr_pin_${currentBiz.slug}`)
-    if (savedPin && !user) {
-      setSubmitting(true)
-      const emailToUse = `${currentBiz.slug}@smartqr.app`
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: emailToUse,
-        password: savedPin,
-      })
-
-      if (!error && data.user) {
-        setSelectedBusiness({ ...currentBiz, role: 'owner' } as any)
-        sessionStorage.setItem('smartqr_selected_business_id', currentBiz.id)
-        await refetch()
-        navigate('/admin', { replace: true })
-        return
-      } else {
-        // Saved PIN is no longer valid, remove it
-        localStorage.removeItem(`smartqr_pin_${currentBiz.slug}`)
-        setSubmitting(false)
-      }
+    if (!authLoading) {
+      init()
     }
-  }, [authLoading, user, businesses, setSelectedBusiness, refetch, navigate])
 
-  useEffect(() => {
-    if (business && !pageLoading) {
-      handleAutoAccess(business)
+    return () => {
+      isMounted = false
     }
-  }, [business, pageLoading, handleAutoAccess])
+  }, [slug, user, authLoading, navigate, refetch, setSelectedBusiness])
 
-  // Keypad click handler
-  const handleKeyClick = (val: string) => {
-    setErrorMsg(null)
-    if (pin.length < 6) {
-      setPin((prev) => prev + val)
-    }
+  // Direct bypass to dashboard for logged-in users
+  const handleDirectAccess = () => {
+    if (!business) return
+    setSelectedBusiness({ ...business, role: 'owner' } as any)
+    sessionStorage.setItem('smartqr_selected_business_id', business.id)
+    navigate('/admin', { replace: true })
   }
 
-  const handleDelete = () => {
-    setErrorMsg(null)
-    setPin((prev) => prev.slice(0, -1))
-  }
-
-  const handleClear = () => {
-    setErrorMsg(null)
+  // Logout current session so user can test pure login
+  const handleSignOut = async () => {
+    setSubmitting(true)
+    await supabase.auth.signOut()
+    if (business) {
+      localStorage.removeItem(`smartqr_pin_${business.slug}`)
+      sessionStorage.removeItem('smartqr_selected_business_id')
+    }
+    setIsSuper(false)
+    setIsCurrentOwner(false)
     setPin('')
+    setErrorMsg(null)
+    setSubmitting(false)
+    window.location.reload()
   }
 
   // Submit PIN login
-  const handlePinSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
+  const submitWithPin = async (pinValue: string) => {
     if (!business) return
-    if (pin.length < 4) {
+    if (pinValue.length < 4) {
       setErrorMsg('Masukkan minimal 4 digit PIN')
       return
     }
@@ -152,17 +165,17 @@ export default function AdminSlugPage() {
 
     try {
       const emailToUse = `${business.slug}@smartqr.app`
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: emailToUse,
-        password: pin,
+        password: pinValue,
       })
 
-      if (error) {
+      if (error || !data.user) {
         throw new Error('PIN salah untuk bisnis ini. Silakan periksa kembali.')
       }
 
       if (rememberMe) {
-        localStorage.setItem(`smartqr_pin_${business.slug}`, pin)
+        localStorage.setItem(`smartqr_pin_${business.slug}`, pinValue)
       } else {
         localStorage.removeItem(`smartqr_pin_${business.slug}`)
       }
@@ -173,9 +186,35 @@ export default function AdminSlugPage() {
       navigate('/admin', { replace: true })
     } catch (err: any) {
       setErrorMsg(err.message || 'Gagal masuk. Periksa PIN Anda.')
+      setPin('')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  // Keypad click handler
+  const handleKeyClick = (val: string) => {
+    if (submitting) return
+    setErrorMsg(null)
+    if (pin.length < 6) {
+      const nextPin = pin + val
+      setPin(nextPin)
+      if (nextPin.length === 6) {
+        submitWithPin(nextPin)
+      }
+    }
+  }
+
+  const handleDelete = () => {
+    if (submitting) return
+    setErrorMsg(null)
+    setPin((prev) => prev.slice(0, -1))
+  }
+
+  const handleClear = () => {
+    if (submitting) return
+    setErrorMsg(null)
+    setPin('')
   }
 
   // Submit Custom Email login
@@ -231,10 +270,39 @@ export default function AdminSlugPage() {
     )
   }
 
+  // Auto-logging in with saved PIN state
+  if (autoLoggingIn) {
+    return (
+      <main className="min-h-[100dvh] bg-primary flex items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full bg-white rounded-[28px] p-8 shadow-xl space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-primary-50 text-primary mx-auto flex items-center justify-center">
+            <Lock className="w-8 h-8 animate-pulse text-primary" />
+          </div>
+          <h1 className="text-xl font-extrabold text-ink">Memverifikasi PIN...</h1>
+          <p className="text-sm text-ink-muted">
+            Sedang menghubungkan ke akun admin <strong>{business.name}</strong> dengan PIN tersimpan di perangkat ini.
+          </p>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.removeItem(`smartqr_pin_${business.slug}`)
+                setAutoLoggingIn(false)
+              }}
+              className="text-xs font-semibold text-ink-muted hover:text-primary transition-colors underline"
+            >
+              Batal & Gunakan PIN Lain
+            </button>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-[100dvh] bg-primary flex flex-col justify-between">
       {/* Top Banner / Store Header */}
-      <section className="relative pt-8 pb-10 px-6 text-center overflow-hidden flex flex-col items-center">
+      <section className="relative pt-8 pb-8 px-6 text-center overflow-hidden flex flex-col items-center">
         <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/10" aria-hidden="true" />
         <div className="absolute top-24 -left-20 w-52 h-52 rounded-full bg-white/10" aria-hidden="true" />
 
@@ -258,6 +326,70 @@ export default function AdminSlugPage() {
       {/* Main Sheet Container */}
       <section className="relative bg-white rounded-t-[32px] px-6 pt-5 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] shadow-[0_-8px_32px_rgba(36,28,115,0.18)] sm:mx-auto sm:w-full sm:max-w-md sm:mb-8 sm:rounded-[32px] flex-1 flex flex-col">
         <div className="w-10 h-1 rounded-full bg-outline mx-auto mb-4" aria-hidden="true" />
+
+        {/* Active Session Notice: Super Admin */}
+        {isSuper && (
+          <div className="mb-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-200/80 text-xs text-amber-950 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-amber-900">
+              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Sesi Super Admin Terdeteksi</span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-amber-800">
+              Anda sedang login sebagai <strong>{user?.email}</strong>. Anda dapat menguji input PIN 6-digit di bawah atau langsung membuka dashboard toko ini.
+            </p>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleDirectAccess}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all flex items-center gap-1.5"
+              >
+                <span>Langsung Masuk Dashboard</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={submitting}
+                className="px-3 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-900 font-semibold text-xs hover:bg-amber-100/50 active:scale-95 transition-all flex items-center gap-1"
+              >
+                <LogOut className="w-3.5 h-3.5 text-amber-700" />
+                <span>Logout Sesi</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Active Session Notice: Current Owner */}
+        {!isSuper && isCurrentOwner && (
+          <div className="mb-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-xs text-emerald-950 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-emerald-900">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Sesi Toko Sedang Aktif</span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-emerald-800">
+              Perangkat ini sudah terhubung ke akun admin <strong>{business.name}</strong>.
+            </p>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleDirectAccess}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all flex items-center gap-1.5"
+              >
+                <span>Buka Dashboard Toko</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={submitting}
+                className="px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-emerald-900 font-semibold text-xs hover:bg-emerald-100/50 active:scale-95 transition-all flex items-center gap-1"
+              >
+                <LogOut className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Keluar / Ganti Akun</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {!useEmailMode ? (
           /* PIN MODE */
@@ -284,7 +416,7 @@ export default function AdminSlugPage() {
             <div
               className="py-4 my-auto flex justify-center items-center gap-3 cursor-pointer"
               onClick={() => hiddenInputRef.current?.focus()}
-              title="Klik untuk mengetik"
+              title="Klik untuk mengetik langsung"
             >
               {[0, 1, 2, 3, 4, 5].map((index) => {
                 const isFilled = index < pin.length
@@ -307,9 +439,14 @@ export default function AdminSlugPage() {
                 pattern="[0-9]*"
                 maxLength={6}
                 value={pin}
+                disabled={submitting}
                 onChange={(e) => {
                   setErrorMsg(null)
-                  setPin(e.target.value.replace(/\D/g, '').slice(0, 6))
+                  const clean = e.target.value.replace(/\D/g, '').slice(0, 6)
+                  setPin(clean)
+                  if (clean.length === 6) {
+                    submitWithPin(clean)
+                  }
                 }}
                 className="sr-only"
                 autoComplete="off"
@@ -336,30 +473,34 @@ export default function AdminSlugPage() {
                 <button
                   key={digit}
                   type="button"
+                  disabled={submitting}
                   onClick={() => handleKeyClick(digit)}
-                  className="h-12 rounded-2xl bg-surface font-extrabold text-lg text-ink hover:bg-primary-50 active:bg-primary-100 active:scale-95 transition-all flex items-center justify-center"
+                  className="h-12 rounded-2xl bg-surface font-extrabold text-lg text-ink hover:bg-primary-50 active:bg-primary-100 active:scale-95 transition-all flex items-center justify-center disabled:opacity-50"
                 >
                   {digit}
                 </button>
               ))}
               <button
                 type="button"
+                disabled={submitting}
                 onClick={handleClear}
-                className="h-12 rounded-2xl text-xs font-bold text-ink-muted hover:bg-surface active:scale-95 transition-all flex items-center justify-center"
+                className="h-12 rounded-2xl text-xs font-bold text-ink-muted hover:bg-surface active:scale-95 transition-all flex items-center justify-center disabled:opacity-50"
               >
                 Clear
               </button>
               <button
                 type="button"
+                disabled={submitting}
                 onClick={() => handleKeyClick('0')}
-                className="h-12 rounded-2xl bg-surface font-extrabold text-lg text-ink hover:bg-primary-50 active:bg-primary-100 active:scale-95 transition-all flex items-center justify-center"
+                className="h-12 rounded-2xl bg-surface font-extrabold text-lg text-ink hover:bg-primary-50 active:bg-primary-100 active:scale-95 transition-all flex items-center justify-center disabled:opacity-50"
               >
                 0
               </button>
               <button
                 type="button"
+                disabled={submitting}
                 onClick={handleDelete}
-                className="h-12 rounded-2xl text-ink-muted hover:bg-surface active:scale-95 transition-all flex items-center justify-center"
+                className="h-12 rounded-2xl text-ink-muted hover:bg-surface active:scale-95 transition-all flex items-center justify-center disabled:opacity-50"
                 aria-label="Hapus digit"
               >
                 <Delete className="w-5 h-5" />
@@ -369,7 +510,7 @@ export default function AdminSlugPage() {
             {/* Action Buttons */}
             <div className="mt-4 space-y-2">
               <Button
-                onClick={() => handlePinSubmit()}
+                onClick={() => submitWithPin(pin)}
                 size="lg"
                 isLoading={submitting}
                 disabled={pin.length < 4}
