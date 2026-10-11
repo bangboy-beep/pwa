@@ -47,6 +47,16 @@ export default function AdminLoginPage() {
         throw new Error('PIN salah. Silakan periksa kembali PIN Anda.')
       }
 
+      // Pastikan relasi tabel business_members disinkronisasi
+      try {
+        await (supabase as any).rpc('verify_business_pin', {
+          p_slug: cleanSlug,
+          p_pin: pin.trim(),
+        })
+      } catch {
+        // fallback dijalankan di getMyBusinesses
+      }
+
       if (rememberMe) {
         localStorage.setItem(`smartqr_pin_${cleanSlug}`, pin.trim())
       }

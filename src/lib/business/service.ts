@@ -26,9 +26,20 @@ export async function getMyBusinesses(): Promise<{
   const supabase = createClient()
   const user = await supabase.auth.getUser()
   const userId = user.data.user?.id
+  const userEmail = user.data.user?.email
 
   if (!userId) return { data: [], error: null }
 
+  // 1. Jika akun menggunakan format <slug>@smartqr.app, pastikan membership terhubung
+  if (userEmail && userEmail.endsWith('@smartqr.app')) {
+    try {
+      await (supabase as any).rpc('ensure_my_business_membership')
+    } catch {
+      // Abaikan jika RPC belum dieksekusi di database
+    }
+  }
+
+  // 2. Query dari tabel business_members
   const { data, error } = await supabase
     .from('business_members')
     .select(`
@@ -43,14 +54,52 @@ export async function getMyBusinesses(): Promise<{
     `)
     .eq('user_id', userId)
 
-  if (error) return { data: [], error: null }
-
-  return {
-    data: (data ?? []).map((m: any) => ({
+  const list: BusinessWithMember[] = (data ?? [])
+    .filter((m: any) => m.businesses)
+    .map((m: any) => ({
       ...m.businesses,
       role: m.role as UserRole,
-    })),
-    error: null,
+    }))
+
+  if (list.length > 0) {
+    return { data: list, error: null }
+  }
+
+  // 3. Fallback cerdas: Jika belum ada di business_members tapi emailnya <slug>@smartqr.app
+  // Langsung ambil bisnis berdasarkan slug agar tidak terlempar ke /onboarding
+  if (userEmail && userEmail.endsWith('@smartqr.app')) {
+    const slug = userEmail.replace('@smartqr.app', '')
+    const { data: directBiz } = await (supabase.from('businesses') as any)
+      .select('id, name, slug, business_type, logo_url, cover_url, description, address, phone, whatsapp, google_maps_url, google_review_url, instagram_url, facebook_url, tiktok_url, website_url, opening_hours, theme, status, created_at, updated_at')
+      .eq('slug', slug)
+      .maybeSingle()
+
+    if (directBiz) {
+      const biz = directBiz as Business
+      // Usahakan insert membership di background
+      try {
+        await (supabase.from('business_members') as any).upsert(
+          {
+            business_id: biz.id,
+            user_id: userId,
+            role: 'owner',
+          },
+          { onConflict: 'business_id,user_id' }
+        )
+      } catch {
+        // Abaikan jika dibatasi RLS
+      }
+
+      return {
+        data: [{ ...biz, role: 'owner' as UserRole }],
+        error: null,
+      }
+    }
+  }
+
+  return {
+    data: [],
+    error: error ? { message: error.message } : null,
   }
 }
 

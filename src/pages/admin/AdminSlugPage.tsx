@@ -173,7 +173,16 @@ export default function AdminSlugPage() {
       })
 
       if (!error && data.user) {
-        // Auth login berhasil
+        // Auth login berhasil, pastikan relasi business_members disinkronisasi
+        try {
+          await (supabase as any).rpc('verify_business_pin', {
+            p_slug: business.slug,
+            p_pin: pinValue,
+          })
+        } catch {
+          // fallback dijalankan di getMyBusinesses
+        }
+
         if (rememberMe) {
           localStorage.setItem(`smartqr_pin_${business.slug}`, pinValue)
         } else {

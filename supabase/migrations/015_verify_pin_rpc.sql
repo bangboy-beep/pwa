@@ -275,3 +275,51 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION public.resync_all_business_pins() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.resync_all_business_pins() TO authenticated;
+
+
+-- RPC: ensure_my_business_membership
+-- Dipanggil saat login untuk memastikan user dengan email <slug>@smartqr.app
+-- terdaftar sebagai 'owner' di tabel business_members
+CREATE OR REPLACE FUNCTION public.ensure_my_business_membership()
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, extensions
+AS $$
+DECLARE
+  v_email TEXT;
+  v_slug TEXT;
+  v_business_id UUID;
+  v_user_id UUID;
+BEGIN
+  v_user_id := auth.uid();
+  v_email := auth.email();
+
+  IF v_user_id IS NULL OR v_email IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  IF v_email LIKE '%@smartqr.app' THEN
+    v_slug := replace(v_email, '@smartqr.app', '');
+
+    SELECT id INTO v_business_id
+    FROM public.businesses
+    WHERE slug = v_slug
+    LIMIT 1;
+
+    IF v_business_id IS NOT NULL THEN
+      INSERT INTO public.business_members (business_id, user_id, role)
+      VALUES (v_business_id, v_user_id, 'owner')
+      ON CONFLICT (business_id, user_id) DO UPDATE SET role = 'owner';
+
+      RETURN v_business_id;
+    END IF;
+  END IF;
+
+  RETURN NULL;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.ensure_my_business_membership() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.ensure_my_business_membership() TO authenticated;
+

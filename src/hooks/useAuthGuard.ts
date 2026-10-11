@@ -31,6 +31,10 @@ export function useAuthGuard(redirectToOnboarding = true) {
     }
 
     if (redirectToOnboarding && businesses.length === 0) {
+      // Akun toko khusus (@smartqr.app) tidak boleh diarahkan ke onboarding pembuatan bisnis baru
+      if (user?.email && user.email.endsWith('@smartqr.app')) {
+        return
+      }
       navigate('/onboarding', { replace: true })
     }
   }, [user, isLoading, businesses, navigate, location, redirectToOnboarding])
