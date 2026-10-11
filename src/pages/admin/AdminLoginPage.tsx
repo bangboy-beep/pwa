@@ -1,19 +1,76 @@
 import { useState } from 'react'
-import { Mail, Lock, ArrowRight, QrCode, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Mail, Lock, ArrowRight, QrCode, AlertCircle, CheckCircle2, KeyRound, Building2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase/client'
 import { isSuperAdmin } from '../../lib/config/admin'
+import { getBusinessBySlug } from '../../lib/business/service'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
 export default function AdminLoginPage() {
+  const [tab, setTab] = useState<'pin' | 'email'>('pin')
+
+  // PIN Tab state
+  const [slug, setSlug] = useState('')
+  const [pin, setPin] = useState('')
+  const [rememberMe, setRememberMe] = useState(true)
+
+  // Email Tab state
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
 
-  const submit = async (e: React.FormEvent) => {
+  const submitPin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')
+    if (!cleanSlug) {
+      setMessage({ type: 'error', text: 'Masukkan slug nama bisnis Anda' })
+      return
+    }
+    if (pin.length < 4) {
+      setMessage({ type: 'error', text: 'Masukkan minimal 4 digit PIN' })
+      return
+    }
+
+    setLoading(true)
+    setMessage(null)
+
+    try {
+      // 1. Verify business exists
+      const { data: bizData, error: bizError } = await getBusinessBySlug(cleanSlug)
+      if (bizError || !bizData) {
+        throw new Error(`Bisnis "${cleanSlug}" tidak ditemukan. Pastikan slug sudah benar.`)
+      }
+
+      // 2. Sign in with owner PIN
+      const loginEmail = `${cleanSlug}@smartqr.app`
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: pin.trim(),
+      })
+
+      if (error) {
+        throw new Error('PIN salah. Silakan periksa kembali PIN Anda.')
+      }
+
+      if (rememberMe) {
+        localStorage.setItem(`smartqr_pin_${cleanSlug}`, pin.trim())
+      }
+
+      sessionStorage.setItem('smartqr_selected_business_id', bizData.id)
+      window.location.href = '/admin'
+    } catch (err: unknown) {
+      const text = err instanceof Error ? err.message : 'Terjadi kesalahan. Coba lagi.'
+      setMessage({ type: 'error', text })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const submitEmail = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage(null)
@@ -33,7 +90,7 @@ export default function AdminLoginPage() {
   return (
     <main className="min-h-[100dvh] bg-primary flex flex-col">
       {/* Hero */}
-      <section className="relative flex-1 min-h-[240px] flex flex-col items-center justify-center px-6 pt-10 pb-14 text-center overflow-hidden">
+      <section className="relative flex-1 min-h-[220px] flex flex-col items-center justify-center px-6 pt-10 pb-14 text-center overflow-hidden">
         <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-white/10" aria-hidden="true" />
         <div className="absolute top-24 -left-20 w-48 h-48 rounded-full bg-white/10" aria-hidden="true" />
         <div className="relative w-16 h-16 rounded-[22px] bg-white flex items-center justify-center shadow-xl shadow-primary-900/30">
@@ -49,63 +106,164 @@ export default function AdminLoginPage() {
       <section className="relative -mt-8 bg-white rounded-t-[32px] px-5 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] shadow-[0_-8px_32px_rgba(36,28,115,0.18)] sm:mx-auto sm:w-full sm:max-w-md sm:mb-10 sm:rounded-[32px] animate-sheet-up">
         <div className="w-10 h-1 rounded-full bg-outline mx-auto mb-5" aria-hidden="true" />
 
-        <h2 className="text-xl font-extrabold text-ink tracking-tight">
-          Selamat datang kembali
-        </h2>
-        <p className="text-sm text-ink-muted mt-1">
-          Masuk untuk melanjutkan ke dashboard manajemen bisnis.
-        </p>
+        {/* Tab Switcher */}
+        <div className="flex bg-surface p-1 rounded-2xl mb-5">
+          <button
+            type="button"
+            onClick={() => {
+              setTab('pin')
+              setMessage(null)
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              tab === 'pin' ? 'bg-white text-primary shadow-sm' : 'text-ink-muted hover:text-ink'
+            }`}
+          >
+            <KeyRound className="w-4 h-4" />
+            PIN Bisnis
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTab('email')
+              setMessage(null)
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              tab === 'email' ? 'bg-white text-primary shadow-sm' : 'text-ink-muted hover:text-ink'
+            }`}
+          >
+            <Mail className="w-4 h-4" />
+            Super Admin
+          </button>
+        </div>
 
-        <form onSubmit={submit} className="space-y-4 mt-6">
-          <div className="relative">
-            <Mail className="absolute left-4 top-[38px] w-5 h-5 text-ink-muted pointer-events-none z-10" aria-hidden="true" />
-            <Input
-              label="Email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="nama@email.com"
-              className="pl-12"
-            />
-          </div>
-          <div className="relative">
-            <Lock className="absolute left-4 top-[38px] w-5 h-5 text-ink-muted pointer-events-none z-10" aria-hidden="true" />
-            <Input
-              label="Password"
-              type="password"
-              required
-              minLength={6}
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimal 6 karakter"
-              className="pl-12"
-            />
-          </div>
+        {tab === 'pin' ? (
+          <div>
+            <h2 className="text-xl font-extrabold text-ink tracking-tight">Masuk dengan PIN Bisnis</h2>
+            <p className="text-xs text-ink-muted mt-1">
+              Gunakan nama slug bisnis dan 6-digit PIN toko Anda.
+            </p>
 
-          {message && (
-            <div
-              role="alert"
-              className={`flex items-start gap-2.5 rounded-2xl p-3 text-sm font-medium ${
-                message.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
-              }`}
-            >
-              {message.type === 'error' ? (
-                <AlertCircle className="w-5 h-5 shrink-0" />
-              ) : (
-                <CheckCircle2 className="w-5 h-5 shrink-0" />
+            <form onSubmit={submitPin} className="space-y-4 mt-5">
+              <div className="relative">
+                <Building2 className="absolute left-4 top-[38px] w-5 h-5 text-ink-muted pointer-events-none z-10" aria-hidden="true" />
+                <Input
+                  label="Slug Bisnis"
+                  type="text"
+                  required
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  placeholder="contoh: kopisenja"
+                  className="pl-12"
+                  helperText="Atau buka langsung via link: /admin/nama-bisnis"
+                />
+              </div>
+
+              <div className="relative">
+                <Lock className="absolute left-4 top-[38px] w-5 h-5 text-ink-muted pointer-events-none z-10" aria-hidden="true" />
+                <Input
+                  label="PIN Login (6 digit)"
+                  type="password"
+                  required
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Contoh: 123456"
+                  className="pl-12"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 text-xs font-semibold text-ink-muted cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded-md text-primary accent-primary cursor-pointer"
+                />
+                Ingat saya di perangkat ini (Masuk otomatis)
+              </label>
+
+              {message && (
+                <div
+                  role="alert"
+                  className={`flex items-start gap-2.5 rounded-2xl p-3 text-sm font-medium ${
+                    message.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+                  }`}
+                >
+                  {message.type === 'error' ? (
+                    <AlertCircle className="w-5 h-5 shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="w-5 h-5 shrink-0" />
+                  )}
+                  <span>{message.text}</span>
+                </div>
               )}
-              <span>{message.text}</span>
-            </div>
-          )}
 
-          <Button type="submit" size="lg" isLoading={loading} className="w-full">
-            {loading ? 'Memproses...' : 'Masuk'}
-            {!loading && <ArrowRight className="w-5 h-5" />}
-          </Button>
-        </form>
+              <Button type="submit" size="lg" isLoading={loading} className="w-full">
+                {loading ? 'Memproses...' : 'Masuk ke Dashboard'}
+                {!loading && <ArrowRight className="w-5 h-5" />}
+              </Button>
+            </form>
+          </div>
+        ) : (
+          <div>
+            <h2 className="text-xl font-extrabold text-ink tracking-tight">Login Super Admin</h2>
+            <p className="text-xs text-ink-muted mt-1">
+              Masuk dengan akun email super admin untuk mengelola semua bisnis.
+            </p>
+
+            <form onSubmit={submitEmail} className="space-y-4 mt-5">
+              <div className="relative">
+                <Mail className="absolute left-4 top-[38px] w-5 h-5 text-ink-muted pointer-events-none z-10" aria-hidden="true" />
+                <Input
+                  label="Email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@email.com"
+                  className="pl-12"
+                />
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-4 top-[38px] w-5 h-5 text-ink-muted pointer-events-none z-10" aria-hidden="true" />
+                <Input
+                  label="Password"
+                  type="password"
+                  required
+                  minLength={6}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password akun"
+                  className="pl-12"
+                />
+              </div>
+
+              {message && (
+                <div
+                  role="alert"
+                  className={`flex items-start gap-2.5 rounded-2xl p-3 text-sm font-medium ${
+                    message.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+                  }`}
+                >
+                  {message.type === 'error' ? (
+                    <AlertCircle className="w-5 h-5 shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="w-5 h-5 shrink-0" />
+                  )}
+                  <span>{message.text}</span>
+                </div>
+              )}
+
+              <Button type="submit" size="lg" isLoading={loading} className="w-full">
+                {loading ? 'Memproses...' : 'Masuk Super Admin'}
+                {!loading && <ArrowRight className="w-5 h-5" />}
+              </Button>
+            </form>
+          </div>
+        )}
 
         <p className="mt-6 text-center text-xs text-ink-muted">
           {'© '}

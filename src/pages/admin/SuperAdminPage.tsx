@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '../../lib/supabase/client';
 import { Loading } from '../../components/ui/Loading';
-import { Plus, X, ExternalLink, Search, Store, CheckCircle2, ChevronRight, RefreshCw, Copy, Check, Key, Share2 } from 'lucide-react';
+import { Plus, X, ExternalLink, Search, Store, CheckCircle2, ChevronRight, RefreshCw, Copy, Check, Key, KeyRound, Share2 } from 'lucide-react';
 import { createBusinessWithOwner, generateRandomPin } from '../../lib/business/service';
 import { useBusiness } from '../../providers/BusinessProvider';
 import { Input } from '../../components/ui/Input';
@@ -151,7 +151,7 @@ export default function SuperAdminPage() {
   const getShareText = () => {
     if (!createdResult) return '';
     const origin = window.location.origin;
-    return `Halo! Akun SmartQR untuk *${createdResult.businessName}* telah siap:\n\n🔗 Link Publik: ${origin}/q/${createdResult.slug}\n🔑 Login Dashboard: ${origin}/admin\n📧 Email: ${createdResult.ownerEmail}\n📌 PIN/Password: ${createdResult.ownerPin}\n\nHarap simpan PIN ini dengan aman!`;
+    return `Halo! Akun SmartQR untuk *${createdResult.businessName}* telah siap:\n\n🔗 Link Pelanggan: ${origin}/q/${createdResult.slug}\n🔑 Link Admin: ${origin}/admin/${createdResult.slug}\n📌 PIN Admin: ${createdResult.ownerPin}\n\nCukup buka Link Admin dan masukkan PIN untuk langsung mengelola menu, WiFi, dan ulasan toko Anda!`;
   };
 
   const copyTextToClipboard = async (text: string): Promise<boolean> => {
@@ -287,15 +287,28 @@ export default function SuperAdminPage() {
                   </span>
                   <ChevronRight className="w-5 h-5 text-ink-muted shrink-0" />
                 </button>
-                <a
-                  href={`/q/${b.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-ink-muted hover:text-primary hover:bg-primary-50 shrink-0"
-                  aria-label={`Buka halaman publik ${b.name}`}
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </a>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <a
+                    href={`/admin/${b.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-ink-muted hover:text-primary hover:bg-primary-50"
+                    title={`Buka Link Admin /admin/${b.slug}`}
+                    aria-label={`Buka link admin ${b.name}`}
+                  >
+                    <KeyRound className="w-4 h-4" />
+                  </a>
+                  <a
+                    href={`/q/${b.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-ink-muted hover:text-primary hover:bg-primary-50"
+                    title={`Buka Halaman Pelanggan /q/${b.slug}`}
+                    aria-label={`Buka halaman pelanggan ${b.name}`}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
               </li>
             ))}
           </ul>
@@ -468,35 +481,51 @@ export default function SuperAdminPage() {
             <div className="p-4 rounded-2xl bg-surface border border-outline space-y-2 text-xs">
               <div
                 onClick={() => {
-                  copyTextToClipboard(createdResult.ownerEmail);
-                  toast.success('Email disalin!');
+                  const url = `${window.location.origin}/admin/${createdResult.slug}`;
+                  copyTextToClipboard(url);
+                  toast.success('Link Admin disalin!');
                 }}
                 className="flex justify-between items-center py-1.5 border-b border-outline/50 cursor-pointer active:opacity-70 select-none"
-                title="Klik untuk salin email"
+                title="Klik untuk salin Link Admin"
               >
-                <span className="text-ink-muted font-medium">Email Login:</span>
-                <span className="font-bold text-ink font-mono flex items-center gap-1.5">
-                  {createdResult.ownerEmail}
-                  <Copy className="w-3.5 h-3.5 text-ink-muted" />
+                <span className="text-ink-muted font-medium">Link Admin:</span>
+                <span className="font-bold text-primary font-mono flex items-center gap-1.5">
+                  /admin/{createdResult.slug}
+                  <Copy className="w-3.5 h-3.5 text-primary" />
                 </span>
               </div>
               <div
                 onClick={() => {
                   copyTextToClipboard(createdResult.ownerPin);
-                  toast.success('PIN login disalin!');
+                  toast.success('PIN admin disalin!');
                 }}
                 className="flex justify-between items-center py-1.5 border-b border-outline/50 cursor-pointer active:opacity-70 select-none"
                 title="Klik untuk salin PIN"
               >
-                <span className="text-ink-muted font-medium">PIN / Password:</span>
+                <span className="text-ink-muted font-medium">PIN Admin (6 digit):</span>
                 <span className="font-extrabold text-primary font-mono text-sm flex items-center gap-1.5">
                   {createdResult.ownerPin}
                   <Copy className="w-3.5 h-3.5 text-primary" />
                 </span>
               </div>
-              <div className="flex justify-between py-1">
-                <span className="text-ink-muted font-medium">URL Publik:</span>
-                <span className="font-bold text-primary">/q/{createdResult.slug}</span>
+              <div
+                onClick={() => {
+                  const url = `${window.location.origin}/q/${createdResult.slug}`;
+                  copyTextToClipboard(url);
+                  toast.success('Link pelanggan disalin!');
+                }}
+                className="flex justify-between items-center py-1.5 border-b border-outline/50 cursor-pointer active:opacity-70 select-none"
+                title="Klik untuk salin Link Pelanggan"
+              >
+                <span className="text-ink-muted font-medium">Link Pelanggan:</span>
+                <span className="font-bold text-ink font-mono flex items-center gap-1.5">
+                  /q/{createdResult.slug}
+                  <Copy className="w-3.5 h-3.5 text-ink-muted" />
+                </span>
+              </div>
+              <div className="flex justify-between py-1 text-[11px] text-ink-muted">
+                <span>Email Login:</span>
+                <span className="font-mono">{createdResult.ownerEmail}</span>
               </div>
             </div>
 

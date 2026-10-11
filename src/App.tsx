@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './providers/AuthProvider'
 import { BusinessProvider } from './providers/BusinessProvider'
 import AdminLoginPage from './pages/admin/AdminLoginPage'
+import AdminSlugPage from './pages/admin/AdminSlugPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import OnboardingPage from './pages/OnboardingPage'
 import PublicMenuPage from './pages/PublicMenuPage'
@@ -32,6 +33,7 @@ export default function App() {
             {/* Public routes */}
             <Route path="/" element={<Navigate to="/super" replace />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route path="/admin/:slug" element={<AdminSlugPage />} />
             <Route path="/m/:slug" element={<PublicMenuPage />} />
             <Route path="/q/:slug" element={<PublicCustomerHubPage />} />
             <Route path="/w/:slug" element={<PublicWifiPage />} />
