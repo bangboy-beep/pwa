@@ -30,7 +30,7 @@ export function AdminHeader({ onMenuClick }: { onMenuClick: () => void }) {
             <Menu className="w-5 h-5" />
           </button>
         )}
-        <div className="w-7 h-7 rounded-lg bg-amber-500 flex items-center justify-center lg:hidden">
+        <div className="w-7 h-7 rounded-lg bg-primary-500 flex items-center justify-center lg:hidden">
           <span className="text-white text-[11px] font-bold">S</span>
         </div>
         <div>
@@ -43,7 +43,7 @@ export function AdminHeader({ onMenuClick }: { onMenuClick: () => void }) {
       <div className="relative">
         <button
           onClick={() => setShowMenu(!showMenu)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold border border-amber-200 transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-800 text-xs font-semibold border border-primary-200 transition-colors"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Publik</span>
@@ -55,16 +55,16 @@ export function AdminHeader({ onMenuClick }: { onMenuClick: () => void }) {
               {selectedBusiness && (
                 <>
                   <a href={`/q/${selectedBusiness.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
-                    <ExternalLink className="w-3.5 h-3.5 text-amber-600" /> Customer Hub
+                    <ExternalLink className="w-3.5 h-3.5 text-primary-600" /> Customer Hub
                   </a>
                   <a href={`/m/${selectedBusiness.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
-                    <ExternalLink className="w-3.5 h-3.5 text-amber-600" /> Menu Publik
+                    <ExternalLink className="w-3.5 h-3.5 text-primary-600" /> Menu Publik
                   </a>
                   <a href={`/w/${selectedBusiness.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
-                    <ExternalLink className="w-3.5 h-3.5 text-amber-600" /> WiFi Publik
+                    <ExternalLink className="w-3.5 h-3.5 text-primary-600" /> WiFi Publik
                   </a>
                   <a href={`/r/${selectedBusiness.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
-                    <ExternalLink className="w-3.5 h-3.5 text-amber-600" /> Review Publik
+                    <ExternalLink className="w-3.5 h-3.5 text-primary-600" /> Review Publik
                   </a>
                 </>
               )}

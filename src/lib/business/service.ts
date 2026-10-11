@@ -97,6 +97,17 @@ export async function getBusinessById(id: string): Promise<{
   return { data: data as unknown as Business | null, error }
 }
 
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+
+export function generateRandomPin(length = 6): string {
+  const digits = '0123456789'
+  let pin = ''
+  for (let i = 0; i < length; i++) {
+    pin += digits.charAt(Math.floor(Math.random() * digits.length))
+  }
+  return pin
+}
+
 export async function createBusiness(input: {
   name: string
   slug: string
@@ -117,6 +128,78 @@ export async function createBusiness(input: {
     .single()
 
   return { data: data as unknown as Business | null, error }
+}
+
+export async function createBusinessWithOwner(input: {
+  name: string
+  slug: string
+  business_type: string
+  owner_email?: string
+  owner_pin?: string
+}): Promise<{
+  data: {
+    business: Business
+    ownerEmail: string
+    ownerPin: string
+  } | null
+  error: { message: string } | null
+}> {
+  const supabase = createClient()
+
+  // 1. Create Business
+  const { data: businessData, error: bizError } = await (supabase.from('businesses') as any)
+    .insert({
+      name: input.name,
+      slug: input.slug,
+      business_type: input.business_type,
+      status: 'active',
+    })
+    .select()
+    .single()
+
+  if (bizError || !businessData) {
+    return { data: null, error: bizError || { message: 'Gagal membuat bisnis' } }
+  }
+
+  const business = businessData as Business
+  const ownerEmail = (input.owner_email && input.owner_email.trim()) || `${input.slug}@smartqr.app`
+  const ownerPin = (input.owner_pin && input.owner_pin.trim()) || generateRandomPin(6)
+
+  // 2. Register Owner Auth user via isolated client (to keep current SuperAdmin session intact)
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co'
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key'
+  const isolatedClient = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  })
+
+  try {
+    const { data: authData, error: authError } = await isolatedClient.auth.signUp({
+      email: ownerEmail,
+      password: ownerPin,
+    })
+
+    if (authError) {
+      console.warn('Signup owner auth warning:', authError.message)
+    } else if (authData.user) {
+      // 3. Link newly created user to business as owner
+      await addBusinessMember(business.id, authData.user.id, 'owner')
+    }
+  } catch (err) {
+    console.error('Failed to create owner user:', err)
+  }
+
+  return {
+    data: {
+      business,
+      ownerEmail,
+      ownerPin,
+    },
+    error: null,
+  }
 }
 
 export async function updateBusiness(

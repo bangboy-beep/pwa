@@ -7,6 +7,7 @@ import { createClient } from '../lib/supabase/client'
 import { Loading } from '../components/ui/Loading'
 import { Wifi, Copy, Check, AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { useToast } from '../hooks/useToast'
+import { copyToClipboard } from '../lib/utils/clipboard'
 import { QRCodeSVG } from 'qrcode.react'
 import type { Business, WiFiNetwork } from '../types'
 
@@ -49,11 +50,15 @@ export default function PublicWifiPage() {
     loadData()
   }, [slug])
 
-  const handleCopy = (text: string, id: string, label: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedId(id)
-    showToast('success', `${label} berhasil disalin!`)
-    setTimeout(() => setCopiedId(null), 2000)
+  const handleCopy = async (text: string, id: string, label: string) => {
+    const ok = await copyToClipboard(text)
+    if (ok) {
+      setCopiedId(id)
+      showToast('success', `${label} berhasil disalin!`)
+      setTimeout(() => setCopiedId(null), 2000)
+    } else {
+      showToast('error', `Gagal menyalin ${label}`)
+    }
   }
 
   const togglePassword = (id: string) => {
@@ -101,7 +106,7 @@ export default function PublicWifiPage() {
 
           {/* WiFi Icon & Title */}
           <div className="text-center">
-            <div className="w-16 h-16 bg-orange-50 text-[#f0883a] rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+            <div className="w-16 h-16 bg-primary-50 text-primary rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm">
               <Wifi className="w-8 h-8" />
             </div>
             <h2 className="text-base font-bold text-stone-900">Koneksi WiFi {business.name}</h2>
@@ -122,7 +127,7 @@ export default function PublicWifiPage() {
                 <div key={wifi.id} className="bg-stone-50 rounded-2xl p-5 border border-stone-200 space-y-4 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-bold text-[#f0883a] uppercase tracking-wider">{wifi.name}</span>
+                      <span className="text-xs font-bold text-primary uppercase tracking-wider">{wifi.name}</span>
                       <h3 className="text-base font-bold text-stone-900 font-mono mt-0.5">{wifi.ssid}</h3>
                     </div>
                   </div>
@@ -157,7 +162,7 @@ export default function PublicWifiPage() {
                           <button
                             type="button"
                             onClick={() => handleCopy(wifi.password || '', `pass-${wifi.id}`, 'Password')}
-                            className="p-2 text-stone-400 hover:text-[#f0883a] transition-colors"
+                            className="p-2 text-stone-400 hover:text-primary transition-colors"
                             title="Salin Password"
                           >
                             {isCopiedPass ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}

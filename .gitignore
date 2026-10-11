@@ -36,3 +36,9 @@ test-results/
 .env
 .env.local
 .env.production
+
+# Deployment & temp files
+.netlify/
+.vercel/
+supabase/.temp/
+fix_layout.*
