@@ -8,7 +8,6 @@ import { Button } from '../../components/ui/Button'
 const CURRENT_YEAR = new Date().getFullYear()
 
 export default function AdminLoginPage() {
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -19,16 +18,10 @@ export default function AdminLoginPage() {
     setLoading(true)
     setMessage(null)
     try {
-      if (mode === 'login') {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
-        const superAdmin = await isSuperAdmin(data.user?.email)
-        window.location.href = superAdmin ? '/super' : '/admin'
-      } else {
-        const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
-        setMessage({ type: 'success', text: 'Akun berhasil dibuat. Silakan cek email jika verifikasi diperlukan.' })
-      }
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+      const superAdmin = await isSuperAdmin(data.user?.email)
+      window.location.href = superAdmin ? '/super' : '/admin'
     } catch (err: unknown) {
       const text = err instanceof Error ? err.message : 'Terjadi kesalahan. Coba lagi.'
       setMessage({ type: 'error', text })
@@ -57,33 +50,13 @@ export default function AdminLoginPage() {
         <div className="w-10 h-1 rounded-full bg-outline mx-auto mb-5" aria-hidden="true" />
 
         <h2 className="text-xl font-extrabold text-ink tracking-tight">
-          {mode === 'login' ? 'Selamat datang kembali' : 'Buat akun baru'}
+          Selamat datang kembali
         </h2>
         <p className="text-sm text-ink-muted mt-1">
-          {mode === 'login' ? 'Masuk untuk melanjutkan ke dashboard.' : 'Daftar gratis dan mulai dalam hitungan menit.'}
+          Masuk untuk melanjutkan ke dashboard manajemen bisnis.
         </p>
 
-        <div className="flex bg-surface rounded-full p-1 mt-5" role="tablist">
-          {(['login', 'signup'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={mode === m}
-              onClick={() => {
-                setMode(m)
-                setMessage(null)
-              }}
-              className={`flex-1 h-10 rounded-full text-sm font-bold transition-all ${
-                mode === m ? 'bg-white text-primary shadow-sm' : 'text-ink-muted'
-              }`}
-            >
-              {m === 'login' ? 'Masuk' : 'Daftar'}
-            </button>
-          ))}
-        </div>
-
-        <form onSubmit={submit} className="space-y-4 mt-5">
+        <form onSubmit={submit} className="space-y-4 mt-6">
           <div className="relative">
             <Mail className="absolute left-4 top-[38px] w-5 h-5 text-ink-muted pointer-events-none z-10" aria-hidden="true" />
             <Input
@@ -104,7 +77,7 @@ export default function AdminLoginPage() {
               type="password"
               required
               minLength={6}
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Minimal 6 karakter"
@@ -129,7 +102,7 @@ export default function AdminLoginPage() {
           )}
 
           <Button type="submit" size="lg" isLoading={loading} className="w-full">
-            {loading ? 'Memproses...' : mode === 'login' ? 'Masuk' : 'Daftar Sekarang'}
+            {loading ? 'Memproses...' : 'Masuk'}
             {!loading && <ArrowRight className="w-5 h-5" />}
           </Button>
         </form>

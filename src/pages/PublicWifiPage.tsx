@@ -7,6 +7,7 @@ import { createClient } from '../lib/supabase/client'
 import { Loading } from '../components/ui/Loading'
 import { Wifi, Copy, Check, AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { useToast } from '../hooks/useToast'
+import { copyToClipboard } from '../lib/utils/clipboard'
 import { QRCodeSVG } from 'qrcode.react'
 import type { Business, WiFiNetwork } from '../types'
 
@@ -49,11 +50,15 @@ export default function PublicWifiPage() {
     loadData()
   }, [slug])
 
-  const handleCopy = (text: string, id: string, label: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedId(id)
-    showToast('success', `${label} berhasil disalin!`)
-    setTimeout(() => setCopiedId(null), 2000)
+  const handleCopy = async (text: string, id: string, label: string) => {
+    const ok = await copyToClipboard(text)
+    if (ok) {
+      setCopiedId(id)
+      showToast('success', `${label} berhasil disalin!`)
+      setTimeout(() => setCopiedId(null), 2000)
+    } else {
+      showToast('error', `Gagal menyalin ${label}`)
+    }
   }
 
   const togglePassword = (id: string) => {

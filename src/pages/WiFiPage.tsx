@@ -16,6 +16,7 @@ import {
 import { Loading } from '../components/ui/Loading'
 import { useToast } from '../hooks/useToast'
 import { cn } from '../components/ui/utils'
+import { copyToClipboard } from '../lib/utils/clipboard'
 import {
   Wifi,
   Eye,
@@ -196,9 +197,11 @@ export default function WifiPage() {
 
   const handleCopyPassword = async () => {
     if (!form.password) return
-    await navigator.clipboard.writeText(form.password)
-    setCopied(form.password)
-    setTimeout(() => setCopied(false), 2000)
+    const ok = await copyToClipboard(form.password)
+    if (ok) {
+      setCopied(form.password)
+      setTimeout(() => setCopied(false), 2000)
+    }
   }
 
 

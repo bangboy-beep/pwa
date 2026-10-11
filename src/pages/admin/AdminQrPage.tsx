@@ -3,6 +3,7 @@ import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react'
 import { useBusiness } from '../../providers/BusinessProvider'
 import { getPublicCustomerHubUrl } from '../../lib/url/generator'
 import { toast } from '../../components/ui/Toast'
+import { copyToClipboard } from '../../lib/utils/clipboard'
 
 export default function AdminQrPage() {
   const { selectedBusiness } = useBusiness()
@@ -16,10 +17,14 @@ export default function AdminQrPage() {
 
   const copy = async () => {
     if (!url) return
-    await navigator.clipboard.writeText(url)
-    setCopied(true)
-    toast.success('Link berhasil disalin')
-    setTimeout(() => setCopied(false), 1600)
+    const success = await copyToClipboard(url)
+    if (success) {
+      setCopied(true)
+      toast.success('Link berhasil disalin')
+      setTimeout(() => setCopied(false), 1600)
+    } else {
+      toast.error('Gagal menyalin link')
+    }
   }
 
   const download = () => {
