@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '../../lib/supabase/client';
 import { Loading } from '../../components/ui/Loading';
-import { Plus, X, ExternalLink, Search, Store, CheckCircle2, ChevronRight, RefreshCw, Copy, Check, Key, KeyRound, Share2, Eye, EyeOff } from 'lucide-react';
-import { createBusinessWithOwner, generateRandomPin, getBusinessPins, setBusinessPin } from '../../lib/business/service';
+import { Plus, X, ExternalLink, Search, Store, CheckCircle2, ChevronRight, RefreshCw, Copy, Check, Key, KeyRound, Share2, Eye, EyeOff, Trash2, AlertTriangle } from 'lucide-react';
+import { createBusinessWithOwner, generateRandomPin, getBusinessPins, setBusinessPin, deleteBusiness } from '../../lib/business/service';
 import { useBusiness } from '../../providers/BusinessProvider';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -40,6 +40,10 @@ export default function SuperAdminPage() {
   const [editPinInput, setEditPinInput] = useState('');
   const [isSavingPin, setIsSavingPin] = useState(false);
   const [isResyncingAll, setIsResyncingAll] = useState(false);
+
+  // Delete Business state
+  const [deletingBiz, setDeletingBiz] = useState<BusinessRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -290,6 +294,27 @@ export default function SuperAdminPage() {
     }
   };
 
+  const handleDeleteBusiness = async () => {
+    if (!deletingBiz) return;
+    setIsDeleting(true);
+    const res = await deleteBusiness(deletingBiz.id);
+    setIsDeleting(false);
+
+    if (!res.success) {
+      toast.error(res.error || 'Gagal menghapus bisnis');
+      return;
+    }
+
+    toast.success(`Bisnis "${deletingBiz.name}" berhasil dihapus!`);
+    setBusinesses((prev) => prev.filter((b) => b.id !== deletingBiz.id));
+    setPinsMap((prev) => {
+      const updated = { ...prev };
+      delete updated[deletingBiz.id];
+      return updated;
+    });
+    setDeletingBiz(null);
+  };
+
 
   if (loading) return <Loading />;
 
@@ -425,6 +450,18 @@ export default function SuperAdminPage() {
                       >
                         <ExternalLink className="w-4 h-4" />
                       </a>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingBiz(b);
+                        }}
+                        className="w-8 h-8 rounded-xl flex items-center justify-center text-ink-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+                        title={`Hapus Bisnis ${b.name}`}
+                        aria-label={`Hapus bisnis ${b.name}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
 
@@ -805,6 +842,78 @@ export default function SuperAdminPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus Bisnis */}
+      {deletingBiz && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Konfirmasi Hapus Bisnis"
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-ink/50 backdrop-blur-xs animate-scrim"
+            onClick={() => !isDeleting && setDeletingBiz(null)}
+          />
+
+          {/* Dialog Card */}
+          <div className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl z-10 animate-sheet-up space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-ink leading-tight">
+                    Hapus Bisnis?
+                  </h3>
+                  <p className="text-xs text-ink-muted">Tindakan ini tidak dapat dibatalkan</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setDeletingBiz(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-ink-muted hover:bg-surface transition-colors"
+                aria-label="Tutup modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-red-50/70 border border-red-100 text-xs space-y-2">
+              <p className="text-ink">
+                Apakah Anda yakin ingin menghapus <strong className="text-red-700">{deletingBiz.name}</strong> (<span className="font-mono">/{deletingBiz.slug}</span>)?
+              </p>
+              <p className="text-[11px] text-red-600 leading-relaxed font-medium">
+                ⚠️ Semua menu produk, WiFi, ulasan, QR code, dan PIN admin untuk toko ini akan dihapus secara permanen.
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                disabled={isDeleting}
+                onClick={() => setDeletingBiz(null)}
+              >
+                Batal
+              </Button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDeleteBusiness}
+                className="flex-1 h-11 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {isDeleting ? 'Menghapus...' : 'Ya, Hapus'}
+              </button>
+            </div>
           </div>
         </div>
       )}

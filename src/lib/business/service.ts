@@ -370,3 +370,24 @@ export async function removeBusinessMember(
 
   return { error }
 }
+
+export async function deleteBusiness(
+  businessId: string
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = createClient()
+  try {
+    const { error } = await supabase
+      .from('businesses')
+      .delete()
+      .eq('id', businessId)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+    return { success: true, error: null }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Gagal menghapus bisnis'
+    return { success: false, error: msg }
+  }
+}
+
