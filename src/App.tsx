@@ -1,9 +1,11 @@
 // SmartQR App Component
 // Main router with authentication and business context
 
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './providers/AuthProvider'
 import { BusinessProvider } from './providers/BusinessProvider'
+import { checkAndCleanupWeeklyCache } from './lib/utils/cacheManager'
 import AdminLoginPage from './pages/admin/AdminLoginPage'
 import SuperAdminLoginPage from './pages/admin/SuperAdminLoginPage'
 import AdminSlugPage from './pages/admin/AdminSlugPage'
@@ -26,6 +28,11 @@ import { AdminRouteGuard } from './components/admin/AdminRouteGuard'
 import { AdminLayout } from './components/admin/AdminLayout'
 
 export default function App() {
+  useEffect(() => {
+    // Jalankan pembersihan cache otomatis setiap 7 hari (mingguan)
+    checkAndCleanupWeeklyCache().catch(() => {})
+  }, [])
+
   return (
     <BrowserRouter>
       <AuthProvider>

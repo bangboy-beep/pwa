@@ -16,8 +16,9 @@ import {
   getCategories, getProducts, createCategory, updateCategory,
   deleteCategory, createProduct, updateProduct, deleteProduct,
   uploadProductImage, uploadProductVideo, deleteProductVideo,
-  validateVideoFile, getVideoDuration,
+  validateVideoFile, getVideoDuration, MAX_VIDEO_DURATION,
 } from '../lib/menu/service'
+import { compressImage } from '../lib/utils/imageCompressor'
 import type { MenuCategory, MenuProduct } from '../types'
 
 function formatRupiah(price: number): string {
@@ -203,31 +204,59 @@ export default function MenuPage() {
     finally { setProductSubmitting(false) }
   }
 
-  const handleProductImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProductImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return
-    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) { setProductFormError('Format gambar harus PNG, JPEG, atau WebP.'); return }
-    if (file.size > 5 * 1024 * 1024) { setProductFormError('Ukuran gambar maksimal 5 MB.'); return }
-    setProductFormError(null); setProductImageFile(file)
-    const reader = new FileReader()
-    reader.onloadend = () => setProductImagePreview(reader.result as string)
-    reader.readAsDataURL(file)
+    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) {
+      setProductFormError('Format gambar harus PNG, JPEG, atau WebP.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setProductFormError('Ukuran gambar maksimal 10 MB.')
+      return
+    }
+    setProductFormError(null)
+
+    // Kompresi otomatis gambar ke WebP (kualitas tinggi, ukuran hemat ~100-250 KB)
+    try {
+      const compressed = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.82 })
+      setProductImageFile(compressed)
+      const reader = new FileReader()
+      reader.onloadend = () => setProductImagePreview(reader.result as string)
+      reader.readAsDataURL(compressed)
+    } catch {
+      // Fallback jika browser gagal kompres
+      setProductImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => setProductImagePreview(reader.result as string)
+      reader.readAsDataURL(file)
+    }
   }
 
   const handleProductVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return
     const validation = validateVideoFile(file)
-    if (!validation.valid) { setProductFormError(validation.error); return }
-    setProductFormError(null); setProductVideoFile(file)
+    if (!validation.valid) {
+      setProductFormError(validation.error)
+      if (videoInputRef.current) videoInputRef.current.value = ''
+      return
+    }
+
+    // Validasi durasi video ketat maksimal 8 detik
+    const duration = await getVideoDuration(file)
+    if (duration !== null && duration > (MAX_VIDEO_DURATION + 0.5)) {
+      setProductFormError(
+        `Durasi video (${Math.round(duration)} detik) melebihi batas maksimal ${MAX_VIDEO_DURATION} detik. Silakan potong/trim video Anda terlebih dahulu agar hemat penyimpanan.`
+      )
+      if (videoInputRef.current) videoInputRef.current.value = ''
+      return
+    }
+
+    setProductFormError(null)
+    setProductVideoWarning(null)
+    setProductVideoFile(file)
     // Preview
     const previewUrl = URL.createObjectURL(file)
     setProductVideoPreview(previewUrl)
-    // Check duration for warning
-    const duration = await getVideoDuration(file)
-    if (duration && duration > 10) {
-      setProductVideoWarning(`Video ${Math.round(duration)} detik. Disarankan 5–10 detik untuk performa terbaik.`)
-    } else {
-      setProductVideoWarning(null)
-    }
   }
 
   const handleDeleteVideo = () => {
@@ -549,7 +578,7 @@ export default function MenuPage() {
                       <VideoOff className="w-3.5 h-3.5" /> Hapus Video
                     </button>
                   </div>
-                  <p className="px-3 pb-3 text-[10px] text-stone-400">MP4 / WebM · Maks 20 MB · Disarankan 5–10 detik</p>
+                  <p className="px-3 pb-3 text-[10px] text-stone-400">MP4 / WebM · Maks 10 MB · Durasi Maks 8 Detik (Wajib Kompres)</p>
                 </div>
               )}
 

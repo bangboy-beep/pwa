@@ -53,6 +53,32 @@ export default defineConfig(({ mode }) => {
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          {
+            // Cache gambar & media menu dengan masa kedaluwarsa 7 hari (1 minggu)
+            urlPattern: /^https:\/\/.*\.(?:png|jpg|jpeg|svg|gif|webp|mp4|webm)$/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'media-cache',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 7 * 24 * 60 * 60, // 7 hari
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Cache request storage (R2 / Supabase Storage) dengan masa kedaluwarsa 7 hari (1 minggu)
+            urlPattern: /^https:\/\/.*(?:r2\.cloudflarestorage\.com|supabase\.co\/storage).*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'storage-media-cache',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 7 * 24 * 60 * 60, // 7 hari
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
         ],
       },
     })] : []),

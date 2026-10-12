@@ -272,7 +272,8 @@ export async function deleteProductImage(businessId: string, productId: string):
 // ─── Video Upload / Delete ────────────────────────────────────────────────────
 
 const VIDEO_STORAGE_BUCKET = 'menu-media'
-const MAX_VIDEO_SIZE = 20 * 1024 * 1024 // 20 MB
+export const MAX_VIDEO_SIZE = 10 * 1024 * 1024 // 10 MB (dikompres agar hemat storage)
+export const MAX_VIDEO_DURATION = 8 // Maksimal 8 detik sesuai standar menu hemat storage
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm']
 
 export interface UploadVideoResult {
@@ -292,7 +293,7 @@ export function validateVideoFile(file: File): VideoValidationResult {
     return { valid: false, error: 'Format video harus MP4 atau WebM.' }
   }
   if (file.size > MAX_VIDEO_SIZE) {
-    return { valid: false, error: 'Ukuran video maksimal 20 MB.' }
+    return { valid: false, error: 'Ukuran video maksimal 10 MB. Wajib kompres video Anda terlebih dahulu.' }
   }
   return { valid: true, error: null }
 }
