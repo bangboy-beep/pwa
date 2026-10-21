@@ -19,15 +19,13 @@ import {
   validateVideoFile, getVideoDuration, MAX_VIDEO_DURATION,
 } from '../lib/menu/service'
 import { compressImage } from '../lib/utils/imageCompressor'
+import { useLanguage } from '../i18n/LanguageContext'
 import type { MenuCategory, MenuProduct } from '../types'
-
-function formatRupiah(price: number): string {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(price)
-}
 
 export default function MenuPage() {
   const { businessId: routeBusinessId } = useParams<{ businessId?: string }>()
   const { businesses, selectedBusiness, setSelectedBusiness, loading: businessLoading } = useBusiness()
+  const { t, formatPrice } = useLanguage()
   useAuthGuard()
 
   const currentBusiness = routeBusinessId
@@ -104,25 +102,25 @@ export default function MenuPage() {
   const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!currentBusiness || isStaff) return
-    if (!categoryName.trim()) { setCategoryFormError('Nama kategori wajib diisi.'); return }
+    if (!categoryName.trim()) { setCategoryFormError(t('adminMenu', 'categoryNameRequired')); return }
     setCategorySubmitting(true); setCategoryFormError(null)
     try {
       if (editingCategory) {
         const { data, error } = await updateCategory(editingCategory.id, currentBusiness.id, { name: categoryName, description: categoryDesc, sort_order: parseInt(categorySort) || 0, is_active: categoryActive })
-        if (!error && data) { setCategories(p => p.map(c => c.id === data.id ? data : c).sort((a, b) => a.sort_order - b.sort_order)); setIsCategoryModalOpen(false); showToast('Kategori berhasil diperbarui.') }
-        else setCategoryFormError(error?.message || 'Gagal memperbarui.')
+        if (!error && data) { setCategories(p => p.map(c => c.id === data.id ? data : c).sort((a, b) => a.sort_order - b.sort_order)); setIsCategoryModalOpen(false); showToast(t('adminMenu', 'categoryUpdated')) }
+        else setCategoryFormError(error?.message || t('common', 'error'))
       } else {
         const { data, error } = await createCategory({ business_id: currentBusiness.id, name: categoryName, description: categoryDesc, sort_order: parseInt(categorySort) || 0, is_active: categoryActive })
-        if (!error && data) { setCategories(p => [...p, data].sort((a, b) => a.sort_order - b.sort_order)); setIsCategoryModalOpen(false); showToast('Kategori berhasil dibuat.') }
-        else setCategoryFormError(error?.message || 'Gagal membuat kategori.')
+        if (!error && data) { setCategories(p => [...p, data].sort((a, b) => a.sort_order - b.sort_order)); setIsCategoryModalOpen(false); showToast(t('adminMenu', 'categoryCreated')) }
+        else setCategoryFormError(error?.message || t('common', 'error'))
       }
-    } catch (err: any) { console.error('[MenuPage] Save category error:', err); setCategoryFormError(err?.message || 'Terjadi kesalahan sistem.') }
+    } catch (err: any) { console.error('[MenuPage] Save category error:', err); setCategoryFormError(err?.message || t('common', 'systemError')) }
     finally { setCategorySubmitting(false) }
   }
 
   const handleOpenAddProduct = (defaultCatId?: string) => {
     if (isStaff) return
-    if (categories.length === 0) { showToast('Buat kategori terlebih dahulu.'); return }
+    if (categories.length === 0) { showToast(t('adminMenu', 'createCategoryFirst')); return }
     setEditingProduct(null); setProductCategoryId(defaultCatId || categories[0]?.id || '');
     setProductName(''); setProductDesc(''); setProductPrice(''); setProductSort('0'); setProductActive(true);
     setProductFormError(null); setProductImageFile(null); setProductImagePreview(null);
@@ -150,10 +148,10 @@ export default function MenuPage() {
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!currentBusiness || isStaff) return
-    if (!productName.trim()) { setProductFormError('Nama produk wajib diisi.'); return }
-    if (!productCategoryId) { setProductFormError('Kategori wajib dipilih.'); return }
+    if (!productName.trim()) { setProductFormError(t('adminMenu', 'productNameRequired')); return }
+    if (!productCategoryId) { setProductFormError(t('adminMenu', 'categoryRequired')); return }
     const parsedPrice = parseFloat(productPrice)
-    if (isNaN(parsedPrice) || parsedPrice < 0) { setProductFormError('Harga harus angka valid.'); return }
+    if (isNaN(parsedPrice) || parsedPrice < 0) { setProductFormError(t('adminMenu', 'priceNumberError')); return }
 
     setProductSubmitting(true); setProductFormError(null)
     try {
@@ -162,7 +160,7 @@ export default function MenuPage() {
         const { url, error: uploadError } = await uploadProductImage(
           currentBusiness.id, editingProduct?.id || 'temp-' + Date.now(), productImageFile
         )
-        if (uploadError) { setProductFormError(uploadError.message || 'Gagal mengunggah gambar.'); return }
+        if (uploadError) { setProductFormError(uploadError.message || t('adminMenu', 'uploadImageFailed')); return }
         imageUrl = url
       }
 
@@ -172,7 +170,7 @@ export default function MenuPage() {
         const { url, error: uploadError } = await uploadProductVideo(
           currentBusiness.id, tempId, productVideoFile
         )
-        if (uploadError) { setProductFormError(uploadError.message || 'Gagal mengunggah video.'); return }
+        if (uploadError) { setProductFormError(uploadError.message || t('adminMenu', 'uploadVideoFailed')); return }
         videoUrl = url
       }
 
@@ -185,8 +183,8 @@ export default function MenuPage() {
         if (!error && data) {
           setProducts(p => p.map(pr => pr.id === data.id ? data : pr).sort((a, b) => a.sort_order - b.sort_order))
           setIsProductModalOpen(false)
-          showToast('Produk berhasil diperbarui.')
-        } else setProductFormError(error?.message || 'Gagal memperbarui.')
+          showToast(t('adminMenu', 'productUpdated'))
+        } else setProductFormError(error?.message || t('common', 'error'))
       } else {
         const { data, error } = await createProduct({
           business_id: currentBusiness.id, category_id: productCategoryId,
@@ -197,21 +195,21 @@ export default function MenuPage() {
         if (!error && data) {
           setProducts(p => [...p, data].sort((a, b) => a.sort_order - b.sort_order))
           setIsProductModalOpen(false)
-          showToast('Produk berhasil dibuat.')
-        } else setProductFormError(error?.message || 'Gagal membuat produk.')
+          showToast(t('adminMenu', 'productCreated'))
+        } else setProductFormError(error?.message || t('common', 'error'))
       }
-    } catch (err: any) { console.error('[MenuPage] Save product error:', err); setProductFormError(err?.message || 'Terjadi kesalahan sistem.') }
+    } catch (err: any) { console.error('[MenuPage] Save product error:', err); setProductFormError(err?.message || t('common', 'systemError')) }
     finally { setProductSubmitting(false) }
   }
 
   const handleProductImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return
     if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) {
-      setProductFormError('Format gambar harus PNG, JPEG, atau WebP.')
+      setProductFormError(t('adminMenu', 'imageFormatError'))
       return
     }
     if (file.size > 10 * 1024 * 1024) {
-      setProductFormError('Ukuran gambar maksimal 10 MB.')
+      setProductFormError(t('adminMenu', 'imageSizeError'))
       return
     }
     setProductFormError(null)
@@ -245,7 +243,10 @@ export default function MenuPage() {
     const duration = await getVideoDuration(file)
     if (duration !== null && duration > (MAX_VIDEO_DURATION + 0.5)) {
       setProductFormError(
-        `Durasi video (${Math.round(duration)} detik) melebihi batas maksimal ${MAX_VIDEO_DURATION} detik. Silakan potong/trim video Anda terlebih dahulu agar hemat penyimpanan.`
+        t('adminMenu', 'videoTooLong', {
+          duration: String(Math.round(duration)),
+          max: String(MAX_VIDEO_DURATION),
+        })
       )
       if (videoInputRef.current) videoInputRef.current.value = ''
       return
@@ -272,7 +273,7 @@ export default function MenuPage() {
     try {
       if (deleteConfirm.type === 'category') {
         const { error } = await deleteCategory(deleteConfirm.id, currentBusiness.id)
-        if (!error) { setCategories(p => p.filter(c => c.id !== deleteConfirm.id)); setProducts(p => p.filter(p => p.category_id !== deleteConfirm.id)); showToast('Kategori berhasil dihapus.') }
+        if (!error) { setCategories(p => p.filter(c => c.id !== deleteConfirm.id)); setProducts(p => p.filter(p => p.category_id !== deleteConfirm.id)); showToast(t('adminMenu', 'categoryDeleted')) }
       } else {
         // Delete video from storage when deleting product
         const prod = products.find(p => p.id === deleteConfirm.id)
@@ -280,14 +281,14 @@ export default function MenuPage() {
           await deleteProductVideo(currentBusiness.id, deleteConfirm.id).catch(() => {})
         }
         const { error } = await deleteProduct(deleteConfirm.id, currentBusiness.id)
-        if (!error) { setProducts(p => p.filter(p => p.id !== deleteConfirm.id)); showToast('Produk berhasil dihapus.') }
+        if (!error) { setProducts(p => p.filter(p => p.id !== deleteConfirm.id)); showToast(t('adminMenu', 'productDeleted')) }
       }
     } catch (err: any) { console.error('[MenuPage] Delete error:', err) }
     finally { setDeleting(false); setDeleteConfirm(null) }
   }
 
   if (businessLoading || loadingMenu) return <Loading />
-  if (!currentBusiness) return <div className="p-12 text-center text-stone-500">Bisnis tidak ditemukan</div>
+  if (!currentBusiness) return <div className="p-12 text-center text-stone-500">{t('adminDashboard', 'noBusinessTitle')}</div>
 
   const searchedProducts = products.filter(p => searchQuery.trim() === '' || p.name.toLowerCase().includes(searchQuery.toLowerCase()) || (p.description?.toLowerCase().includes(searchQuery.toLowerCase())))
   const filteredCats = selectedCategoryId === 'all' ? categories : categories.filter(c => c.id === selectedCategoryId)
@@ -309,7 +310,7 @@ export default function MenuPage() {
               ? 'bg-primary-100 border-primary-200 text-primary'
               : 'bg-white border-stone-200 text-stone-600 active:bg-stone-50'
           )}>
-          Semua ({products.length})
+          {t('common', 'all')} ({products.length})
         </button>
         {categories.map(cat => {
           const count = products.filter(p => p.category_id === cat.id).length
@@ -335,7 +336,7 @@ export default function MenuPage() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
         <input
           type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Cari menu..."
+          placeholder={t('adminMenu', 'searchPlaceholder')}
           className="w-full h-12 pl-11 pr-11 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-stone-400"
         />
         {searchQuery && (
@@ -351,14 +352,14 @@ export default function MenuPage() {
           <div className="w-16 h-16 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4">
             <UtensilsCrossed className="w-8 h-8 text-primary" />
           </div>
-          <h3 className="text-[15px] font-bold text-stone-900">Belum ada kategori</h3>
-          <p className="text-xs text-stone-500 mt-1 leading-relaxed px-4">Buat kategori untuk mulai menambahkan produk ke menu Anda.</p>
+          <h3 className="text-[15px] font-bold text-stone-900">{t('adminMenu', 'noCategories')}</h3>
+          <p className="text-xs text-stone-500 mt-1 leading-relaxed px-4">{t('adminMenu', 'createCategoryFirst')}</p>
           {!isStaff && <button onClick={handleOpenAddCategory} className="mt-6 w-full h-11 rounded-xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm">
-            <Plus className="w-5 h-5" /> Tambah Kategori
+            <Plus className="w-5 h-5" /> {t('adminMenu', 'addCategory')}
           </button>}
         </div>
       ) : filteredCats.length === 0 ? (
-        <div className="rounded-2xl border border-stone-200 p-12 text-center text-stone-500 text-sm bg-white shadow-sm font-medium">Kategori tidak ditemukan.</div>
+        <div className="rounded-2xl border border-stone-200 p-12 text-center text-stone-500 text-sm bg-white shadow-sm font-medium">{t('adminMenu', 'categoryNotFound')}</div>
       ) : (
         <div className="space-y-6">
           {filteredCats.map(category => {
@@ -369,15 +370,15 @@ export default function MenuPage() {
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <h2 className="font-bold text-stone-900 text-[16px]">{category.name}</h2>
-                    {!category.is_active && <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 font-bold uppercase tracking-wider">Nonaktif</span>}
+                    {!category.is_active && <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 font-bold uppercase tracking-wider">{t('common', 'inactive')}</span>}
                     <span className="text-[11px] text-stone-400 font-bold">{catProducts.length}</span>
                   </div>
                   {!isStaff && (
                     <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => handleOpenEditCategory(category)} className="p-2 rounded-full text-stone-400 active:bg-stone-100 transition-colors" title="Edit kategori">
+                      <button onClick={() => handleOpenEditCategory(category)} className="p-2 rounded-full text-stone-400 active:bg-stone-100 transition-colors" title={t('adminMenu', 'editCategory')}>
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => setDeleteConfirm({ type: 'category', id: category.id, name: category.name })} className="p-2 rounded-full text-stone-400 active:bg-red-50 active:text-red-500 transition-colors" title="Hapus kategori">
+                      <button onClick={() => setDeleteConfirm({ type: 'category', id: category.id, name: category.name })} className="p-2 rounded-full text-stone-400 active:bg-red-50 active:text-red-500 transition-colors" title={t('adminMenu', 'deleteCategory')}>
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -387,10 +388,10 @@ export default function MenuPage() {
                 <div className="space-y-3">
                   {catProducts.length === 0 ? (
                     <div className="py-8 text-center text-stone-400 text-xs border border-dashed border-stone-200 rounded-2xl bg-stone-50/50">
-                      {searchQuery ? 'Tidak ada produk yang cocok.' : 'Belum ada produk di kategori ini.'}
+                      {searchQuery ? t('adminMenu', 'noMatchingProducts') : t('adminMenu', 'emptyCategoryMsg')}
                       {!isStaff && !searchQuery && (
                         <button onClick={() => handleOpenAddProduct(category.id)} className="block mx-auto mt-2 font-bold text-primary hover:underline">
-                          Tambah produk
+                          {t('adminMenu', 'addProduct')}
                         </button>
                       )}
                     </div>
@@ -401,9 +402,9 @@ export default function MenuPage() {
                           {/* Product media thumbnail */}
                           <div className="w-16 h-16 rounded-xl border border-stone-100 flex items-center justify-center bg-stone-50 shrink-0 overflow-hidden relative">
                             {product.video_url ? (
-<video src={product.video_url} poster={product.image_url || undefined} className="w-full h-full object-cover" muted loop playsInline preload="metadata" />
-  ) : product.image_url ? (
-  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                              <video src={product.video_url} poster={product.image_url || undefined} className="w-full h-full object-cover" muted loop playsInline preload="metadata" />
+                            ) : product.image_url ? (
+                              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                             ) : (
                               <ShoppingBag className="w-7 h-7 text-stone-300" />
                             )}
@@ -416,10 +417,10 @@ export default function MenuPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5">
                               <h3 className="font-bold text-stone-900 text-sm truncate">{product.name}</h3>
-                              {!product.is_active && <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-500 font-bold uppercase shrink-0">Off</span>}
+                              {!product.is_active && <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-500 font-bold uppercase shrink-0">{t('common', 'inactive')}</span>}
                             </div>
-                            <p className="text-[11px] text-stone-500 line-clamp-1 mt-0.5 font-medium">{product.description || 'Tidak ada deskripsi'}</p>
-                            <p className="text-[13px] font-bold text-primary mt-1">{formatRupiah(product.price)}</p>
+                            <p className="text-[11px] text-stone-500 line-clamp-1 mt-0.5 font-medium">{product.description || t('adminMenu', 'noDescription')}</p>
+                            <p className="text-[13px] font-bold text-primary mt-1">{formatPrice(product.price)}</p>
                           </div>
                           {!isStaff && (
                             <div className="flex items-center gap-1 shrink-0">
@@ -461,8 +462,8 @@ export default function MenuPage() {
             <div className="px-6 pt-6 pb-6">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h3 className="text-[18px] font-bold text-stone-900">{editingCategory ? 'Edit Kategori' : 'Tambah Kategori'}</h3>
-                  <p className="text-xs text-stone-500 mt-1 font-medium">Kelola kelompok menu Anda.</p>
+                  <h3 className="text-[18px] font-bold text-stone-900">{editingCategory ? t('adminMenu', 'editCategory') : t('adminMenu', 'addCategory')}</h3>
+                  <p className="text-xs text-stone-500 mt-1 font-medium">{t('adminMenu', 'manageCategoriesSubtitle')}</p>
                 </div>
                 <button onClick={() => setIsCategoryModalOpen(false)} className="p-2 -mr-2 rounded-full active:bg-stone-100 text-stone-400 transition-colors">
                   <X className="w-5 h-5" />
@@ -473,30 +474,30 @@ export default function MenuPage() {
 
               <form onSubmit={handleSaveCategory} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Nama Kategori *</label>
-                  <input type="text" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="Makanan, Minuman, dll" className="w-full h-12 px-4 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all" required />
+                  <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">{t('adminMenu', 'categoryName')} *</label>
+                  <input type="text" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder={t('adminMenu', 'categoryNamePlaceholder')} className="w-full h-12 px-4 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Deskripsi (Opsional)</label>
-                  <textarea value={categoryDesc} onChange={(e) => setCategoryDesc(e.target.value)} rows={2} placeholder="Keterangan singkat..." className="w-full px-4 py-3 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all resize-none" />
+                  <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">{t('adminMenu', 'categoryDesc')} ({t('common', 'optional')})</label>
+                  <textarea value={categoryDesc} onChange={(e) => setCategoryDesc(e.target.value)} rows={2} placeholder={t('adminMenu', 'categoryDescPlaceholder')} className="w-full px-4 py-3 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all resize-none" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Urutan</label>
+                    <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">{t('adminMenu', 'sortOrder')}</label>
                     <input type="number" value={categorySort} onChange={(e) => setCategorySort(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all" />
                   </div>
                   <div className="flex items-center pt-7">
                     <label className="flex items-center gap-3 cursor-pointer group">
                       <input type="checkbox" checked={categoryActive} onChange={(e) => setCategoryActive(e.target.checked)} className="w-5 h-5 accent-primary rounded-lg border-2 border-stone-300 transition-all" />
-                      <span className="text-sm font-bold text-stone-800">Aktif</span>
+                      <span className="text-sm font-bold text-stone-800">{t('common', 'active')}</span>
                     </label>
                   </div>
                 </div>
                 <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="flex-1 h-12 rounded-xl border border-stone-300 text-stone-600 font-bold text-[15px] active:bg-stone-50 transition-colors">Batal</button>
+                  <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="flex-1 h-12 rounded-xl border border-stone-300 text-stone-600 font-bold text-[15px] active:bg-stone-50 transition-colors">{t('common', 'cancel')}</button>
                   <button type="submit" disabled={categorySubmitting} className="flex-1 h-12 rounded-xl bg-primary text-white font-bold text-[15px] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
                     {categorySubmitting && <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>}
-                    Simpan
+                    {t('common', 'save')}
                   </button>
                 </div>
               </form>
@@ -517,7 +518,7 @@ export default function MenuPage() {
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-stone-400 px-8 text-center">
                   <ImagePlus className="w-10 h-10 mb-2 opacity-30" />
-                  <span className="text-xs font-bold uppercase tracking-wider">Upload Foto Menu</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">{t('adminMenu', 'uploadImageCard')}</span>
                 </div>
               )}
               {/* Video overlay indicator */}
@@ -525,7 +526,7 @@ export default function MenuPage() {
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                   <video src={productVideoPreview} className="w-full h-full object-cover" muted loop playsInline preload="metadata" />
                   <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/60 text-white text-xs font-bold px-3 py-1.5 rounded-full">
-                    <Video className="w-3.5 h-3.5" /> Video Menu
+                    <Video className="w-3.5 h-3.5" /> {t('adminMenu', 'uploadVideo')}
                   </div>
                 </div>
               )}
@@ -534,20 +535,20 @@ export default function MenuPage() {
               </button>
               <label className="absolute bottom-3 right-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white shadow-lg cursor-pointer text-xs font-bold text-stone-900 active:bg-stone-50 transition-all border border-stone-100">
                 <ImagePlus className="w-3.5 h-3.5 text-primary" />
-                <span>{productImagePreview || editingProduct?.image_url ? 'Ganti Foto' : 'Upload Foto'}</span>
+                <span>{productImagePreview || editingProduct?.image_url ? t('adminMenu', 'changeImage') : t('adminMenu', 'uploadImage')}</span>
                 <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleProductImageChange} />
               </label>
               <label className="absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary shadow-lg cursor-pointer text-xs font-bold text-white active:bg-primary-dark transition-all">
                 <Video className="w-3.5 h-3.5" />
-                <span>{productVideoPreview || editingProduct?.video_url ? 'Ganti Video' : 'Upload Video'}</span>
+                <span>{productVideoPreview || editingProduct?.video_url ? t('adminMenu', 'changeVideo') : t('adminMenu', 'uploadVideo')}</span>
                 <input ref={videoInputRef} type="file" accept="video/mp4,video/webm" className="hidden" onChange={handleProductVideoChange} />
               </label>
             </div>
 
             <div className="px-6 pt-5 pb-6">
               <div className="mb-6">
-                <h3 className="text-[18px] font-bold text-stone-900">{editingProduct ? 'Edit Menu' : 'Tambah Menu'}</h3>
-                <p className="text-xs text-stone-500 mt-1 font-medium leading-relaxed">Atur detail menu, harga, dan ketersediaan untuk pelanggan.</p>
+                <h3 className="text-[18px] font-bold text-stone-900">{editingProduct ? t('adminMenu', 'editProduct') : t('adminMenu', 'addProduct')}</h3>
+                <p className="text-xs text-stone-500 mt-1 font-medium leading-relaxed">{t('adminMenu', 'manageProductsSubtitle')}</p>
               </div>
 
               {productFormError && <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-100 text-red-700 text-xs flex items-center gap-2 font-bold"><AlertCircle className="w-4 h-4 shrink-0" /><span>{productFormError}</span></div>}
@@ -568,23 +569,23 @@ export default function MenuPage() {
                   </div>
                   <div className="p-3 flex items-center justify-between">
                     <span className="text-xs text-stone-500 font-medium flex items-center gap-1.5">
-                      <Video className="w-3.5 h-3.5 text-primary" /> Video Menu
+                      <Video className="w-3.5 h-3.5 text-primary" /> {t('adminMenu', 'uploadVideo')}
                     </span>
                     <button
                       type="button"
                       onClick={handleDeleteVideo}
                       className="text-xs text-red-500 font-bold hover:text-red-700 active:bg-red-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
                     >
-                      <VideoOff className="w-3.5 h-3.5" /> Hapus Video
+                      <VideoOff className="w-3.5 h-3.5" /> {t('adminMenu', 'removeVideo')}
                     </button>
                   </div>
-                  <p className="px-3 pb-3 text-[10px] text-stone-400">MP4 / WebM · Maks 10 MB · Durasi Maks 8 Detik (Wajib Kompres)</p>
+                  <p className="px-3 pb-3 text-[10px] text-stone-400">{t('adminMenu', 'videoSpecs')}</p>
                 </div>
               )}
 
               <form onSubmit={handleSaveProduct} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Kategori *</label>
+                  <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">{t('adminMenu', 'productCategory')} *</label>
                   <div className="relative">
                     <select value={productCategoryId} onChange={(e) => setProductCategoryId(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none" required>
                       {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
@@ -595,32 +596,32 @@ export default function MenuPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Nama Produk *</label>
-                  <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Contoh: Nasi Goreng Spesial" className="w-full h-12 px-4 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all" required />
+                  <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">{t('adminMenu', 'productName')} *</label>
+                  <input type="text" value={productName} onChange={(e) => setProductName(e.target.value)} placeholder={t('adminMenu', 'productNamePlaceholder')} className="w-full h-12 px-4 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all" required />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Deskripsi (Opsional)</label>
-                  <textarea value={productDesc} onChange={(e) => setProductDesc(e.target.value)} rows={2} className="w-full px-4 py-3 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all resize-none" placeholder="Deskripsi singkat menu..." />
+                  <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">{t('adminMenu', 'productDesc')} ({t('common', 'optional')})</label>
+                  <textarea value={productDesc} onChange={(e) => setProductDesc(e.target.value)} rows={2} className="w-full px-4 py-3 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all resize-none" placeholder={t('adminMenu', 'productDescPlaceholder')} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Harga (Rp) *</label>
+                    <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">{t('adminMenu', 'priceLabel')} *</label>
                     <input type="number" min="0" step="any" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} placeholder="25000" className="w-full h-12 px-4 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all" required />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">Urutan</label>
+                    <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">{t('adminMenu', 'sortOrder')}</label>
                     <input type="number" value={productSort} onChange={(e) => setProductSort(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-outline text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-transparent transition-all" />
                   </div>
                 </div>
                 <div className="flex items-center gap-3 py-1 cursor-pointer group" onClick={() => setProductActive(!productActive)}>
                   <input type="checkbox" checked={productActive} onChange={() => setProductActive(!productActive)} className="w-5 h-5 accent-primary rounded-lg border-2 border-stone-300 transition-all" />
-                  <span className="text-sm font-bold text-stone-800">Menu Tersedia</span>
+                  <span className="text-sm font-bold text-stone-800">{t('adminMenu', 'availableStatus')}</span>
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setIsProductModalOpen(false)} className="flex-1 h-12 rounded-xl border border-stone-300 text-stone-600 font-bold text-[15px] active:bg-stone-50 transition-colors">Batal</button>
+                  <button type="button" onClick={() => setIsProductModalOpen(false)} className="flex-1 h-12 rounded-xl border border-stone-300 text-stone-600 font-bold text-[15px] active:bg-stone-50 transition-colors">{t('common', 'cancel')}</button>
                   <button type="submit" disabled={productSubmitting} className="flex-1 h-12 rounded-xl bg-primary text-white font-bold text-[15px] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
                     {productSubmitting && <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>}
-                    Simpan
+                    {t('common', 'save')}
                   </button>
                 </div>
               </form>
@@ -637,17 +638,19 @@ export default function MenuPage() {
             <div className="w-16 h-16 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-8 h-8" />
             </div>
-            <h3 className="text-[17px] font-bold text-stone-900 mb-2">Hapus {deleteConfirm.type === 'category' ? 'Kategori' : 'Produk'}?</h3>
+            <h3 className="text-[17px] font-bold text-stone-900 mb-2">
+              {deleteConfirm.type === 'category' ? t('adminMenu', 'deleteCategoryConfirmTitle') : t('adminMenu', 'deleteProductConfirmTitle')}
+            </h3>
             <p className="text-sm text-stone-500 mb-6 leading-relaxed font-medium">
               {deleteConfirm.type === 'category'
-                ? `Menghapus "${deleteConfirm.name}" juga akan menghapus semua produk di dalamnya.`
-                : `Anda akan menghapus "${deleteConfirm.name}" dari menu.`}
+                ? t('adminMenu', 'deleteCategoryDesc', { name: deleteConfirm.name })
+                : t('adminMenu', 'deleteProductDesc', { name: deleteConfirm.name })}
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteConfirm(null)} className="flex-1 h-12 rounded-xl border border-stone-200 text-stone-700 font-bold text-sm active:bg-stone-50 transition-colors">Batal</button>
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 h-12 rounded-xl border border-stone-200 text-stone-700 font-bold text-sm active:bg-stone-50 transition-colors">{t('common', 'cancel')}</button>
               <button onClick={handleDeleteConfirm} disabled={deleting} className="flex-1 h-12 rounded-xl bg-red-500 text-white font-bold text-sm active:bg-red-600 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
                 {deleting && <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>}
-                Hapus
+                {t('common', 'delete')}
               </button>
             </div>
           </div>

@@ -2,31 +2,34 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Menu, ExternalLink, ArrowLeft } from 'lucide-react';
 import { useBusiness } from '../../providers/BusinessProvider';
 import { useState } from 'react';
+import { useLanguage } from '../../i18n/LanguageContext';
+import { LanguageToggle } from '../ui/LanguageToggle';
 
 export function AdminHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const { selectedBusiness } = useBusiness();
   const location = useLocation();
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
+  const { t } = useLanguage();
 
   const isSubpage = !['/admin', '/admin/qr'].includes(location.pathname);
   const pageTitle = isSubpage
-    ? location.pathname === '/admin/menu' ? 'Menu'
-    : location.pathname === '/admin/wifi' ? 'WiFi'
-    : location.pathname === '/admin/review' ? 'Review'
-    : location.pathname === '/admin/qr/print' ? 'Print QR'
-    : 'QR Code'
-    : 'Dashboard';
+    ? location.pathname === '/admin/menu' ? t('nav', 'menu')
+    : location.pathname === '/admin/wifi' ? t('nav', 'wifi')
+    : location.pathname === '/admin/review' ? t('nav', 'review')
+    : location.pathname === '/admin/qr/print' ? t('nav', 'printQr')
+    : t('nav', 'qrCode')
+    : t('nav', 'dashboard');
 
   return (
     <header className="h-14 bg-white border-b border-stone-200 sticky top-0 z-30 flex items-center justify-between px-4 shadow-[0_1px_0_rgba(231,229,228,0.8)]">
       <div className="flex items-center gap-2">
         {isSubpage ? (
-          <button onClick={() => navigate(-1)} className="p-2 -ml-1 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors" aria-label="Kembali">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-1 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors" aria-label={t('common', 'back')}>
             <ArrowLeft className="w-5 h-5" />
           </button>
         ) : (
-          <button onClick={onMenuClick} className="p-2 -ml-1 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-100 lg:hidden transition-colors" aria-label="Buka menu">
+          <button onClick={onMenuClick} className="p-2 -ml-1 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-100 lg:hidden transition-colors" aria-label="Menu">
             <Menu className="w-5 h-5" />
           </button>
         )}
@@ -39,38 +42,42 @@ export function AdminHeader({ onMenuClick }: { onMenuClick: () => void }) {
         </div>
       </div>
 
-      {/* Dropdown for public link */}
-      <div className="relative">
-        <button
-          onClick={() => setShowMenu(!showMenu)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-800 text-xs font-semibold border border-primary-200 transition-colors"
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Publik</span>
-        </button>
-        {showMenu && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-stone-200 z-20 py-1">
-              {selectedBusiness && (
-                <>
-                  <a href={`/q/${selectedBusiness.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
-                    <ExternalLink className="w-3.5 h-3.5 text-primary-600" /> Customer Hub
-                  </a>
-                  <a href={`/m/${selectedBusiness.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
-                    <ExternalLink className="w-3.5 h-3.5 text-primary-600" /> Menu Publik
-                  </a>
-                  <a href={`/w/${selectedBusiness.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
-                    <ExternalLink className="w-3.5 h-3.5 text-primary-600" /> WiFi Publik
-                  </a>
-                  <a href={`/r/${selectedBusiness.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
-                    <ExternalLink className="w-3.5 h-3.5 text-primary-600" /> Review Publik
-                  </a>
-                </>
-              )}
-            </div>
-          </>
-        )}
+      <div className="flex items-center gap-2">
+        <LanguageToggle variant="minimal" />
+
+        {/* Dropdown for public link */}
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-800 text-xs font-semibold border border-primary-200 transition-colors"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{t('nav', 'publicHub')}</span>
+          </button>
+          {showMenu && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-stone-200 z-20 py-1">
+                {selectedBusiness && (
+                  <>
+                    <a href={`/q/${selectedBusiness.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
+                      <ExternalLink className="w-3.5 h-3.5 text-primary-600" /> {t('nav', 'publicHub')}
+                    </a>
+                    <a href={`/m/${selectedBusiness.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
+                      <ExternalLink className="w-3.5 h-3.5 text-primary-600" /> {t('nav', 'publicMenu')}
+                    </a>
+                    <a href={`/w/${selectedBusiness.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
+                      <ExternalLink className="w-3.5 h-3.5 text-primary-600" /> {t('nav', 'publicWifi')}
+                    </a>
+                    <a href={`/r/${selectedBusiness.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-stone-700 hover:bg-stone-50">
+                      <ExternalLink className="w-3.5 h-3.5 text-primary-600" /> {t('nav', 'publicReview')}
+                    </a>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

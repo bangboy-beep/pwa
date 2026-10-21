@@ -9,6 +9,8 @@ import { Loading } from '../components/ui/Loading'
 import { Utensils, Wifi, Star, AlertCircle, ChevronRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { PublicBusiness } from '../lib/business/service'
+import { useLanguage } from '../i18n/LanguageContext'
+import { LanguageToggle } from '../components/ui/LanguageToggle'
 
 interface HubAction {
   title: string
@@ -36,6 +38,7 @@ function ActionContent({ action }: { action: HubAction }) {
 
 export default function PublicCustomerHubPage() {
   const { slug } = useParams<{ slug: string }>()
+  const { t } = useLanguage()
   const [business, setBusiness] = useState<PublicBusiness | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -44,14 +47,14 @@ export default function PublicCustomerHubPage() {
   useEffect(() => {
     async function loadData() {
       if (!slug) {
-        setError('Slug bisnis tidak valid')
+        setError(t('publicHub', 'invalidSlug'))
         setLoading(false)
         return
       }
       try {
         const { data, error: bizError } = await getPublicBusinessBySlug(slug)
         if (bizError || !data || data.status !== 'active') {
-          setError('Bisnis tidak ditemukan atau tidak tersedia')
+          setError(t('publicHub', 'notFoundDesc'))
           setLoading(false)
           return
         }
@@ -61,13 +64,13 @@ export default function PublicCustomerHubPage() {
           setReviewUrl(revData.google_review_url)
         }
       } catch {
-        setError('Terjadi kesalahan saat memuat data')
+        setError(t('publicHub', 'loadError'))
       } finally {
         setLoading(false)
       }
     }
     loadData()
-  }, [slug])
+  }, [slug, t])
 
   if (loading) {
     return (
@@ -80,23 +83,50 @@ export default function PublicCustomerHubPage() {
   if (error || !business) {
     return (
       <div className="min-h-[100dvh] bg-surface flex items-center justify-center p-5">
-        <div className="bg-white p-6 rounded-[28px] max-w-sm w-full text-center">
-          <div className="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <div className="bg-white p-6 rounded-[28px] max-w-sm w-full text-center relative">
+          <div className="absolute top-4 right-4">
+            <LanguageToggle variant="button" />
+          </div>
+          <div className="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 mt-2">
             <AlertCircle className="w-7 h-7" />
           </div>
-          <h1 className="text-lg font-extrabold text-ink mb-1">Halaman Tidak Ditemukan</h1>
-          <p className="text-ink-muted text-sm leading-relaxed">{error || 'Bisnis yang Anda cari tidak tersedia.'}</p>
+          <h1 className="text-lg font-extrabold text-ink mb-1">{t('publicHub', 'notFoundTitle')}</h1>
+          <p className="text-ink-muted text-sm leading-relaxed">{error || t('publicHub', 'notFoundDesc')}</p>
         </div>
       </div>
     )
   }
 
   const actions: HubAction[] = [
-    { title: 'Lihat Menu', desc: 'Daftar makanan & minuman', icon: Utensils, tone: 'bg-primary-100 text-primary-800', to: `/m/${slug}` },
-    { title: 'Sambung WiFi', desc: 'Akses internet gratis', icon: Wifi, tone: 'bg-sky-100 text-sky-800', to: `/w/${slug}` },
+    {
+      title: t('publicHub', 'viewMenu'),
+      desc: t('publicHub', 'viewMenuDesc'),
+      icon: Utensils,
+      tone: 'bg-primary-100 text-primary-800',
+      to: `/m/${slug}`,
+    },
+    {
+      title: t('publicHub', 'connectWifi'),
+      desc: t('publicHub', 'connectWifiDesc'),
+      icon: Wifi,
+      tone: 'bg-sky-100 text-sky-800',
+      to: `/w/${slug}`,
+    },
     reviewUrl
-      ? { title: 'Beri Ulasan', desc: 'Bagikan pengalaman Anda di Google', icon: Star, tone: 'bg-amber-100 text-amber-800', href: reviewUrl }
-      : { title: 'Beri Ulasan', desc: 'Bagikan pengalaman Anda di Google', icon: Star, tone: 'bg-amber-100 text-amber-800', to: `/r/${slug}` },
+      ? {
+          title: t('publicHub', 'leaveReview'),
+          desc: t('publicHub', 'leaveReviewDesc'),
+          icon: Star,
+          tone: 'bg-amber-100 text-amber-800',
+          href: reviewUrl,
+        }
+      : {
+          title: t('publicHub', 'leaveReview'),
+          desc: t('publicHub', 'leaveReviewDesc'),
+          icon: Star,
+          tone: 'bg-amber-100 text-amber-800',
+          to: `/r/${slug}`,
+        },
   ]
 
   const itemClass =
@@ -113,6 +143,11 @@ export default function PublicCustomerHubPage() {
             <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-800" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+
+          {/* Floating Language Toggle */}
+          <div className="absolute top-4 right-4 z-10">
+            <LanguageToggle variant="button" className="bg-white/90 backdrop-blur-md shadow-md border-0" />
+          </div>
         </div>
 
         {/* Profile sheet */}
@@ -121,9 +156,9 @@ export default function PublicCustomerHubPage() {
             {business.logo_url ? (
               <img
                 src={business.logo_url}
-  alt={business.name}
-  decoding="async"
-  className="w-[88px] h-[88px] rounded-[28px] object-cover border-4 border-surface shadow-lg bg-white"
+                alt={business.name}
+                decoding="async"
+                className="w-[88px] h-[88px] rounded-[28px] object-cover border-4 border-surface shadow-lg bg-white"
               />
             ) : (
               <div className="w-[88px] h-[88px] rounded-[28px] bg-ink text-white flex items-center justify-center border-4 border-surface shadow-lg">
@@ -138,11 +173,11 @@ export default function PublicCustomerHubPage() {
             )}
             <span className="mt-3 inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
-              Buka untuk Anda
+              {t('publicHub', 'openForYou')}
             </span>
           </div>
 
-          <h2 className="mt-7 mb-3 px-1 text-sm font-bold text-ink">Apa yang Anda butuhkan?</h2>
+          <h2 className="mt-7 mb-3 px-1 text-sm font-bold text-ink">{t('publicHub', 'whatDoYouNeed')}</h2>
           <nav className="space-y-3" aria-label="Layanan">
             {actions.map((action) =>
               action.href ? (
@@ -158,7 +193,7 @@ export default function PublicCustomerHubPage() {
           </nav>
 
           <p className="py-8 text-center text-[11px] font-semibold text-ink-muted/70">
-            Powered by <span className="text-ink-muted">SmartQR</span>
+            {t('common', 'poweredBy')} <span className="text-ink-muted">SmartQR</span>
           </p>
         </div>
       </div>

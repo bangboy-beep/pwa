@@ -1,9 +1,11 @@
-﻿import { useState } from "react"
+import { useState } from "react"
 import { Mail, Lock, ArrowRight, QrCode, AlertCircle, CheckCircle2, ShieldCheck } from "lucide-react"
 import { supabase } from "../../lib/supabase/client"
 import { isSuperAdmin } from "../../lib/config/admin"
 import { Input } from "../../components/ui/Input"
 import { Button } from "../../components/ui/Button"
+import { useLanguage } from "../../i18n/LanguageContext"
+import { LanguageToggle } from "../../components/ui/LanguageToggle"
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -12,6 +14,7 @@ export default function SuperAdminLoginPage() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null)
+  const { t } = useLanguage()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,11 +26,11 @@ export default function SuperAdminLoginPage() {
       const superAdmin = await isSuperAdmin(data.user?.email)
       if (!superAdmin) {
         await supabase.auth.signOut()
-        throw new Error("Akun ini tidak memiliki akses Super Admin.")
+        throw new Error(t('superAdminLogin', 'noSuperAccess'))
       }
       window.location.href = "/super"
     } catch (err: unknown) {
-      const text = err instanceof Error ? err.message : "Terjadi kesalahan. Coba lagi."
+      const text = err instanceof Error ? err.message : t('common', 'systemError')
       setMessage({ type: "error", text })
     } finally {
       setLoading(false)
@@ -38,13 +41,17 @@ export default function SuperAdminLoginPage() {
     <main className="min-h-[100dvh] bg-primary flex flex-col">
       {/* Hero */}
       <section className="relative flex-1 min-h-[220px] flex flex-col items-center justify-center px-6 pt-10 pb-14 text-center overflow-hidden">
+        <div className="absolute top-4 right-4 z-20">
+          <LanguageToggle variant="button" className="bg-white/90 shadow-md" />
+        </div>
+
         <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-white/10" aria-hidden="true" />
         <div className="absolute top-24 -left-20 w-48 h-48 rounded-full bg-white/10" aria-hidden="true" />
         <div className="relative w-16 h-16 rounded-[22px] bg-white flex items-center justify-center shadow-xl shadow-primary-900/30">
           <QrCode className="w-8 h-8 text-primary" />
         </div>
         <h1 className="relative mt-4 text-2xl font-extrabold text-white tracking-tight">SmartQR</h1>
-        <p className="relative mt-1 text-sm text-white/80 font-medium">Super Admin Panel</p>
+        <p className="relative mt-1 text-sm text-white/80 font-medium">{t('superAdminLogin', 'title')}</p>
       </section>
 
       {/* Sheet */}
@@ -57,8 +64,8 @@ export default function SuperAdminLoginPage() {
             <ShieldCheck className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-ink tracking-tight">Login Super Admin</h2>
-            <p className="text-xs text-ink-muted mt-0.5">Masuk untuk mengelola semua bisnis.</p>
+            <h2 className="text-xl font-extrabold text-ink tracking-tight">{t('superAdminLogin', 'title')}</h2>
+            <p className="text-xs text-ink-muted mt-0.5">{t('superAdminLogin', 'subtitle')}</p>
           </div>
         </div>
 
@@ -66,7 +73,7 @@ export default function SuperAdminLoginPage() {
           <div className="relative">
             <Mail className="absolute left-4 top-[38px] w-5 h-5 text-ink-muted pointer-events-none z-10" aria-hidden="true" />
             <Input
-              label="Email"
+              label={t('superAdminLogin', 'emailLabel')}
               type="email"
               required
               autoComplete="email"
@@ -79,14 +86,14 @@ export default function SuperAdminLoginPage() {
           <div className="relative">
             <Lock className="absolute left-4 top-[38px] w-5 h-5 text-ink-muted pointer-events-none z-10" aria-hidden="true" />
             <Input
-              label="Password"
+              label={t('superAdminLogin', 'passwordLabel')}
               type="password"
               required
               minLength={6}
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password akun"
+              placeholder="••••••••"
               className="pl-12"
             />
           </div>
@@ -108,16 +115,16 @@ export default function SuperAdminLoginPage() {
           )}
 
           <Button type="submit" size="lg" isLoading={loading} className="w-full">
-            {loading ? "Memproses..." : "Masuk Super Admin"}
+            {loading ? t('common', 'processing') : t('superAdminLogin', 'loginBtn')}
             {!loading && <ArrowRight className="w-5 h-5" />}
           </Button>
         </form>
 
         <div className="mt-5 pt-4 border-t border-outline text-center">
           <p className="text-xs text-ink-muted">
-            Pemilik toko?{" "}
+            {t('superAdminLogin', 'ownerLinkText')}{" "}
             <a href="/admin/login" className="text-primary font-semibold hover:underline">
-              Login dengan PIN Bisnis →
+              {t('superAdminLogin', 'ownerLink')}
             </a>
           </p>
         </div>

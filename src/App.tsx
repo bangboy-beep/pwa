@@ -3,6 +3,7 @@
 
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { LanguageProvider } from './i18n/LanguageContext'
 import { AuthProvider } from './providers/AuthProvider'
 import { BusinessProvider } from './providers/BusinessProvider'
 import { checkAndCleanupWeeklyCache } from './lib/utils/cacheManager'
@@ -35,8 +36,9 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <BusinessProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <BusinessProvider>
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Navigate to="/super" replace />} />
@@ -75,8 +77,10 @@ export default function App() {
             {/* 404 */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
-        </BusinessProvider>
-      </AuthProvider>
+          </BusinessProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </BrowserRouter>
   )
 }
+

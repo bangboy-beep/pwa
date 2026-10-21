@@ -10,14 +10,14 @@ import { getReviewSettings, updateReviewSettings } from '../lib/review/service'
 import { Loading } from '../components/ui/Loading'
 import { useToast } from '../hooks/useToast'
 import { cn } from '../components/ui/utils'
-import {
-  Star,
-} from 'lucide-react'
+import { Star } from 'lucide-react'
+import { useLanguage } from '../i18n/LanguageContext'
 
 export default function ReviewPage() {
   const { businessId: routeBusinessId } = useParams<{ businessId?: string }>()
   const { businesses, selectedBusiness } = useBusiness()
   const { showToast } = useToast()
+  const { t } = useLanguage()
   useAuthGuard()
 
   const currentBusiness = routeBusinessId
@@ -48,17 +48,16 @@ export default function ReviewPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!currentBusiness || isReadOnly) return
-    if (!googleReviewUrl.trim()) { showToast('error', 'URL Google Review wajib diisi'); return }
+    if (!googleReviewUrl.trim()) { showToast('error', t('adminReview', 'urlRequired')); return }
     setSaving(true)
     const { error } = await updateReviewSettings(currentBusiness.id, { google_review_url: googleReviewUrl.trim(), is_active: isActive })
     setSaving(false)
-    if (error) showToast('error', error.message || 'Gagal menyimpan pengaturan ulasan')
-    else showToast('success', 'Pengaturan Google Review berhasil disimpan!')
+    if (error) showToast('error', error.message || t('common', 'error'))
+    else showToast('success', t('adminReview', 'saveSuccess'))
   }
 
-
   if (loading) return <Loading />
-  if (!currentBusiness) return <div className="p-12 text-center text-stone-500">Bisnis tidak ditemukan</div>
+  if (!currentBusiness) return <div className="p-12 text-center text-stone-500">{t('publicReview', 'notFoundDesc')}</div>
 
   return (
     <div className="w-full space-y-5 pb-4">
@@ -84,13 +83,13 @@ export default function ReviewPage() {
               "font-bold text-[14px] leading-tight truncate",
               isActive ? "text-stone-900" : "text-stone-500"
             )}>
-              Google Review
+              {t('adminReview', 'title')}
             </p>
             <p className={cn(
               "text-[10px] font-bold uppercase tracking-wider",
               isActive ? "text-primary" : "text-stone-400"
             )}>
-              {isActive ? 'Link Aktif' : 'Link Nonaktif'}
+              {isActive ? t('adminReview', 'statusActive') : t('adminReview', 'statusInactive')}
             </p>
           </div>
         </div>
@@ -121,11 +120,9 @@ export default function ReviewPage() {
             disabled={isReadOnly}
             className="w-full h-[48px] min-w-0 max-w-full box-border pl-4 pr-14 rounded-lg border border-outline text-sm bg-white text-stone-900 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-60"
           />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 bg-white pl-1">
-          </div>
         </div>
         <p className="text-[10px] text-stone-400 ml-1 leading-relaxed">
-          Pelanggan akan diarahkan ke link ini setelah scan QR atau klik tombol ulasan.
+          {t('adminReview', 'urlHelper')}
         </p>
 
         {/* Save button — directly below, no card */}
@@ -142,11 +139,11 @@ export default function ReviewPage() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
               )}
-              Simpan Link
+              {t('adminReview', 'saveBtn')}
             </button>
           ) : (
             <p className="text-xs text-stone-400 text-center font-medium">
-              Hanya owner atau admin yang dapat mengubah pengaturan.
+              Admin view mode only.
             </p>
           )}
         </div>
@@ -159,9 +156,9 @@ export default function ReviewPage() {
             💡
           </div>
           <div className="min-w-0 flex-1">
-            <h4 className="text-[15px] font-bold text-stone-900 mb-1">Tips untuk Anda</h4>
+            <h4 className="text-[15px] font-bold text-stone-900 mb-1">{t('adminReview', 'previewTitle')}</h4>
             <p className="text-xs text-stone-600 leading-relaxed font-medium">
-              Bagikan link ini melalui WhatsApp atau media sosial agar pelanggan lebih mudah memberikan ulasan positif untuk bisnis Anda.
+              {t('adminReview', 'previewDesc')}
             </p>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { NavLink, useParams } from 'react-router-dom';
 import { Home, Utensils, Wifi, Star, QrCode } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface NavItem {
   name: string;
@@ -51,30 +52,33 @@ function NavBar({ items, className = '' }: { items: NavItem[]; className?: strin
 
 export function CustomerBottomNav() {
   const { slug } = useParams<{ slug: string }>();
+  const { t } = useLanguage();
   if (!slug) return null;
 
   return (
     <NavBar
       items={[
-        { name: 'Beranda', path: `/q/${slug}`, icon: Home },
-        { name: 'Menu', path: `/m/${slug}`, icon: Utensils },
-        { name: 'WiFi', path: `/w/${slug}`, icon: Wifi },
-        { name: 'Ulasan', path: `/r/${slug}`, icon: Star },
+        { name: t('nav', 'dashboard'), path: `/q/${slug}`, icon: Home },
+        { name: t('nav', 'menu'), path: `/m/${slug}`, icon: Utensils },
+        { name: t('nav', 'wifi'), path: `/w/${slug}`, icon: Wifi },
+        { name: t('nav', 'review'), path: `/r/${slug}`, icon: Star },
       ]}
     />
   );
 }
 
 export function AdminBottomNav() {
+  const { t } = useLanguage();
+
   return (
     <NavBar
       className="lg:hidden"
       items={[
-        { name: 'Beranda', path: '/admin', icon: Home, end: true },
-        { name: 'Menu', path: '/admin/menu', icon: Utensils },
-        { name: 'WiFi', path: '/admin/wifi', icon: Wifi },
-        { name: 'Review', path: '/admin/review', icon: Star },
-        { name: 'QR', path: '/admin/qr', icon: QrCode },
+        { name: t('nav', 'dashboard'), path: '/admin', icon: Home, end: true },
+        { name: t('nav', 'menu'), path: '/admin/menu', icon: Utensils },
+        { name: t('nav', 'wifi'), path: '/admin/wifi', icon: Wifi },
+        { name: t('nav', 'review'), path: '/admin/review', icon: Star },
+        { name: t('nav', 'qrCode'), path: '/admin/qr', icon: QrCode },
       ]}
     />
   );

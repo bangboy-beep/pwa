@@ -22,29 +22,14 @@ import { useBusiness } from '../../providers/BusinessProvider';
 import { AdminBottomNav } from '../ui/BottomNav';
 import { BusinessTypeIcon, getBusinessTypeMeta } from '../ui/BusinessTypeIcon';
 import { cn } from '../ui/utils';
-
-const NAV_ITEMS = [
-  { name: 'Beranda', path: '/admin', icon: Home },
-  { name: 'Kelola Menu', path: '/admin/menu', icon: Utensils },
-  { name: 'Akses WiFi', path: '/admin/wifi', icon: Wifi },
-  { name: 'Google Review', path: '/admin/review', icon: Star },
-  { name: 'QR Code', path: '/admin/qr', icon: QrCode },
-  { name: 'Cetak QR', path: '/admin/qr/print', icon: Printer },
-];
-
-const PAGE_TITLES: Record<string, string> = {
-  '/admin/menu': 'Kelola Menu',
-  '/admin/wifi': 'Akses WiFi',
-  '/admin/review': 'Google Review',
-  '/admin/qr': 'QR Code',
-  '/admin/qr/print': 'Cetak QR',
-  '/onboarding': 'Buat Bisnis',
-};
+import { useLanguage } from '../../i18n/LanguageContext';
+import { LanguageToggle } from '../ui/LanguageToggle';
 
 function DrawerContent({ onNavigate }: { onNavigate?: () => void }) {
   const navigate = useNavigate();
   const { user, signOut } = useAuthContext();
   const { businesses, selectedBusiness } = useBusiness();
+  const { t, language } = useLanguage();
   const currentBusiness = selectedBusiness || businesses[0] || null;
 
   const handleLogout = async () => {
@@ -52,21 +37,33 @@ function DrawerContent({ onNavigate }: { onNavigate?: () => void }) {
     navigate('/admin/login');
   };
 
+  const navItems = [
+    { name: t('nav', 'dashboard'), path: '/admin', icon: Home },
+    { name: t('nav', 'menu'), path: '/admin/menu', icon: Utensils },
+    { name: t('nav', 'wifi'), path: '/admin/wifi', icon: Wifi },
+    { name: t('nav', 'review'), path: '/admin/review', icon: Star },
+    { name: t('nav', 'qrCode'), path: '/admin/qr', icon: QrCode },
+    { name: t('nav', 'printQr'), path: '/admin/qr/print', icon: Printer },
+  ];
+
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 px-5 h-16 shrink-0">
-        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-md shadow-primary/30">
-          <Logo className="w-5 h-5 text-white" />
+      <div className="flex items-center justify-between px-5 h-16 shrink-0 border-b border-stone-100">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-md shadow-primary/30">
+            <Logo className="w-5 h-5 text-white" />
+          </div>
+          <div className="leading-tight">
+            <p className="font-extrabold text-ink tracking-tight">SmartQR</p>
+            <p className="text-[11px] font-medium text-ink-muted">{t('nav', 'adminPanel')}</p>
+          </div>
         </div>
-        <div className="leading-tight">
-          <p className="font-extrabold text-ink tracking-tight">SmartQR</p>
-          <p className="text-[11px] font-medium text-ink-muted">Panel Admin</p>
-        </div>
+        <LanguageToggle variant="minimal" />
       </div>
 
       {currentBusiness && (
-        <div className="mx-4 mt-2 mb-3 p-3 rounded-3xl bg-primary-50 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-white text-primary flex items-center justify-center shrink-0 overflow-hidden">
+        <div className="mx-4 mt-3 mb-3 p-3 rounded-3xl bg-primary-50 flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-white text-primary flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
             {currentBusiness.logo_url ? (
               <img src={currentBusiness.logo_url} alt="" className="w-full h-full object-cover" decoding="async" />
             ) : (
@@ -75,13 +72,13 @@ function DrawerContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-ink truncate">{currentBusiness.name}</p>
-            <p className="text-xs text-ink-muted">{getBusinessTypeMeta(currentBusiness.business_type).label}</p>
+            <p className="text-xs text-ink-muted">{getBusinessTypeMeta(currentBusiness.business_type, language).label}</p>
           </div>
         </div>
       )}
 
       <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-0.5" aria-label="Menu admin">
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -106,12 +103,12 @@ function DrawerContent({ onNavigate }: { onNavigate?: () => void }) {
             className="flex items-center gap-3.5 px-4 h-12 rounded-full text-sm font-medium text-ink-muted hover:bg-surface"
           >
             <ExternalLink className="w-5 h-5 shrink-0" />
-            <span>Lihat Halaman Publik</span>
+            <span>{t('nav', 'viewPublicPage')}</span>
           </a>
         )}
       </nav>
 
-      <div className="p-4 shrink-0">
+      <div className="p-4 shrink-0 space-y-2">
         <div className="flex items-center gap-3 p-2 pl-3 rounded-full bg-surface">
           <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shrink-0">
             {(user?.email || 'U').charAt(0).toUpperCase()}
@@ -123,7 +120,8 @@ function DrawerContent({ onNavigate }: { onNavigate?: () => void }) {
           <button
             onClick={handleLogout}
             className="w-9 h-9 rounded-full flex items-center justify-center text-ink-muted hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
-            aria-label="Keluar"
+            aria-label={t('nav', 'logout')}
+            title={t('nav', 'logout')}
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -138,10 +136,20 @@ export function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { businesses, selectedBusiness } = useBusiness();
+  const { t } = useLanguage();
+
+  const pageTitles: Record<string, string> = {
+    '/admin/menu': t('nav', 'menu'),
+    '/admin/wifi': t('nav', 'wifi'),
+    '/admin/review': t('nav', 'review'),
+    '/admin/qr': t('nav', 'qrCode'),
+    '/admin/qr/print': t('nav', 'printQr'),
+    '/onboarding': t('nav', 'onboarding'),
+  };
 
   const currentBusiness = selectedBusiness || businesses[0] || null;
   const isHome = ['/admin', '/admin/'].includes(location.pathname);
-  const title = isHome ? currentBusiness?.name || 'SmartQR' : PAGE_TITLES[location.pathname] || 'SmartQR';
+  const title = isHome ? currentBusiness?.name || 'SmartQR' : pageTitles[location.pathname] || 'SmartQR';
 
   useEffect(() => {
     const handleResize = () => {
@@ -155,7 +163,7 @@ export function AdminLayout() {
     <div className="min-h-[100dvh] bg-surface print:bg-white flex flex-col">
       {/* Top app bar (mobile) */}
       <header
-        className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-surface/90 backdrop-blur-lg print:hidden"
+        className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-surface/90 backdrop-blur-lg print:hidden border-b border-stone-200/40"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="flex items-center gap-1 h-16 px-2 max-w-md mx-auto">
@@ -171,23 +179,27 @@ export function AdminLayout() {
             <button
               onClick={() => navigate(-1)}
               className="w-12 h-12 rounded-full flex items-center justify-center text-ink active:bg-primary-100 transition-colors"
-              aria-label="Kembali"
+              aria-label={t('common', 'back')}
             >
               <ArrowLeft className="w-6 h-6" />
             </button>
           )}
           <h1 className="flex-1 min-w-0 text-lg font-bold text-ink truncate tracking-tight">{title}</h1>
-          {currentBusiness && (
-            <a
-              href={`/q/${currentBusiness.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-12 h-12 rounded-full flex items-center justify-center text-ink-muted active:bg-primary-100 transition-colors"
-              aria-label="Lihat halaman publik"
-            >
-              <ExternalLink className="w-5 h-5" />
-            </a>
-          )}
+          <div className="flex items-center gap-1">
+            <LanguageToggle variant="minimal" />
+            {currentBusiness && (
+              <a
+                href={`/q/${currentBusiness.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-ink-muted active:bg-primary-100 transition-colors"
+                aria-label={t('nav', 'viewPublicPage')}
+                title={t('nav', 'viewPublicPage')}
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
+          </div>
         </div>
       </header>
 
@@ -222,7 +234,7 @@ export function AdminLayout() {
             <button
               onClick={() => setDrawerOpen(false)}
               className="absolute top-3 right-3 z-10 w-10 h-10 rounded-full flex items-center justify-center text-ink-muted hover:bg-surface"
-              aria-label="Tutup menu"
+              aria-label={t('common', 'close')}
             >
               <X className="w-5 h-5" />
             </button>

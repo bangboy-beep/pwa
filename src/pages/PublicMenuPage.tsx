@@ -8,6 +8,8 @@ import { createClient } from '../lib/supabase/client'
 import { Loading } from '../components/ui/Loading'
 import { AlertCircle } from 'lucide-react'
 import type { Business, MenuCategory, MenuProduct } from '../types'
+import { useLanguage } from '../i18n/LanguageContext'
+import { LanguageToggle } from '../components/ui/LanguageToggle'
 
 const FOOD_IMAGES = [
   'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&h=200&fit=crop',
@@ -28,6 +30,7 @@ function VideoProductCard({
   product: MenuProduct
   index: number
 }) {
+  const { formatPrice } = useLanguage()
   const videoRef = useRef<HTMLVideoElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const [_isIntersecting, setIsIntersecting] = useState(false)
@@ -89,7 +92,7 @@ function VideoProductCard({
         )}
         {product.price > 0 && (
           <p className="text-primary-600 font-bold text-[15px] mt-2">
-            Rp {product.price.toLocaleString('id-ID')}
+            {formatPrice(product.price)}
           </p>
         )}
       </div>
@@ -104,6 +107,8 @@ function ProductImageCard({
   product: MenuProduct
   index: number
 }) {
+  const { formatPrice } = useLanguage()
+
   return (
     <div className="flex items-center gap-4 bg-stone-50 rounded-2xl p-4 hover:bg-stone-100 transition-colors group">
       <div className="w-20 h-20 shrink-0 rounded-full overflow-hidden bg-stone-200 shadow-sm">
@@ -120,7 +125,7 @@ function ProductImageCard({
         )}
         {product.price > 0 && (
           <p className="text-primary-600 font-bold text-[15px] mt-1">
-            Rp {product.price.toLocaleString('id-ID')}
+            {formatPrice(product.price)}
           </p>
         )}
       </div>
@@ -130,6 +135,7 @@ function ProductImageCard({
 
 export default function PublicMenuPage() {
   const { slug } = useParams<{ slug: string }>()
+  const { t } = useLanguage()
   const [business, setBusiness] = useState<Business | null>(null)
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [products, setProducts] = useState<MenuProduct[]>([])
@@ -139,7 +145,7 @@ export default function PublicMenuPage() {
 
   useEffect(() => {
     async function loadData() {
-      if (!slug) { setError('Slug bisnis tidak valid'); setLoading(false); return }
+      if (!slug) { setError(t('publicHub', 'invalidSlug')); setLoading(false); return }
       const supabase = createClient()
       try {
         const { data: bizData, error: bizError } = await supabase
@@ -148,7 +154,7 @@ export default function PublicMenuPage() {
           .eq('slug', slug)
           .eq('status', 'active')
           .single()
-        if (bizError || !bizData) { setError('Bisnis tidak ditemukan'); setLoading(false); return }
+        if (bizError || !bizData) { setError(t('publicMenu', 'notFoundDesc')); setLoading(false); return }
         setBusiness(bizData as Business)
         const { data: catData } = await supabase
           .from('menu_categories')
@@ -165,13 +171,13 @@ export default function PublicMenuPage() {
         setCategories((catData as MenuCategory[]) || [])
         setProducts((prodData as MenuProduct[]) || [])
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
+        setError(err instanceof Error ? err.message : t('common', 'error'))
       } finally {
         setLoading(false)
       }
     }
     loadData()
-  }, [slug])
+  }, [slug, t])
 
   if (loading) {
     return (
@@ -184,14 +190,17 @@ export default function PublicMenuPage() {
   if (error || !business) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center p-5">
-        <div className="bg-white p-8 rounded-[1.25rem] shadow-sm border border-stone-100 max-w-sm w-full text-center">
-          <div className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <div className="bg-white p-8 rounded-[1.25rem] shadow-sm border border-stone-100 max-w-sm w-full text-center relative">
+          <div className="absolute top-4 right-4">
+            <LanguageToggle variant="button" />
+          </div>
+          <div className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 mt-2">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <h1 className="text-lg font-bold text-stone-900 mb-2">Menu Tidak Ditemukan</h1>
-          <p className="text-stone-500 text-sm leading-relaxed mb-6">{error || 'Bisnis yang Anda cari tidak tersedia.'}</p>
+          <h1 className="text-lg font-bold text-stone-900 mb-2">{t('publicMenu', 'notFoundTitle')}</h1>
+          <p className="text-stone-500 text-sm leading-relaxed mb-6">{error || t('publicMenu', 'notFoundDesc')}</p>
           <Link to={`/q/${slug || ''}`} className="inline-block px-5 py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm hover:bg-primary-600 transition-colors w-full">
-            Kembali ke Hub
+            {t('nav', 'backToHub')}
           </Link>
         </div>
       </div>
@@ -212,12 +221,15 @@ export default function PublicMenuPage() {
       {/* Outer wrapper: fixed viewport height, no scroll allowed */}
       <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl border-[8px] border-white h-[92vh] flex flex-col relative">
 
-        {/* Fixed Header — always visible at top */}
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-stone-100 flex-shrink-0 bg-white sticky top-0 z-20">
-          <Link to={`/q/${slug}`} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-xl transition-all">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          </Link>
-          <h1 className="text-base font-bold text-stone-900">Menu</h1>
+        {/* Fixed Header with Language Toggle */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 flex-shrink-0 bg-white sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <Link to={`/q/${slug}`} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-xl transition-all" aria-label={t('common', 'back')}>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            </Link>
+            <h1 className="text-base font-bold text-stone-900">{t('publicMenu', 'title')}</h1>
+          </div>
+          <LanguageToggle variant="minimal" />
         </div>
 
         {/* Fixed Tabs — always visible, never scrolls */}
@@ -231,7 +243,7 @@ export default function PublicMenuPage() {
                 : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
                 }`}
             >
-              Semua
+              {t('publicMenu', 'allTab')}
             </button>
             {allCategories.map(cat => (
               <button
@@ -279,7 +291,7 @@ export default function PublicMenuPage() {
 
           {productsByCategory.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-stone-400 text-sm">Menu belum tersedia untuk bisnis ini.</p>
+              <p className="text-stone-400 text-sm">{t('publicMenu', 'emptyMenu')}</p>
             </div>
           )}
         </div>
@@ -287,7 +299,7 @@ export default function PublicMenuPage() {
         {/* Fixed Footer — always visible at bottom */}
         <div className="p-5 text-center flex-shrink-0 border-t border-stone-100 bg-white">
           <p className="text-[10px] uppercase tracking-widest text-stone-300 font-bold">
-            Powered by <span className="text-stone-400">SmartQR</span>
+            {t('common', 'poweredBy')} <span className="text-stone-400">SmartQR</span>
           </p>
         </div>
       </div>

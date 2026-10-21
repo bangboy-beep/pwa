@@ -23,12 +23,15 @@ import { Loading } from '../../components/ui/Loading'
 import { Button } from '../../components/ui/Button'
 import { BusinessTypeIcon } from '../../components/ui/BusinessTypeIcon'
 import type { Business } from '../../types'
+import { useLanguage } from '../../i18n/LanguageContext'
+import { LanguageToggle } from '../../components/ui/LanguageToggle'
 
 export default function AdminSlugPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
   const { user, loading: authLoading } = useAuthContext()
   const { setSelectedBusiness, refetch } = useBusiness()
+  const { t } = useLanguage()
 
   const [business, setBusiness] = useState<Business | null>(null)
   const [pageLoading, setPageLoading] = useState(true)
@@ -59,7 +62,7 @@ export default function AdminSlugPage() {
     async function init() {
       if (!slug) {
         if (isMounted) {
-          setBusinessError('Slug bisnis tidak valid')
+          setBusinessError(t('publicHub', 'invalidSlug'))
           setPageLoading(false)
         }
         return
@@ -110,7 +113,7 @@ export default function AdminSlugPage() {
           // Saved PIN is no longer valid, remove it
           localStorage.removeItem(`smartqr_pin_${data.slug}`)
           setAutoLoggingIn(false)
-          setErrorMsg('PIN tersimpan sudah kadaluarsa. Silakan masukkan PIN kembali.')
+          setErrorMsg(t('adminLogin', 'invalidPin'))
         }
       }
 
@@ -126,7 +129,7 @@ export default function AdminSlugPage() {
     return () => {
       isMounted = false
     }
-  }, [slug, user, authLoading, navigate, refetch, setSelectedBusiness])
+  }, [slug, user, authLoading, navigate, refetch, setSelectedBusiness, t])
 
   // Direct bypass to dashboard for logged-in users
   const handleDirectAccess = () => {
@@ -156,7 +159,7 @@ export default function AdminSlugPage() {
   const submitWithPin = async (pinValue: string) => {
     if (!business) return
     if (pinValue.length < 4) {
-      setErrorMsg('Masukkan minimal 4 digit PIN')
+      setErrorMsg(t('adminLogin', 'enterPinMin'))
       return
     }
 
@@ -173,14 +176,13 @@ export default function AdminSlugPage() {
       })
 
       if (!error && data.user) {
-        // Auth login berhasil, pastikan relasi business_members disinkronisasi
         try {
           await (supabase as any).rpc('verify_business_pin', {
             p_slug: business.slug,
             p_pin: pinValue,
           })
         } catch {
-          // fallback dijalankan di getMyBusinesses
+          // fallback
         }
 
         if (rememberMe) {
@@ -195,19 +197,16 @@ export default function AdminSlugPage() {
         return
       }
 
-      // Step 2: Fallback — verifikasi PIN via RPC (dan auto-sync di database)
+      // Step 2: Fallback — verifikasi PIN via RPC
       const { data: pinOk, error: rpcErr } = await (supabase as any).rpc('verify_business_pin', {
         p_slug: business.slug,
         p_pin: pinValue,
       })
 
       if (rpcErr || !pinOk) {
-        // PIN benar-benar salah
-        throw new Error('PIN salah untuk bisnis ini. Silakan periksa kembali.')
+        throw new Error(t('adminLogin', 'invalidPin'))
       }
 
-      // PIN cocok! verify_business_pin otomatis men-sync auth.users dan identities di DB.
-      // Coba signInWithPassword sekali lagi sekarang:
       const { data: retryData, error: retryErr } = await supabase.auth.signInWithPassword({
         email: emailToUse,
         password: pinValue,
@@ -223,45 +222,47 @@ export default function AdminSlugPage() {
         return
       }
 
-      // Step 3: Jika akun auth belum ada sama sekali di GoTrue, buat akun via signUp
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-        email: emailToUse,
-        password: pinValue,
-      })
-
-      if (!signUpErr && signUpData.user) {
-        // Pastikan relasi dan password ter-sync ulang setelah sign up
-        await (supabase as any).rpc('verify_business_pin', {
-          p_slug: business.slug,
-          p_pin: pinValue,
-        })
-        if (rememberMe) localStorage.setItem(`smartqr_pin_${business.slug}`, pinValue)
-        else localStorage.removeItem(`smartqr_pin_${business.slug}`)
-        setSelectedBusiness({ ...business, role: 'owner' } as any)
-        sessionStorage.setItem('smartqr_selected_business_id', business.id)
-        await refetch()
-        navigate('/admin', { replace: true })
-        return
-      }
-
-      // Jika masih gagal (misal email confirmation tertahan di dashboard Supabase)
-      throw new Error(
-        retryErr?.message || signUpErr?.message || 'Gagal masuk akun. Minta Super Admin untuk klik "Resync PIN" di dashboard.'
-      )
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Gagal masuk. Periksa PIN Anda.')
+      throw new Error(retryErr?.message || t('adminLogin', 'invalidPin'))
+    } catch (err: unknown) {
+      const text = err instanceof Error ? err.message : t('common', 'systemError')
+      setErrorMsg(text)
       setPin('')
     } finally {
       setSubmitting(false)
     }
   }
 
-  // Keypad click handler
-  const handleKeyClick = (val: string) => {
-    if (submitting) return
+  // Email login submit
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!business) return
+    setSubmitting(true)
+    setErrorMsg(null)
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: customEmail.trim(),
+        password: customPassword,
+      })
+      if (error || !data.user) throw error || new Error(t('adminLogin', 'invalidPin'))
+
+      setSelectedBusiness({ ...business, role: 'owner' } as any)
+      sessionStorage.setItem('smartqr_selected_business_id', business.id)
+      await refetch()
+      navigate('/admin', { replace: true })
+    } catch (err: unknown) {
+      const text = err instanceof Error ? err.message : t('common', 'systemError')
+      setErrorMsg(text)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // Keypad clicks
+  const handleKeyClick = (digit: string) => {
     setErrorMsg(null)
     if (pin.length < 6) {
-      const nextPin = pin + val
+      const nextPin = pin + digit
       setPin(nextPin)
       if (nextPin.length === 6) {
         submitWithPin(nextPin)
@@ -270,82 +271,55 @@ export default function AdminSlugPage() {
   }
 
   const handleDelete = () => {
-    if (submitting) return
     setErrorMsg(null)
     setPin((prev) => prev.slice(0, -1))
   }
 
   const handleClear = () => {
-    if (submitting) return
     setErrorMsg(null)
     setPin('')
   }
 
-  // Submit Custom Email login
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!business) return
-
-    setSubmitting(true)
-    setErrorMsg(null)
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: customEmail,
-        password: customPassword,
-      })
-
-      if (error) throw error
-
-      setSelectedBusiness({ ...business, role: 'owner' } as any)
-      sessionStorage.setItem('smartqr_selected_business_id', business.id)
-      await refetch()
-      navigate('/admin', { replace: true })
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Email atau password salah')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  if (pageLoading || authLoading) {
-    return <Loading label="Menyiapkan akses admin..." />
+  if (pageLoading) {
+    return (
+      <div className="min-h-[100dvh] bg-surface flex items-center justify-center">
+        <Loading />
+      </div>
+    )
   }
 
   if (businessError || !business) {
     return (
-      <main className="min-h-[100dvh] bg-surface flex items-center justify-center p-6 text-center">
-        <div className="max-w-md w-full bg-white rounded-[28px] p-8 shadow-xl space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-600 mx-auto flex items-center justify-center">
-            <AlertCircle className="w-8 h-8" />
+      <div className="min-h-[100dvh] bg-surface flex items-center justify-center p-5">
+        <div className="bg-white p-6 rounded-[28px] max-w-sm w-full text-center">
+          <div className="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-7 h-7" />
           </div>
-          <h1 className="text-xl font-extrabold text-ink">Bisnis Tidak Ditemukan</h1>
-          <p className="text-sm text-ink-muted">{businessError}</p>
-          <div className="pt-2">
-            <Link
-              to="/admin/login"
-              className="inline-flex items-center justify-center h-12 px-6 rounded-full bg-primary text-white font-bold text-sm shadow-md shadow-primary/30 active:scale-95 transition-transform"
-            >
-              Ke Halaman Login Admin
-            </Link>
-          </div>
+          <h1 className="text-lg font-extrabold text-ink mb-1">{t('publicHub', 'notFoundTitle')}</h1>
+          <p className="text-ink-muted text-sm leading-relaxed mb-6">{businessError || t('publicHub', 'notFoundDesc')}</p>
+          <Link
+            to="/admin/login"
+            className="inline-flex items-center justify-center w-full h-12 rounded-xl bg-primary text-white font-bold text-sm"
+          >
+            {t('nav', 'login')}
+          </Link>
         </div>
-      </main>
+      </div>
     )
   }
 
-  // Auto-logging in with saved PIN state
+  // Auto-login overlay
   if (autoLoggingIn) {
     return (
-      <main className="min-h-[100dvh] bg-primary flex items-center justify-center p-6 text-center">
-        <div className="max-w-md w-full bg-white rounded-[28px] p-8 shadow-xl space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-primary-50 text-primary mx-auto flex items-center justify-center">
-            <Lock className="w-8 h-8 animate-pulse text-primary" />
+      <main className="min-h-[100dvh] bg-primary flex flex-col items-center justify-center px-6 text-white text-center">
+        <div className="bg-white text-ink p-8 rounded-[32px] max-w-sm w-full shadow-2xl space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-primary-100 text-primary flex items-center justify-center mx-auto">
+            <Lock className="w-8 h-8 animate-pulse" />
           </div>
-          <h1 className="text-xl font-extrabold text-ink">Memverifikasi PIN...</h1>
-          <p className="text-sm text-ink-muted">
-            Sedang menghubungkan ke akun admin <strong>{business.name}</strong> dengan PIN tersimpan di perangkat ini.
-          </p>
+          <div>
+            <h2 className="text-xl font-extrabold">{business.name}</h2>
+            <p className="text-xs text-ink-muted mt-1">{t('adminSlug', 'autoLogin')}</p>
+          </div>
           <div className="pt-2">
             <button
               type="button"
@@ -355,7 +329,7 @@ export default function AdminSlugPage() {
               }}
               className="text-xs font-semibold text-ink-muted hover:text-primary transition-colors underline"
             >
-              Batal & Gunakan PIN Lain
+              {t('common', 'cancel')}
             </button>
           </div>
         </div>
@@ -367,6 +341,10 @@ export default function AdminSlugPage() {
     <main className="min-h-[100dvh] bg-primary flex flex-col justify-between">
       {/* Top Banner / Store Header */}
       <section className="relative pt-8 pb-8 px-6 text-center overflow-hidden flex flex-col items-center">
+        <div className="absolute top-4 right-4 z-20">
+          <LanguageToggle variant="button" className="bg-white/90 shadow-md" />
+        </div>
+
         <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/10" aria-hidden="true" />
         <div className="absolute top-24 -left-20 w-52 h-52 rounded-full bg-white/10" aria-hidden="true" />
 
@@ -383,7 +361,7 @@ export default function AdminSlugPage() {
 
         <h1 className="relative mt-3 text-2xl font-black text-white tracking-tight">{business.name}</h1>
         <p className="relative mt-0.5 text-xs font-semibold text-white/80 bg-white/15 px-3 py-1 rounded-full inline-block backdrop-blur-xs">
-          Akses Admin · /{business.slug}
+          {t('adminSlug', 'accessDashboard')} · /{business.slug}
         </p>
       </section>
 
@@ -399,7 +377,7 @@ export default function AdminSlugPage() {
               <span>Sesi Super Admin Terdeteksi</span>
             </div>
             <p className="text-[11px] leading-relaxed text-amber-800">
-              Anda sedang login sebagai <strong>{user?.email}</strong>. Anda dapat menguji input PIN 6-digit di bawah atau langsung membuka dashboard toko ini.
+              Anda sedang login sebagai <strong>{user?.email}</strong>.
             </p>
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <button
@@ -407,7 +385,7 @@ export default function AdminSlugPage() {
                 onClick={handleDirectAccess}
                 className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all flex items-center gap-1.5"
               >
-                <span>Langsung Masuk Dashboard</span>
+                <span>{t('adminSlug', 'directToDashboard')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
               <button
@@ -417,7 +395,7 @@ export default function AdminSlugPage() {
                 className="px-3 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-900 font-semibold text-xs hover:bg-amber-100/50 active:scale-95 transition-all flex items-center gap-1"
               >
                 <LogOut className="w-3.5 h-3.5 text-amber-700" />
-                <span>Logout Sesi</span>
+                <span>{t('adminSlug', 'switchAccount')}</span>
               </button>
             </div>
           </div>
@@ -428,18 +406,15 @@ export default function AdminSlugPage() {
           <div className="mb-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-xs text-emerald-950 space-y-2">
             <div className="flex items-center gap-2 font-bold text-emerald-900">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Sesi Toko Sedang Aktif</span>
+              <span>{t('adminSlug', 'alreadyLoggedIn')}</span>
             </div>
-            <p className="text-[11px] leading-relaxed text-emerald-800">
-              Perangkat ini sudah terhubung ke akun admin <strong>{business.name}</strong>.
-            </p>
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <button
                 type="button"
                 onClick={handleDirectAccess}
                 className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs active:scale-95 transition-all flex items-center gap-1.5"
               >
-                <span>Buka Dashboard Toko</span>
+                <span>{t('adminSlug', 'directToDashboard')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
               <button
@@ -449,7 +424,7 @@ export default function AdminSlugPage() {
                 className="px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-emerald-900 font-semibold text-xs hover:bg-emerald-100/50 active:scale-95 transition-all flex items-center gap-1"
               >
                 <LogOut className="w-3.5 h-3.5 text-emerald-700" />
-                <span>Keluar / Ganti Akun</span>
+                <span>{t('adminSlug', 'switchAccount')}</span>
               </button>
             </div>
           </div>
@@ -459,9 +434,9 @@ export default function AdminSlugPage() {
           /* PIN MODE */
           <div className="flex-1 flex flex-col justify-between">
             <div className="text-center space-y-1">
-              <h2 className="text-lg font-black text-ink">Masukkan PIN Admin</h2>
+              <h2 className="text-lg font-black text-ink">{t('adminSlug', 'accessDashboard')}</h2>
               <p className="text-xs text-ink-muted">
-                Masukkan 6-digit PIN yang Anda terima saat pendaftaran bisnis
+                {t('adminSlug', 'enter6DigitPin')}
               </p>
             </div>
 
@@ -480,7 +455,7 @@ export default function AdminSlugPage() {
             <div
               className="py-4 my-auto flex justify-center items-center gap-3 cursor-pointer"
               onClick={() => hiddenInputRef.current?.focus()}
-              title="Klik untuk mengetik langsung"
+              title="Click to type"
             >
               {[0, 1, 2, 3, 4, 5].map((index) => {
                 const isFilled = index < pin.length
@@ -495,7 +470,6 @@ export default function AdminSlugPage() {
                   />
                 )
               })}
-              {/* Hidden input for physical keyboard / mobile paste support */}
               <input
                 ref={hiddenInputRef}
                 type="password"
@@ -527,7 +501,7 @@ export default function AdminSlugPage() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded-md text-primary accent-primary cursor-pointer"
                 />
-                Ingat saya (masuk otomatis di perangkat ini)
+                {t('adminLogin', 'rememberMe')}
               </label>
             </div>
 
@@ -565,7 +539,7 @@ export default function AdminSlugPage() {
                 disabled={submitting}
                 onClick={handleDelete}
                 className="h-12 rounded-2xl text-ink-muted hover:bg-surface active:scale-95 transition-all flex items-center justify-center disabled:opacity-50"
-                aria-label="Hapus digit"
+                aria-label="Delete"
               >
                 <Delete className="w-5 h-5" />
               </button>
@@ -580,7 +554,7 @@ export default function AdminSlugPage() {
                 disabled={pin.length < 4}
                 className="w-full flex items-center justify-center gap-2"
               >
-                {submitting ? 'Memverifikasi...' : 'Masuk ke Dashboard'}
+                {submitting ? t('adminSlug', 'verifying') : t('adminSlug', 'unlockBtn')}
                 {!submitting && <ArrowRight className="w-4 h-4" />}
               </Button>
 
@@ -592,7 +566,7 @@ export default function AdminSlugPage() {
                 }}
                 className="w-full py-2 text-center text-xs font-semibold text-primary hover:underline"
               >
-                Atau masuk dengan Email & Password
+                {t('adminSlug', 'useCustomEmail')}
               </button>
             </div>
           </div>
@@ -601,9 +575,9 @@ export default function AdminSlugPage() {
           <div className="flex-1 flex flex-col justify-between">
             <div>
               <div className="text-center space-y-1 mb-4">
-                <h2 className="text-lg font-black text-ink">Login dengan Email</h2>
+                <h2 className="text-lg font-black text-ink">{t('adminSlug', 'useCustomEmail')}</h2>
                 <p className="text-xs text-ink-muted">
-                  Gunakan email akun terdaftar Anda untuk masuk ke {business.name}
+                  {business.name}
                 </p>
               </div>
 
@@ -619,7 +593,7 @@ export default function AdminSlugPage() {
 
               <form onSubmit={handleEmailSubmit} className="space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-ink-muted mb-1 ml-1">Email Akun</label>
+                  <label className="block text-xs font-semibold text-ink-muted mb-1 ml-1">{t('adminSlug', 'customEmailLabel')}</label>
                   <input
                     type="email"
                     required
@@ -630,19 +604,19 @@ export default function AdminSlugPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-ink-muted mb-1 ml-1">Password</label>
+                  <label className="block text-xs font-semibold text-ink-muted mb-1 ml-1">{t('adminSlug', 'customPasswordLabel')}</label>
                   <input
                     type="password"
                     required
                     value={customPassword}
                     onChange={(e) => setCustomPassword(e.target.value)}
-                    placeholder="Password Anda"
+                    placeholder="Password"
                     className="w-full h-12 px-4 rounded-2xl border-2 border-outline bg-surface text-sm focus:outline-none focus:border-primary"
                   />
                 </div>
 
                 <Button type="submit" size="lg" isLoading={submitting} className="w-full mt-2">
-                  {submitting ? 'Memproses...' : 'Masuk dengan Email'}
+                  {submitting ? t('common', 'processing') : t('nav', 'login')}
                 </Button>
               </form>
             </div>
@@ -655,7 +629,7 @@ export default function AdminSlugPage() {
               }}
               className="mt-4 w-full py-2 text-center text-xs font-semibold text-primary hover:underline"
             >
-              Kembali ke Login PIN
+              {t('adminSlug', 'usePinInstead')}
             </button>
           </div>
         )}
@@ -668,11 +642,11 @@ export default function AdminSlugPage() {
             rel="noopener noreferrer"
             className="text-ink-muted hover:text-primary flex items-center gap-1 font-medium"
           >
-            <span>Lihat Halaman Pelanggan</span>
+            <span>{t('adminSlug', 'viewPublicSite')}</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
           <Link to="/admin/login" className="text-ink-muted hover:text-primary font-medium">
-            Login Lainnya
+            {t('adminSlug', 'backToDirectLogin')}
           </Link>
         </div>
       </section>

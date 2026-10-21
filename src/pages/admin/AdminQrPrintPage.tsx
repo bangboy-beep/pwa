@@ -2,9 +2,11 @@ import { useMemo } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useBusiness } from '../../providers/BusinessProvider'
 import { getPublicMenuUrl } from '../../lib/url/generator'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 export default function AdminQrPrintPage() {
   const { selectedBusiness } = useBusiness()
+  const { t } = useLanguage()
   const url = useMemo(() => selectedBusiness ? getPublicMenuUrl(selectedBusiness.slug) : '', [selectedBusiness])
 
   if (!selectedBusiness) return null
@@ -21,21 +23,20 @@ export default function AdminQrPrintPage() {
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </a>
             <div>
-              <div className="text-[10px] uppercase tracking-[.16em] text-stone-400 font-semibold">Print Studio</div>
-              <div className="font-extrabold text-sm">Kartu QR</div>
+              <div className="text-[10px] uppercase tracking-[.16em] text-stone-400 font-semibold">{t('adminQrPrint', 'printStudio')}</div>
+              <div className="font-extrabold text-sm">{t('adminQrPrint', 'qrCard')}</div>
             </div>
           </div>
           <button onClick={print} className="flex h-10 items-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primary-dark px-4 text-xs font-bold text-white shadow-lg shadow-primary-200">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-            Print
+            {t('adminQrPrint', 'printBtn')}
           </button>
         </div>
       </div>
 
-
       <div className="mx-auto max-w-xl px-4 pb-6 pt-4">
         <div className="rounded-2xl bg-primary-50 border border-primary-100 p-4 text-xs text-stone-600 leading-relaxed">
-          Preview ukuran kartu <strong>A6</strong> (105 × 148 mm). Saat dicetak, area di bawah akan menjadi satu kartu QR bersih.
+          {t('adminQrPrint', 'previewNotice')}
         </div>
       </div>
 
@@ -46,7 +47,7 @@ export default function AdminQrPrintPage() {
             ? <img src={selectedBusiness.logo_url} alt="" className="mx-auto h-14 w-14 rounded-2xl object-cover" />
             : <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-dark text-white text-lg font-black">QR</div>}
           <h1 className="mt-4 text-lg font-extrabold tracking-tight text-stone-900">{selectedBusiness.name}</h1>
-          <p className="mt-1 text-xs text-stone-400">Menu Digital</p>
+          <p className="mt-1 text-xs text-stone-400">{t('adminQrPrint', 'digitalMenu')}</p>
         </div>
 
         <div className="rounded-3xl border border-stone-100 bg-stone-50 p-4">
@@ -54,10 +55,10 @@ export default function AdminQrPrintPage() {
         </div>
 
         <div className="mb-2">
-          <div className="text-base font-extrabold text-stone-900">Scan untuk buka Menu</div>
-          <p className="mt-1 text-[10px] leading-5 text-stone-400">Arahkan kamera smartphone ke QR code di atas</p>
+          <div className="text-base font-extrabold text-stone-900">{t('adminQrPrint', 'scanToOpen')}</div>
+          <p className="mt-1 text-[10px] leading-5 text-stone-400">{t('adminQrPrint', 'pointCamera')}</p>
           <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-50 border border-primary-100">
-            <span className="text-[9px] font-bold text-primary">Powered by SmartQR</span>
+            <span className="text-[9px] font-bold text-primary">{t('common', 'poweredBy')} SmartQR</span>
           </div>
         </div>
       </section>
@@ -66,11 +67,11 @@ export default function AdminQrPrintPage() {
       <div className="no-print mx-auto flex max-w-xl gap-3 px-4 py-5">
         <button onClick={print} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-sm font-bold text-white shadow-lg shadow-primary-200 active:scale-[0.98] transition-all">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-          Cetak
+          {t('adminQrPrint', 'printBtn')}
         </button>
         <button onClick={() => window.print()} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-white text-sm font-bold text-stone-700 shadow-[0_4px_16px_rgba(0,0,0,.05)] active:scale-[0.98] transition-all">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-          Simpan PDF
+          {t('adminQrPrint', 'savePdfBtn')}
         </button>
       </div>
 

@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import type { WiFiNetwork } from '../types'
+import { useLanguage } from '../i18n/LanguageContext'
 
 type SecurityType = 'WPA' | 'WEP' | 'nopass' | 'WPA2'
 
@@ -45,6 +46,7 @@ export default function WifiPage() {
   const { businessId: routeBusinessId } = useParams<{ businessId?: string }>()
   const { businesses, selectedBusiness } = useBusiness()
   const { showToast } = useToast()
+  const { t } = useLanguage()
   useAuthGuard()
 
   const currentBusiness = routeBusinessId
@@ -125,7 +127,6 @@ export default function WifiPage() {
         }
         setShowAddForm(false)
       } else {
-        // Jika belum ada wifi sama sekali, otomatis tampilkan form tambah baru
         setSelectedNetwork(null)
         setEditingNetwork(null)
         setForm({
@@ -143,7 +144,7 @@ export default function WifiPage() {
 
   const handleSave = async () => {
     if (!currentBusiness || isReadOnly) return
-    if (!form.ssid.trim()) { showToast('error', 'Nama WiFi (SSID) wajib diisi'); return }
+    if (!form.ssid.trim()) { showToast('error', t('adminWifi', 'ssidRequired')); return }
     setSaving(true)
     if (editingNetwork) {
       const { error } = await updateWifiNetwork(editingNetwork.id, {
@@ -151,11 +152,11 @@ export default function WifiPage() {
         ssid: form.ssid.trim(),
         password: form.password.trim() || undefined,
       })
-      if (error) showToast('error', error.message || 'Gagal menyimpan pengaturan WiFi')
-      else { showToast('success', 'Pengaturan WiFi berhasil disimpan!'); setEditingNetwork(null) }
+      if (error) showToast('error', error.message || t('common', 'error'))
+      else { showToast('success', t('adminWifi', 'saveSuccess')); setEditingNetwork(null) }
     } else {
       const { data, error } = await createWifiNetwork(currentBusiness.id, {
-        name: form.name.trim() || 'WiFi Baru',
+        name: form.name.trim() || t('adminWifi', 'addNewWifi'),
         ssid: form.ssid.trim(),
         password: form.password.trim() || undefined,
         security_type: form.security_type,
@@ -163,9 +164,9 @@ export default function WifiPage() {
         sort_order: networks.length,
       })
       if (error) {
-        showToast('error', error.message || 'Gagal menambahkan WiFi')
+        showToast('error', error.message || t('common', 'error'))
       } else if (data) {
-        showToast('success', 'WiFi baru berhasil ditambahkan!')
+        showToast('success', t('adminWifi', 'createSuccess'))
         setShowAddForm(false)
         setSelectedNetwork(data.id)
       }
@@ -175,10 +176,10 @@ export default function WifiPage() {
   }
 
   const handleDelete = async (networkId: string) => {
-    if (!confirm('Hapus WiFi ini?')) return
+    if (!confirm(t('adminWifi', 'confirmDelete'))) return
     const { error } = await deleteWifiNetwork(networkId)
-    if (error) showToast('error', error.message || 'Gagal menghapus WiFi')
-    else { showToast('success', 'WiFi berhasil dihapus!'); if (selectedNetwork === networkId) setSelectedNetwork(null); loadNetworks() }
+    if (error) showToast('error', error.message || t('common', 'error'))
+    else { showToast('success', t('adminWifi', 'deleteSuccess')); if (selectedNetwork === networkId) setSelectedNetwork(null); loadNetworks() }
   }
 
   const handleEdit = (network: WiFiNetwork) => {
@@ -204,9 +205,8 @@ export default function WifiPage() {
     }
   }
 
-
   if (loading) return <Loading />
-  if (!currentBusiness) return <div className="p-12 text-center text-stone-500">Bisnis tidak ditemukan</div>
+  if (!currentBusiness) return <div className="p-12 text-center text-stone-500">{t('adminDashboard', 'noBusinessTitle')}</div>
 
   const activeNetwork = networks.find(n => n.id === selectedNetwork) || networks[0] || null
 
@@ -236,15 +236,15 @@ export default function WifiPage() {
               "font-bold text-[16px] leading-tight",
               (showAddForm ? form.is_active : activeNetwork?.is_active !== false) ? "text-stone-900" : "text-stone-500"
             )}>
-              {showAddForm ? (form.name || 'WiFi Baru') : (activeNetwork?.name || 'Belum diatur')}
+              {showAddForm ? (form.name || t('adminWifi', 'addNewWifi')) : (activeNetwork?.name || t('adminWifi', 'notSet'))}
             </p>
             <p className={cn(
               "text-[11px] mt-0.5 font-bold uppercase tracking-wider",
               (showAddForm ? form.is_active : activeNetwork?.is_active !== false) ? "text-primary" : "text-stone-400"
             )}>
               {showAddForm
-                ? (form.is_active ? 'WiFi Aktif' : 'WiFi Nonaktif')
-                : (activeNetwork?.is_active !== false ? 'WiFi Aktif' : 'WiFi Nonaktif')}
+                ? (form.is_active ? t('common', 'active') : t('common', 'inactive'))
+                : (activeNetwork?.is_active !== false ? t('common', 'active') : t('common', 'inactive'))}
             </p>
           </div>
         </div>
@@ -267,7 +267,7 @@ export default function WifiPage() {
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl active:bg-primary-600 transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            Tambah WiFi
+            {t('adminWifi', 'addNetwork')}
           </button>
         )}
       </div>
@@ -300,14 +300,15 @@ export default function WifiPage() {
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-3">
                 {network.is_active && (
-                  <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                    AKTIF
+                  <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full uppercase">
+                    {t('common', 'active')}
                   </span>
                 )}
                 {!isReadOnly && (
                   <button
                     onClick={(e) => { e.stopPropagation(); handleEdit(network) }}
                     className="p-2 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+                    aria-label={t('common', 'edit')}
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -318,6 +319,7 @@ export default function WifiPage() {
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(network.id) }}
                     className="p-2 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    aria-label={t('common', 'delete')}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -336,13 +338,13 @@ export default function WifiPage() {
             {/* Name */}
             <div>
               <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">
-                Nama WiFi
+                {t('adminWifi', 'networkName')}
               </label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Contoh: WiFi Tamu"
+                placeholder={t('adminWifi', 'networkNamePlaceholder')}
                 disabled={isReadOnly}
                 className="w-full h-12 px-4 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-60"
               />
@@ -351,13 +353,13 @@ export default function WifiPage() {
             {/* SSID */}
             <div>
               <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">
-                Nama WiFi (SSID)
+                {t('adminWifi', 'ssid')}
               </label>
               <input
                 type="text"
                 value={form.ssid}
                 onChange={(e) => setForm({ ...form, ssid: e.target.value })}
-                placeholder="KopiKita_Guest"
+                placeholder={t('adminWifi', 'ssidPlaceholder')}
                 disabled={isReadOnly}
                 className="w-full h-12 px-4 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-60"
               />
@@ -366,14 +368,14 @@ export default function WifiPage() {
             {/* Password */}
             <div>
               <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">
-                Password
+                {t('adminWifi', 'password')}
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder="Masukkan password WiFi"
+                  placeholder={t('adminWifi', 'passwordPlaceholder')}
                   disabled={isReadOnly}
                   className="w-full h-12 px-4 pr-24 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-60"
                 />
@@ -383,8 +385,8 @@ export default function WifiPage() {
                     onClick={handleCopyPassword}
                     disabled={isReadOnly || !form.password}
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 active:bg-stone-100 transition-colors disabled:opacity-40"
-                    aria-label="Salin password"
-                    title="Salin password"
+                    aria-label={t('adminWifi', 'copyPassword')}
+                    title={t('adminWifi', 'copyPassword')}
                   >
                     {copied === form.password ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                   </button>
@@ -392,7 +394,7 @@ export default function WifiPage() {
                     type="button"
                     onClick={() => setShowPassword(v => !v)}
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 active:bg-stone-100 transition-colors"
-                    aria-label={showPassword ? 'Sembunyikan' : 'Tampilkan'}
+                    aria-label={showPassword ? t('publicWifi', 'hide') : t('publicWifi', 'show')}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -403,7 +405,7 @@ export default function WifiPage() {
             {/* Security type */}
             <div>
               <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">
-                Keamanan
+                {t('adminWifi', 'securityType')}
               </label>
               <div className="relative">
                 <select
@@ -412,10 +414,10 @@ export default function WifiPage() {
                   disabled={isReadOnly}
                   className="w-full h-12 px-4 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none disabled:opacity-60 transition-all cursor-pointer"
                 >
-                  <option value="WPA2">WPA2 (Recommended)</option>
-                  <option value="WPA">WPA</option>
-                  <option value="WEP">WEP</option>
-                  <option value="nopass">Tanpa Password</option>
+                  <option value="WPA2">{t('adminWifi', 'securityTypeWpa2')}</option>
+                  <option value="WPA">{t('adminWifi', 'securityTypeWpa')}</option>
+                  <option value="WEP">{t('adminWifi', 'securityTypeWep')}</option>
+                  <option value="nopass">{t('adminWifi', 'securityTypeOpen')}</option>
                 </select>
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -428,7 +430,7 @@ export default function WifiPage() {
             {/* Active toggle */}
             {!isReadOnly && (
               <div className="flex items-center justify-between py-2">
-                <span className="text-sm font-bold text-stone-700">Status WiFi</span>
+                <span className="text-sm font-bold text-stone-700">{t('adminWifi', 'activeStatus')}</span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -457,11 +459,11 @@ export default function WifiPage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                 )}
-                {editingNetwork ? 'Simpan Perubahan' : 'Tambah WiFi'}
+                {editingNetwork ? t('common', 'save') : t('adminWifi', 'addNetwork')}
               </button>
             ) : (
               <p className="text-xs text-stone-400 text-center font-medium">
-                Hanya owner atau admin yang dapat mengubah pengaturan.
+                Admin mode view only.
               </p>
             )}
           </div>
@@ -476,10 +478,10 @@ export default function WifiPage() {
               <QrCode className="w-6 h-6" />
             </div>
             <span className="text-[17px] font-bold text-stone-900">
-              QR WiFi Pelanggan
+              {t('adminWifi', 'qrConnect')}
             </span>
             <p className="text-xs text-stone-500 mt-1 font-medium leading-relaxed">
-              Scan dengan kamera untuk terhubung otomatis
+              {t('adminWifi', 'scanToConnect')}
             </p>
           </div>
 
@@ -497,7 +499,7 @@ export default function WifiPage() {
                 className="mt-6 w-full h-11 rounded-xl border border-stone-200 text-stone-700 text-[14px] font-bold flex items-center justify-center gap-2 active:bg-stone-50 transition-all bg-white shadow-sm"
               >
                 {copied === form.password ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-primary" />}
-                {copied === form.password ? 'Password Tersalin' : 'Salin Password'}
+                {copied === form.password ? t('publicWifi', 'passwordCopied') : t('adminWifi', 'copyPassword')}
               </button>
             )}
           </div>

@@ -3,6 +3,7 @@ import { UtensilsCrossed, AlertCircle } from 'lucide-react'
 import { getPublicMenu } from '../../lib/menu/service'
 import { formatCurrency } from '../../lib/utils/format'
 import type { MenuCategory, MenuProduct } from '../../types'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 interface PublicMenuSectionProps {
   businessId: string
@@ -28,6 +29,7 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
 }
 
 export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
+  const { t, language } = useLanguage()
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [products, setProducts] = useState<MenuProduct[]>([])
   const [loading, setLoading] = useState(true)
@@ -107,22 +109,22 @@ export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
   // 2. Error State
   if (error) {
     return (
-      <section className="space-y-3" aria-label="Daftar Menu">
+      <section className="space-y-3" aria-label="Menu">
         <div className="border-b border-stone-100 pb-2">
           <h2 className="text-xs font-bold uppercase tracking-wider text-primary-700">
-            Menu
+            {t('publicMenu', 'title')}
           </h2>
-          <p className="text-lg font-bold text-stone-900">Daftar Menu</p>
+          <p className="text-lg font-bold text-stone-900">{t('publicMenu', 'title')}</p>
         </div>
         <div className="p-6 rounded-2xl bg-stone-50 border border-stone-200/60 text-center flex flex-col items-center">
           <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mb-2">
             <AlertCircle className="w-5 h-5" />
           </div>
           <p className="text-sm font-semibold text-stone-800">
-            Menu belum dapat dimuat.
+            {t('publicMenu', 'loadError')}
           </p>
           <p className="text-xs text-stone-500 mt-1">
-            Silakan coba beberapa saat lagi.
+            {t('common', 'systemError')}
           </p>
         </div>
       </section>
@@ -140,22 +142,19 @@ export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
   // 3. Empty Menu State
   if (!hasMenuContent) {
     return (
-      <section className="space-y-3" aria-label="Daftar Menu">
+      <section className="space-y-3" aria-label="Menu">
         <div className="border-b border-stone-100 pb-2">
           <h2 className="text-xs font-bold uppercase tracking-wider text-primary-700">
-            Menu
+            {t('publicMenu', 'title')}
           </h2>
-          <p className="text-lg font-bold text-stone-900">Daftar Menu</p>
+          <p className="text-lg font-bold text-stone-900">{t('publicMenu', 'title')}</p>
         </div>
         <div className="p-8 rounded-2xl bg-stone-50 border border-stone-200/60 text-center flex flex-col items-center">
           <div className="w-12 h-12 rounded-2xl bg-stone-200/60 text-stone-400 flex items-center justify-center mb-3">
             <UtensilsCrossed className="w-6 h-6" />
           </div>
           <p className="text-sm font-bold text-stone-800">
-            Menu belum tersedia.
-          </p>
-          <p className="text-xs text-stone-500 mt-1 max-w-xs">
-            Bisnis ini belum memiliki daftar menu yang ditampilkan.
+            {t('publicMenu', 'emptyMenu')}
           </p>
         </div>
       </section>
@@ -169,13 +168,13 @@ export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
       : categoriesWithProducts.filter((c) => c.id === selectedCategoryId)
 
   return (
-    <section className="space-y-4" aria-label="Daftar Menu">
+    <section className="space-y-4" aria-label="Menu">
       {/* Section Title */}
       <div className="border-b border-stone-100 pb-1">
         <h2 className="text-xs font-bold uppercase tracking-wider text-primary-700">
-          Menu
+          {t('publicMenu', 'title')}
         </h2>
-        <p className="text-lg font-bold text-stone-900">Daftar Menu</p>
+        <p className="text-lg font-bold text-stone-900">{t('publicMenu', 'title')}</p>
       </div>
 
       {/* Category Horizontal Filter Navigation (if multiple categories) */}
@@ -189,9 +188,9 @@ export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
                 ? 'bg-primary-600 text-white shadow-sm ring-1 ring-primary-600'
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900'
             }`}
-            aria-label="Tampilkan semua menu"
+            aria-label="Filter"
           >
-            Semua
+            {t('publicMenu', 'allTab')}
           </button>
           {categoriesWithProducts.map((category) => (
             <button
@@ -203,7 +202,7 @@ export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
                   ? 'bg-primary-600 text-white shadow-sm ring-1 ring-primary-600'
                   : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-900'
               }`}
-              aria-label={`Filter menu ${category.name}`}
+              aria-label={category.name}
             >
               {category.name}
             </button>
@@ -251,7 +250,7 @@ export function PublicMenuSection({ businessId }: PublicMenuSectionProps) {
                         </p>
                       )}
                       <span className="text-sm font-extrabold text-primary-700 mt-2 block">
-                        {formatCurrency(product.price)}
+                        {formatCurrency(product.price, language)}
                       </span>
                     </div>
 

@@ -7,9 +7,12 @@ import { createClient } from '../lib/supabase/client'
 import { Loading } from '../components/ui/Loading'
 import { AlertCircle, Star, ExternalLink } from 'lucide-react'
 import type { Business, ReviewSettings } from '../types'
+import { useLanguage } from '../i18n/LanguageContext'
+import { LanguageToggle } from '../components/ui/LanguageToggle'
 
 export default function PublicReviewPage() {
   const { slug } = useParams<{ slug: string }>()
+  const { t } = useLanguage()
   const [business, setBusiness] = useState<Business | null>(null)
   const [review, setReview] = useState<ReviewSettings | null>(null)
   const [loading, setLoading] = useState(true)
@@ -17,7 +20,7 @@ export default function PublicReviewPage() {
 
   useEffect(() => {
     async function loadData() {
-      if (!slug) { setError('Slug bisnis tidak valid'); setLoading(false); return }
+      if (!slug) { setError(t('publicHub', 'invalidSlug')); setLoading(false); return }
       const supabase = createClient()
       try {
         const { data: bizData, error: bizError } = await supabase
@@ -26,7 +29,7 @@ export default function PublicReviewPage() {
           .eq('slug', slug)
           .eq('status', 'active')
           .single()
-        if (bizError || !bizData) { setError('Bisnis tidak ditemukan'); setLoading(false); return }
+        if (bizError || !bizData) { setError(t('publicReview', 'notFoundDesc')); setLoading(false); return }
         setBusiness(bizData as Business)
         const { data: revData, error: revError } = await supabase
           .from('business_reviews')
@@ -36,13 +39,13 @@ export default function PublicReviewPage() {
           .single()
         if (!revError && revData) setReview(revData as ReviewSettings)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
+        setError(err instanceof Error ? err.message : t('common', 'error'))
       } finally {
         setLoading(false)
       }
     }
     loadData()
-  }, [slug])
+  }, [slug, t])
 
   if (loading) {
     return (
@@ -55,14 +58,17 @@ export default function PublicReviewPage() {
   if (error || !business) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center p-5">
-        <div className="bg-white p-8 rounded-[1.25rem] shadow-sm border border-stone-100 max-w-sm w-full text-center">
-          <div className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <div className="bg-white p-8 rounded-[1.25rem] shadow-sm border border-stone-100 max-w-sm w-full text-center relative">
+          <div className="absolute top-4 right-4">
+            <LanguageToggle variant="button" />
+          </div>
+          <div className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 mt-2">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <h1 className="text-lg font-bold text-stone-900 mb-2">Review Tidak Ditemukan</h1>
-          <p className="text-stone-500 text-sm leading-relaxed mb-6">{error || 'Halaman ulasan tidak tersedia.'}</p>
+          <h1 className="text-lg font-bold text-stone-900 mb-2">{t('publicReview', 'notFoundTitle')}</h1>
+          <p className="text-stone-500 text-sm leading-relaxed mb-6">{error || t('publicReview', 'notFoundDesc')}</p>
           <Link to={`/q/${slug || ''}`} className="inline-block px-5 py-3 rounded-xl bg-stone-900 text-white font-semibold text-sm hover:bg-stone-800 transition-colors w-full">
-            Kembali ke Hub
+            {t('nav', 'backToHub')}
           </Link>
         </div>
       </div>
@@ -75,12 +81,15 @@ export default function PublicReviewPage() {
     <div className="fixed inset-0 bg-stone-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl border-[8px] border-white overflow-hidden h-[92vh] flex flex-col">
 
-        {/* Back Header */}
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-stone-100 shrink-0">
-          <Link to={`/q/${slug}`} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-xl transition-all">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          </Link>
-          <h1 className="text-base font-bold text-stone-900">Google Review</h1>
+        {/* Back Header with Language Toggle */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <Link to={`/q/${slug}`} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-xl transition-all" aria-label={t('common', 'back')}>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            </Link>
+            <h1 className="text-base font-bold text-stone-900">{t('publicReview', 'title')}</h1>
+          </div>
+          <LanguageToggle variant="minimal" />
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 pt-6 pb-10 space-y-5">
@@ -94,9 +103,9 @@ export default function PublicReviewPage() {
 
           {/* Title & Subtitle */}
           <div className="text-center">
-            <h2 className="text-base font-bold text-stone-900">Share Your Experience</h2>
-            <p className="text-stone-400 text-xs mt-1.5 leading-relaxed max-w-[220px] mx-auto">
-              Kami sangat menghargai ulasan Anda
+            <h2 className="text-base font-bold text-stone-900">{t('publicReview', 'shareExperience')}</h2>
+            <p className="text-stone-400 text-xs mt-1.5 leading-relaxed max-w-[240px] mx-auto">
+              {t('publicReview', 'weAppreciate')}
             </p>
           </div>
 
@@ -109,9 +118,9 @@ export default function PublicReviewPage() {
                 </svg>
               </div>
               <div className="flex-1">
-                <p className="font-bold text-stone-900 text-sm">Google Review</p>
+                <p className="font-bold text-stone-900 text-sm">{t('publicReview', 'googleReview')}</p>
                 <p className="text-stone-400 text-xs mt-0.5 leading-snug">
-                  Beri ulasan di Google Maps untuk membantu kami terus berkembang
+                  {t('publicReview', 'reviewPrompt')}
                 </p>
               </div>
             </div>
@@ -121,14 +130,14 @@ export default function PublicReviewPage() {
                 href={review.google_review_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full py-3 rounded-2xl bg-primary-500 text-white text-sm font-bold hover:bg-primary-600 transition-colors text-center flex items-center justify-center gap-2 shadow-sm active:scale-95"
+                className="w-full py-3 rounded-2xl bg-primary-500 text-white text-sm font-bold hover:bg-primary-600 transition-colors text-center flex items-center justify-center gap-2 shadow-sm active:scale-95"
               >
-                Leave a Google Review
+                {t('publicReview', 'leaveReviewBtn')}
                 <ExternalLink className="w-4 h-4" />
               </a>
             ) : (
               <div className="text-center py-4">
-                <p className="text-stone-400 text-xs">Ulasan Google belum tersedia untuk bisnis ini.</p>
+                <p className="text-stone-400 text-xs">{t('publicReview', 'notAvailable')}</p>
               </div>
             )}
           </div>
@@ -137,7 +146,7 @@ export default function PublicReviewPage() {
         {/* Footer */}
         <div className="p-5 text-center shrink-0 border-t border-stone-100">
           <p className="text-[10px] uppercase tracking-widest text-stone-300 font-bold">
-            Powered by <span className="text-stone-400">SmartQR</span>
+            {t('common', 'poweredBy')} <span className="text-stone-400">SmartQR</span>
           </p>
         </div>
       </div>

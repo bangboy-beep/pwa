@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase/client'
 import { getBusinessBySlug } from '../../lib/business/service'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
+import { useLanguage } from '../../i18n/LanguageContext'
+import { LanguageToggle } from '../../components/ui/LanguageToggle'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -13,16 +15,17 @@ export default function AdminLoginPage() {
   const [rememberMe, setRememberMe] = useState(true)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
+  const { t } = useLanguage()
 
   const submitPin = async (e: React.FormEvent) => {
     e.preventDefault()
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')
     if (!cleanSlug) {
-      setMessage({ type: 'error', text: 'Masukkan slug nama bisnis Anda' })
+      setMessage({ type: 'error', text: t('adminLogin', 'enterSlug') })
       return
     }
     if (pin.length < 4) {
-      setMessage({ type: 'error', text: 'Masukkan minimal 4 digit PIN' })
+      setMessage({ type: 'error', text: t('adminLogin', 'enterPinMin') })
       return
     }
 
@@ -44,7 +47,7 @@ export default function AdminLoginPage() {
       })
 
       if (error) {
-        throw new Error('PIN salah. Silakan periksa kembali PIN Anda.')
+        throw new Error(t('adminLogin', 'invalidPin'))
       }
 
       // Pastikan relasi tabel business_members disinkronisasi
@@ -64,7 +67,7 @@ export default function AdminLoginPage() {
       sessionStorage.setItem('smartqr_selected_business_id', bizData.id)
       window.location.href = '/admin'
     } catch (err: unknown) {
-      const text = err instanceof Error ? err.message : 'Terjadi kesalahan. Coba lagi.'
+      const text = err instanceof Error ? err.message : t('common', 'systemError')
       setMessage({ type: 'error', text })
     } finally {
       setLoading(false)
@@ -75,14 +78,19 @@ export default function AdminLoginPage() {
     <main className="min-h-[100dvh] bg-primary flex flex-col">
       {/* Hero */}
       <section className="relative flex-1 min-h-[220px] flex flex-col items-center justify-center px-6 pt-10 pb-14 text-center overflow-hidden">
+        {/* Language selector in top right */}
+        <div className="absolute top-4 right-4 z-20">
+          <LanguageToggle variant="button" className="bg-white/90 shadow-md" />
+        </div>
+
         <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-white/10" aria-hidden="true" />
         <div className="absolute top-24 -left-20 w-48 h-48 rounded-full bg-white/10" aria-hidden="true" />
         <div className="relative w-16 h-16 rounded-[22px] bg-white flex items-center justify-center shadow-xl shadow-primary-900/30">
           <QrCode className="w-8 h-8 text-primary" />
         </div>
-        <h1 className="relative mt-4 text-2xl font-extrabold text-white tracking-tight">SmartQR</h1>
+        <h1 className="relative mt-4 text-2xl font-extrabold text-white tracking-tight">{t('adminLogin', 'heroTitle')}</h1>
         <p className="relative mt-1 text-sm text-white/80 font-medium text-balance">
-          Kelola bisnis Anda dalam satu genggaman
+          {t('adminLogin', 'heroSubtitle')}
         </p>
       </section>
 
@@ -96,8 +104,8 @@ export default function AdminLoginPage() {
             <KeyRound className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-ink tracking-tight">Masuk dengan PIN Bisnis</h2>
-            <p className="text-xs text-ink-muted mt-0.5">Gunakan slug bisnis dan 6-digit PIN toko Anda.</p>
+            <h2 className="text-xl font-extrabold text-ink tracking-tight">{t('adminLogin', 'pinLoginTitle')}</h2>
+            <p className="text-xs text-ink-muted mt-0.5">{t('adminLogin', 'pinLoginSubtitle')}</p>
           </div>
         </div>
 
@@ -105,28 +113,28 @@ export default function AdminLoginPage() {
           <div className="relative">
             <Building2 className="absolute left-4 top-[38px] w-5 h-5 text-ink-muted pointer-events-none z-10" aria-hidden="true" />
             <Input
-              label="Slug Bisnis"
+              label={t('adminLogin', 'slugLabel')}
               type="text"
               required
               value={slug}
               onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-              placeholder="contoh: warkop-99"
+              placeholder={t('adminLogin', 'slugPlaceholder')}
               className="pl-12"
-              helperText="Atau buka langsung via link: /admin/nama-bisnis"
+              helperText={t('adminLogin', 'slugHelper')}
             />
           </div>
 
           <div className="relative">
             <Lock className="absolute left-4 top-[38px] w-5 h-5 text-ink-muted pointer-events-none z-10" aria-hidden="true" />
             <Input
-              label="PIN Login (6 digit)"
+              label={t('adminLogin', 'pinLabel')}
               type="password"
               required
               inputMode="numeric"
               maxLength={6}
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="Contoh: 123456"
+              placeholder={t('adminLogin', 'pinPlaceholder')}
               className="pl-12"
             />
           </div>
@@ -138,7 +146,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setRememberMe(e.target.checked)}
               className="w-4 h-4 rounded-md text-primary accent-primary cursor-pointer"
             />
-            Ingat saya di perangkat ini (Masuk otomatis)
+            {t('adminLogin', 'rememberMe')}
           </label>
 
           {message && (
@@ -158,16 +166,16 @@ export default function AdminLoginPage() {
           )}
 
           <Button type="submit" size="lg" isLoading={loading} className="w-full">
-            {loading ? 'Memproses...' : 'Masuk ke Dashboard'}
+            {loading ? t('common', 'processing') : t('adminLogin', 'enterDashboard')}
             {!loading && <ArrowRight className="w-5 h-5" />}
           </Button>
         </form>
 
         <div className="mt-5 pt-4 border-t border-outline text-center">
           <p className="text-xs text-ink-muted">
-            Super Admin?{' '}
+            {t('adminLogin', 'superAdminText')}{' '}
             <a href="/super/login" className="text-primary font-semibold hover:underline">
-              Login Super Admin →
+              {t('adminLogin', 'superAdminLink')}
             </a>
           </p>
         </div>
