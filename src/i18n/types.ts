@@ -196,6 +196,10 @@ export interface TranslationDictionary {
     manageProductsSubtitle: string
     videoSpecs: string
     videoTooLong: string
+    videoLimitReached: string
+    videoCompressedNotice: string
+    specialVideoBadge: string
+    specialVideoCounter: string
     imageFormatError: string
     imageSizeError: string
     uploadImageCard: string

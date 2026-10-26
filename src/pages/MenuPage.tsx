@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom'
 import {
   Plus, Edit2, Trash2, AlertCircle, X, Search,
   UtensilsCrossed, ShoppingBag, ImagePlus, Video, VideoOff,
+  Sparkles, Loader2,
 } from 'lucide-react'
 import { useAuthGuard } from '../hooks/useAuthGuard'
 import { useBusiness } from '../providers/BusinessProvider'
@@ -17,8 +18,12 @@ import {
   deleteCategory, createProduct, updateProduct, deleteProduct,
   uploadProductImage, uploadProductVideo, deleteProductVideo,
   validateVideoFile, getVideoDuration, MAX_VIDEO_DURATION,
+  MAX_VIDEO_SIZE,
 } from '../lib/menu/service'
 import { compressImage } from '../lib/utils/imageCompressor'
+import {
+  compressVideoClient, extractVideoThumbnail, MAX_SPECIAL_VIDEO_LIMIT,
+} from '../lib/utils/videoCompressor'
 import { useLanguage } from '../i18n/LanguageContext'
 import type { MenuCategory, MenuProduct } from '../types'
 
@@ -67,7 +72,10 @@ export default function MenuPage() {
   const [productVideoFile, setProductVideoFile] = useState<File | null>(null)
   const [productVideoPreview, setProductVideoPreview] = useState<string | null>(null)
   const [productVideoWarning, setProductVideoWarning] = useState<string | null>(null)
+  const [isVideoCompressing, setIsVideoCompressing] = useState(false)
   const videoInputRef = useRef<HTMLInputElement>(null)
+
+  const specialVideoCount = products.filter(p => !!p.video_url).length
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'category' | 'product'; id: string; name: string } | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -232,9 +240,13 @@ export default function MenuPage() {
 
   const handleProductVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return
-    const validation = validateVideoFile(file)
-    if (!validation.valid) {
-      setProductFormError(validation.error)
+
+    // Cek kuota maksimal 5 menu spesial dengan video
+    const isAlreadyVideo = !!editingProduct?.video_url
+    if (!isAlreadyVideo && specialVideoCount >= MAX_SPECIAL_VIDEO_LIMIT) {
+      setProductFormError(
+        t('adminMenu', 'videoLimitReached', { count: String(specialVideoCount) })
+      )
       if (videoInputRef.current) videoInputRef.current.value = ''
       return
     }
@@ -254,9 +266,63 @@ export default function MenuPage() {
 
     setProductFormError(null)
     setProductVideoWarning(null)
-    setProductVideoFile(file)
+
+    let finalFile = file
+
+    // Kompresi otomatis jika file > 2.5 MB
+    if (file.size > MAX_VIDEO_SIZE) {
+      setIsVideoCompressing(true)
+      setProductVideoWarning('Sedang mengompresi video otomatis agar ringan (1.0–2.5 MB)...')
+      try {
+        const { file: optimized, compressed } = await compressVideoClient(file)
+        if (compressed && optimized.size <= MAX_VIDEO_SIZE) {
+          finalFile = optimized
+          showToast(
+            t('adminMenu', 'videoCompressedNotice', {
+              size: (optimized.size / (1024 * 1024)).toFixed(1),
+            })
+          )
+          setProductVideoWarning(null)
+        } else if (optimized.size > MAX_VIDEO_SIZE) {
+          const validation = validateVideoFile(optimized)
+          setProductFormError(validation.error)
+          if (videoInputRef.current) videoInputRef.current.value = ''
+          setIsVideoCompressing(false)
+          return
+        }
+      } catch {
+        // Abaikan error kompresi, lanjut validasi standar
+      } finally {
+        setIsVideoCompressing(false)
+      }
+    }
+
+    const validation = validateVideoFile(finalFile)
+    if (!validation.valid) {
+      setProductFormError(validation.error)
+      if (videoInputRef.current) videoInputRef.current.value = ''
+      return
+    }
+
+    // Ekstrak poster thumbnail otomatis dari frame video jika belum ada gambar
+    if (!productImageFile && !productImagePreview && !editingProduct?.image_url) {
+      try {
+        const thumb = await extractVideoThumbnail(finalFile)
+        if (thumb) {
+          setProductImageFile(thumb)
+          const reader = new FileReader()
+          reader.onloadend = () => setProductImagePreview(reader.result as string)
+          reader.readAsDataURL(thumb)
+        }
+      } catch (err) {
+        console.warn('Gagal ekstrak thumbnail video:', err)
+      }
+    }
+
+    setProductFormError(null)
+    setProductVideoFile(finalFile)
     // Preview
-    const previewUrl = URL.createObjectURL(file)
+    const previewUrl = URL.createObjectURL(finalFile)
     setProductVideoPreview(previewUrl)
   }
 
@@ -346,6 +412,17 @@ export default function MenuPage() {
         )}
       </div>
 
+      {/* Special Video Menus Counter Chip */}
+      <div className="flex items-center justify-between px-1 text-xs">
+        <span className="font-bold text-stone-700 flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          {t('adminMenu', 'specialVideoCounter', { count: String(specialVideoCount) })}
+        </span>
+        <span className="text-[11px] text-stone-400">
+          Maks. 5 menu video (1–2.5 MB)
+        </span>
+      </div>
+
       {/* Product list */}
       {categories.length === 0 ? (
         <div className="rounded-2xl border border-stone-200 p-8 text-center bg-white shadow-sm">
@@ -415,8 +492,13 @@ export default function MenuPage() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <h3 className="font-bold text-stone-900 text-sm truncate">{product.name}</h3>
+                              {product.video_url && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/60 font-bold flex items-center gap-1 shrink-0">
+                                  <Sparkles className="w-2.5 h-2.5 text-amber-500" /> {t('adminMenu', 'specialVideoBadge')}
+                                </span>
+                              )}
                               {!product.is_active && <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-500 font-bold uppercase shrink-0">{t('common', 'inactive')}</span>}
                             </div>
                             <p className="text-[11px] text-stone-500 line-clamp-1 mt-0.5 font-medium">{product.description || t('adminMenu', 'noDescription')}</p>
@@ -538,7 +620,20 @@ export default function MenuPage() {
                 <span>{productImagePreview || editingProduct?.image_url ? t('adminMenu', 'changeImage') : t('adminMenu', 'uploadImage')}</span>
                 <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleProductImageChange} />
               </label>
-              <label className="absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary shadow-lg cursor-pointer text-xs font-bold text-white active:bg-primary-dark transition-all">
+              <label
+                onClick={(e) => {
+                  if (!editingProduct?.video_url && !productVideoPreview && specialVideoCount >= MAX_SPECIAL_VIDEO_LIMIT) {
+                    e.preventDefault()
+                    setProductFormError(t('adminMenu', 'videoLimitReached', { count: String(specialVideoCount) }))
+                  }
+                }}
+                className={cn(
+                  "absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg cursor-pointer text-xs font-bold text-white transition-all",
+                  !editingProduct?.video_url && !productVideoPreview && specialVideoCount >= MAX_SPECIAL_VIDEO_LIMIT
+                    ? "bg-stone-500 cursor-not-allowed opacity-80"
+                    : "bg-primary active:bg-primary-dark"
+                )}
+              >
                 <Video className="w-3.5 h-3.5" />
                 <span>{productVideoPreview || editingProduct?.video_url ? t('adminMenu', 'changeVideo') : t('adminMenu', 'uploadVideo')}</span>
                 <input ref={videoInputRef} type="file" accept="video/mp4,video/webm" className="hidden" onChange={handleProductVideoChange} />
@@ -553,6 +648,14 @@ export default function MenuPage() {
 
               {productFormError && <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-100 text-red-700 text-xs flex items-center gap-2 font-bold"><AlertCircle className="w-4 h-4 shrink-0" /><span>{productFormError}</span></div>}
 
+              {/* Video compressing indicator */}
+              {isVideoCompressing && (
+                <div className="mb-5 p-3 rounded-xl bg-sky-50 border border-sky-200 text-sky-800 text-xs flex items-center gap-2 font-medium">
+                  <Loader2 className="w-4 h-4 animate-spin text-sky-600 shrink-0" />
+                  <span>Sedang mengompresi video otomatis agar ringan (1.0–2.5 MB)...</span>
+                </div>
+              )}
+
               {/* Video warning */}
               {productVideoWarning && (
                 <div className="mb-5 p-3 rounded-xl bg-primary-50 border border-primary-200 text-primary-700 text-xs flex items-start gap-2 font-medium">
@@ -564,6 +667,15 @@ export default function MenuPage() {
               {/* Video section */}
               {(productVideoPreview || editingProduct?.video_url) && (
                 <div className="mb-5 rounded-xl overflow-hidden border border-stone-200 bg-stone-50">
+                  <div className="p-3 flex items-center justify-between border-b border-stone-100 bg-white">
+                    <span className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      {t('adminMenu', 'specialVideoBadge')}
+                    </span>
+                    <span className="text-[11px] text-stone-400 font-medium">
+                      {t('adminMenu', 'specialVideoCounter', { count: String(specialVideoCount) })}
+                    </span>
+                  </div>
                   <div className="relative aspect-video">
                     <video src={productVideoPreview || editingProduct!.video_url!} className="w-full h-full object-cover" muted loop playsInline controls preload="metadata" />
                   </div>

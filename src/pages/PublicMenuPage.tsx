@@ -6,7 +6,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { createClient } from '../lib/supabase/client'
 import { Loading } from '../components/ui/Loading'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Sparkles, Video as VideoIcon } from 'lucide-react'
 import type { Business, MenuCategory, MenuProduct } from '../types'
 import { useLanguage } from '../i18n/LanguageContext'
 import { LanguageToggle } from '../components/ui/LanguageToggle'
@@ -22,7 +22,7 @@ function getRandomFoodImage(index: number): string {
   return FOOD_IMAGES[index % FOOD_IMAGES.length]
 }
 
-// Lazy video card — plays when visible via IntersectionObserver, fallback to image
+// True Lazy Video Card — src hanya dipasang saat masuk viewport, transisi mulus dari poster foto
 function VideoProductCard({
   product,
   index,
@@ -33,32 +33,51 @@ function VideoProductCard({
   const { formatPrice } = useLanguage()
   const videoRef = useRef<HTMLVideoElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
-  const [_isIntersecting, setIsIntersecting] = useState(false)
+  const [shouldLoad, setShouldLoad] = useState(false)
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [videoError, setVideoError] = useState(false)
+
+  const posterImage = product.image_url || getRandomFoodImage(index)
 
   const observe = useCallback(() => {
     const el = cardRef.current
-    const video = videoRef.current
-    if (!el || !video || !product.video_url) return
+    if (!el || !product.video_url) return
 
     const observer = new IntersectionObserver(
       ([entry]) => {
+        const video = videoRef.current
         if (entry.isIntersecting) {
-          setIsIntersecting(true)
-          video.play().catch(() => {})
+          // Masuk layar: load video dan mulai play
+          setShouldLoad(true)
+          if (video) {
+            video.play().catch(() => {})
+          }
         } else {
-          setIsIntersecting(false)
-          video.pause()
+          // Keluar layar: pause segera agar hemat GPU & memori HP
+          if (video) {
+            video.pause()
+          }
         }
       },
-      { threshold: 0.25 }
+      { threshold: 0.3, rootMargin: '80px 0px 80px 0px' }
     )
 
     observer.observe(el)
     return () => observer.disconnect()
   }, [product.video_url])
 
-  useEffect(() => { observe() }, [observe])
+  useEffect(() => {
+    const cleanup = observe()
+    return () => {
+      if (cleanup) cleanup()
+    }
+  }, [observe])
+
+  useEffect(() => {
+    if (shouldLoad && videoRef.current) {
+      videoRef.current.play().catch(() => {})
+    }
+  }, [shouldLoad])
 
   if (videoError || !product.video_url) {
     return <ProductImageCard product={product} index={index} />
@@ -67,31 +86,59 @@ function VideoProductCard({
   return (
     <div
       ref={cardRef}
-      className="bg-white rounded-2xl border border-stone-100 overflow-hidden shadow-sm active:scale-[0.98] transition-transform"
+      className="bg-white rounded-3xl border border-stone-100 overflow-hidden shadow-sm active:scale-[0.99] transition-all relative group"
     >
-      {/* Video — no overlay, clean video display */}
-      <div className="relative h-64 bg-stone-900">
-        <video
-          ref={videoRef}
-          src={product.video_url}
-          poster={product.image_url || undefined}
-          muted
-          loop
-          playsInline
-          preload="none"
-          className="w-full h-full object-cover"
-          onError={() => setVideoError(true)}
+      {/* Video Container — True Lazy Loading */}
+      <div className="relative h-64 bg-stone-100 overflow-hidden">
+        {/* Poster Image: Instan muncul tanpa delay, tidak ada lagi kotak hitam kosong */}
+        <img
+          src={posterImage}
+          alt={product.name}
+          className={`w-full h-full object-cover transition-opacity duration-500 ${
+            isVideoPlaying ? 'opacity-0' : 'opacity-100'
+          }`}
+          loading="lazy"
+          decoding="async"
         />
+
+        {/* Video Element: src HANYA diinjeksi saat kartu mulai masuk layar */}
+        {shouldLoad && (
+          <video
+            ref={videoRef}
+            src={product.video_url}
+            poster={posterImage}
+            muted
+            loop
+            playsInline
+            preload="auto"
+            onPlaying={() => setIsVideoPlaying(true)}
+            onError={() => setVideoError(true)}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+              isVideoPlaying ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        )}
+
+        {/* Badge Menu Spesial */}
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-bold shadow-md">
+          <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
+          <span>Menu Spesial</span>
+        </div>
+
+        {/* Video Icon Indicator */}
+        <div className="absolute top-3 right-3 flex items-center justify-center w-7 h-7 rounded-full bg-black/40 backdrop-blur-md text-white">
+          <VideoIcon className="w-3.5 h-3.5" />
+        </div>
       </div>
 
       {/* Info — centered below video */}
       <div className="p-4 flex flex-col items-center text-center">
-        <p className="font-semibold text-stone-900 text-[15px] leading-tight">{product.name}</p>
+        <p className="font-bold text-stone-900 text-[16px] leading-tight">{product.name}</p>
         {product.description && (
-          <p className="text-stone-500 text-xs mt-1 line-clamp-2 leading-relaxed w-full">{product.description}</p>
+          <p className="text-stone-500 text-xs mt-1.5 line-clamp-2 leading-relaxed w-full">{product.description}</p>
         )}
         {product.price > 0 && (
-          <p className="text-primary-600 font-bold text-[15px] mt-2">
+          <p className="text-primary-600 font-extrabold text-[16px] mt-2">
             {formatPrice(product.price)}
           </p>
         )}

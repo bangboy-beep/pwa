@@ -272,8 +272,9 @@ export async function deleteProductImage(businessId: string, productId: string):
 // ─── Video Upload / Delete ────────────────────────────────────────────────────
 
 const VIDEO_STORAGE_BUCKET = 'menu-media'
-export const MAX_VIDEO_SIZE = 10 * 1024 * 1024 // 10 MB (dikompres agar hemat storage)
-export const MAX_VIDEO_DURATION = 8 // Maksimal 8 detik sesuai standar menu hemat storage
+export const MAX_VIDEO_SIZE = 2.5 * 1024 * 1024 // 2.5 MB (standar hemat & cepat dibuka di HP)
+export const MAX_VIDEO_DURATION = 8 // Maksimal 8 detik sesuai standar menu cepat
+export const MAX_SPECIAL_VIDEO_PRODUCTS = 5 // Maksimal 5 menu spesial dengan video
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm']
 
 export interface UploadVideoResult {
@@ -293,7 +294,11 @@ export function validateVideoFile(file: File): VideoValidationResult {
     return { valid: false, error: 'Format video harus MP4 atau WebM.' }
   }
   if (file.size > MAX_VIDEO_SIZE) {
-    return { valid: false, error: 'Ukuran video maksimal 10 MB. Wajib kompres video Anda terlebih dahulu.' }
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1)
+    return {
+      valid: false,
+      error: `Ukuran video (${sizeMb} MB) melebihi batas 2.5 MB. Gunakan video berukuran 1.0 s/d 2.5 MB agar menu cepat dibuka pengunjung.`,
+    }
   }
   return { valid: true, error: null }
 }
@@ -323,7 +328,7 @@ export async function uploadProductVideo(
 
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from(VIDEO_STORAGE_BUCKET)
-    .upload(fileName, file, { upsert: false })
+    .upload(fileName, file, { upsert: true })
 
   if (uploadError) return { path: null, url: undefined, error: { message: uploadError.message } }
 
