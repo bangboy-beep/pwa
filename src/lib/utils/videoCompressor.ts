@@ -1,12 +1,12 @@
 /**
  * SmartQR Video Utility
- * - Menjaga video menu tetap ultra-ringan (1 MB s/d 2.5 MB)
+ * - Menjaga video menu tetap tajam & optimal (hingga 5.0 MB)
  * - Ekstraksi poster thumbnail otomatis dari frame video (WebP)
  * - Kompresi video client-side berbasis Canvas & MediaRecorder
  */
 
 export const MAX_SPECIAL_VIDEO_LIMIT = 5
-export const MAX_VIDEO_FILE_SIZE = 2.5 * 1024 * 1024 // 2.5 MB
+export const MAX_VIDEO_FILE_SIZE = 5.0 * 1024 * 1024 // 5.0 MB
 export const IDEAL_VIDEO_MIN_SIZE = 1.0 * 1024 * 1024 // 1.0 MB
 export const MAX_VIDEO_DURATION_SECONDS = 8 // Maksimal 8 detik
 
@@ -88,13 +88,13 @@ export async function extractVideoThumbnail(file: File): Promise<File | null> {
 
 /**
  * Kompresi video client-side menggunakan HTML5 Canvas + MediaRecorder
- * Mengubah video berukuran besar menjadi ~1.0 - 2.0 MB dengan resolusi 720p/480p
+ * Mengubah video berukuran besar menjadi ~2.0 - 4.5 MB dengan resolusi jernih HD
  */
 export async function compressVideoClient(
   file: File,
-  targetBitrate = 1_400_000 // 1.4 Mbps (~1.4 MB per 8 detik)
+  targetBitrate = 2_800_000 // 2.8 Mbps (~2.8 MB per 8 detik)
 ): Promise<{ file: File; compressed: boolean; savedPercent?: number }> {
-  // Jika file sudah <= 2.5 MB, tidak perlu kompres lagi
+  // Jika file sudah <= 5.0 MB, tidak perlu kompres lagi
   if (file.size <= MAX_VIDEO_FILE_SIZE) {
     return { file, compressed: false }
   }

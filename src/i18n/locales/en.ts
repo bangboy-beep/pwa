@@ -84,6 +84,8 @@ export const en: TranslationDictionary = {
     emptyMenu: 'No menu items available for this business.',
     loadError: 'Unable to load menu at this time.',
     pricePrefix: 'Rp',
+    specialMenu: 'Special Menu',
+    watchVideo: 'Watch Video',
   },
   publicWifi: {
     title: 'WiFi',
@@ -192,7 +194,7 @@ export const en: TranslationDictionary = {
     availableStatus: 'Item Available',
     manageCategoriesSubtitle: 'Manage your menu categories.',
     manageProductsSubtitle: 'Configure item details, price, and customer availability.',
-    videoSpecs: 'MP4 / WebM · Max 2.5 MB (1–2.5 MB) · Max 8 Seconds',
+    videoSpecs: 'MP4 / WebM · Max 5 MB · Max 8 Seconds',
     videoTooLong: 'Video duration ({duration}s) exceeds the maximum allowed limit ({max}s). Please trim your video first.',
     videoLimitReached: 'Maximum 5 special video menus reached ({count}/5). Remove video from another product first.',
     videoCompressedNotice: 'Video automatically compressed ({size} MB).',

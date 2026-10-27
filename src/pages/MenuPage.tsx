@@ -269,10 +269,10 @@ export default function MenuPage() {
 
     let finalFile = file
 
-    // Kompresi otomatis jika file > 2.5 MB
+    // Kompresi otomatis jika file > 5.0 MB
     if (file.size > MAX_VIDEO_SIZE) {
       setIsVideoCompressing(true)
-      setProductVideoWarning('Sedang mengompresi video otomatis agar ringan (1.0–2.5 MB)...')
+      setProductVideoWarning('Sedang mengompresi video otomatis agar tajam & optimal (maks. 5.0 MB)...')
       try {
         const { file: optimized, compressed } = await compressVideoClient(file)
         if (compressed && optimized.size <= MAX_VIDEO_SIZE) {
@@ -419,7 +419,7 @@ export default function MenuPage() {
           {t('adminMenu', 'specialVideoCounter', { count: String(specialVideoCount) })}
         </span>
         <span className="text-[11px] text-stone-400">
-          Maks. 5 menu video (1–2.5 MB)
+          Maks. 5 menu video (maks. 5 MB)
         </span>
       </div>
 
@@ -652,7 +652,7 @@ export default function MenuPage() {
               {isVideoCompressing && (
                 <div className="mb-5 p-3 rounded-xl bg-sky-50 border border-sky-200 text-sky-800 text-xs flex items-center gap-2 font-medium">
                   <Loader2 className="w-4 h-4 animate-spin text-sky-600 shrink-0" />
-                  <span>Sedang mengompresi video otomatis agar ringan (1.0–2.5 MB)...</span>
+                  <span>Sedang mengompresi video otomatis agar tajam & optimal (maks. 5.0 MB)...</span>
                 </div>
               )}
 

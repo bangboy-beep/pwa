@@ -2,11 +2,11 @@
 // Route: /m/:slug
 // Supports optional product videos with lazy loading and IntersectionObserver.
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { createClient } from '../lib/supabase/client'
 import { Loading } from '../components/ui/Loading'
-import { AlertCircle, Sparkles, Video as VideoIcon } from 'lucide-react'
+import { AlertCircle, Sparkles, Video as VideoIcon, Play, Pause, Volume2, VolumeX, X } from 'lucide-react'
 import type { Business, MenuCategory, MenuProduct } from '../types'
 import { useLanguage } from '../i18n/LanguageContext'
 import { LanguageToggle } from '../components/ui/LanguageToggle'
@@ -22,116 +22,62 @@ function getRandomFoodImage(index: number): string {
   return FOOD_IMAGES[index % FOOD_IMAGES.length]
 }
 
-// True Lazy Video Card — src hanya dipasang saat masuk viewport, transisi mulus dari poster foto
+// Video Product Card Preview — thumbnail saja dengan play button indikator
 function VideoProductCard({
   product,
   index,
+  onOpenVideo,
 }: {
   product: MenuProduct
   index: number
+  onOpenVideo: (product: MenuProduct) => void
 }) {
-  const { formatPrice } = useLanguage()
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
-  const [shouldLoad, setShouldLoad] = useState(false)
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false)
-  const [videoError, setVideoError] = useState(false)
-
+  const { formatPrice, t } = useLanguage()
   const posterImage = product.image_url || getRandomFoodImage(index)
-
-  const observe = useCallback(() => {
-    const el = cardRef.current
-    if (!el || !product.video_url) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        const video = videoRef.current
-        if (entry.isIntersecting) {
-          // Masuk layar: load video dan mulai play
-          setShouldLoad(true)
-          if (video) {
-            video.play().catch(() => {})
-          }
-        } else {
-          // Keluar layar: pause segera agar hemat GPU & memori HP
-          if (video) {
-            video.pause()
-          }
-        }
-      },
-      { threshold: 0.3, rootMargin: '80px 0px 80px 0px' }
-    )
-
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [product.video_url])
-
-  useEffect(() => {
-    const cleanup = observe()
-    return () => {
-      if (cleanup) cleanup()
-    }
-  }, [observe])
-
-  useEffect(() => {
-    if (shouldLoad && videoRef.current) {
-      videoRef.current.play().catch(() => {})
-    }
-  }, [shouldLoad])
-
-  if (videoError || !product.video_url) {
-    return <ProductImageCard product={product} index={index} />
-  }
 
   return (
     <div
-      ref={cardRef}
-      className="bg-white rounded-3xl border border-stone-100 overflow-hidden shadow-sm active:scale-[0.99] transition-all relative group"
+      onClick={() => onOpenVideo(product)}
+      className="bg-white rounded-3xl border border-stone-100 overflow-hidden shadow-sm hover:shadow-md active:scale-[0.99] transition-all relative group cursor-pointer"
     >
-      {/* Video Container — True Lazy Loading */}
-      <div className="relative h-64 bg-stone-100 overflow-hidden">
-        {/* Poster Image: Instan muncul tanpa delay, tidak ada lagi kotak hitam kosong */}
+      {/* Thumbnail Container — Preview poster dengan Play Button */}
+      <div className="relative h-60 bg-stone-100 overflow-hidden">
         <img
           src={posterImage}
           alt={product.name}
-          className={`w-full h-full object-cover transition-opacity duration-500 ${
-            isVideoPlaying ? 'opacity-0' : 'opacity-100'
-          }`}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
           decoding="async"
         />
 
-        {/* Video Element: src HANYA diinjeksi saat kartu mulai masuk layar */}
-        {shouldLoad && (
-          <video
-            ref={videoRef}
-            src={product.video_url}
-            poster={posterImage}
-            muted
-            loop
-            playsInline
-            preload="auto"
-            onPlaying={() => setIsVideoPlaying(true)}
-            onError={() => setVideoError(true)}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
-              isVideoPlaying ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
-        )}
+        {/* Subtle dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
 
         {/* Badge Menu Spesial */}
-        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-bold shadow-md">
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-bold shadow-md border border-white/10">
           <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
-          <span>Menu Spesial</span>
+          <span>{t('publicMenu', 'specialMenu')}</span>
         </div>
 
         {/* Video Icon Indicator */}
-        <div className="absolute top-3 right-3 flex items-center justify-center w-7 h-7 rounded-full bg-black/40 backdrop-blur-md text-white">
+        <div className="absolute top-3 right-3 flex items-center justify-center w-7 h-7 rounded-full bg-black/50 backdrop-blur-md text-white border border-white/10 shadow-sm">
           <VideoIcon className="w-3.5 h-3.5" />
+        </div>
+
+        {/* Big Centered Play Button Preview */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-14 h-14 rounded-full bg-black/60 backdrop-blur-md border border-white/40 flex items-center justify-center text-white shadow-2xl group-hover:scale-110 group-active:scale-95 transition-all">
+            <Play className="w-6 h-6 fill-white ml-0.5" />
+          </div>
+        </div>
+
+        {/* Pill bottom right: Watch Video */}
+        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-semibold border border-white/10 shadow-sm">
+          <span>{t('publicMenu', 'watchVideo')}</span>
         </div>
       </div>
 
-      {/* Info — centered below video */}
+      {/* Info — centered below thumbnail */}
       <div className="p-4 flex flex-col items-center text-center">
         <p className="font-bold text-stone-900 text-[16px] leading-tight">{product.name}</p>
         {product.description && (
@@ -142,6 +88,185 @@ function VideoProductCard({
             {formatPrice(product.price)}
           </p>
         )}
+      </div>
+    </div>
+  )
+}
+
+// Video Modal Fullscreen — Video muncul full dengan nama & harga melayang di atas video
+function VideoModal({
+  product,
+  onClose,
+}: {
+  product: MenuProduct
+  onClose: () => void
+}) {
+  const { formatPrice, t } = useLanguage()
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [isMuted, setIsMuted] = useState(false)
+  const [showPlayIcon, setShowPlayIcon] = useState<boolean | null>(null)
+
+  // Lock body scroll saat modal aktif
+  useEffect(() => {
+    const origOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = origOverflow
+    }
+  }, [])
+
+  // Auto-play video saat dibuka; coba unmuted dulu, fallback muted bila diblok browser
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    video.play().catch(() => {
+      video.muted = true
+      setIsMuted(true)
+      video.play().catch(() => {})
+    })
+  }, [product.video_url])
+
+  // ESC key listener untuk tutup modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  const togglePlayPause = () => {
+    const video = videoRef.current
+    if (!video) return
+    if (video.paused) {
+      video.play().then(() => {
+        setIsPlaying(true)
+        setShowPlayIcon(true)
+        setTimeout(() => setShowPlayIcon(null), 500)
+      }).catch(() => {})
+    } else {
+      video.pause()
+      setIsPlaying(false)
+      setShowPlayIcon(false)
+      setTimeout(() => setShowPlayIcon(null), 500)
+    }
+  }
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const video = videoRef.current
+    if (!video) return
+    const nextMuted = !isMuted
+    video.muted = nextMuted
+    setIsMuted(nextMuted)
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-0 md:p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      {/* Modal Dialog Card Container */}
+      <div
+        className="relative w-full max-w-md h-full md:h-[92vh] md:max-h-[840px] md:rounded-3xl bg-black overflow-hidden flex flex-col justify-center shadow-2xl border border-white/10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Full Video Element */}
+        <video
+          ref={videoRef}
+          src={product.video_url || ''}
+          poster={product.image_url || undefined}
+          autoPlay
+          loop
+          playsInline
+          muted={isMuted}
+          onClick={togglePlayPause}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          className="w-full h-full object-cover cursor-pointer select-none"
+        />
+
+        {/* Play/Pause state center animation feedback */}
+        {showPlayIcon !== null ? (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-30">
+            <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white scale-125 transition-all">
+              {showPlayIcon ? (
+                <Play className="w-8 h-8 fill-white ml-1" />
+              ) : (
+                <Pause className="w-8 h-8 fill-white" />
+              )}
+            </div>
+          </div>
+        ) : !isPlaying ? (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-30">
+            <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-2xl">
+              <Play className="w-8 h-8 fill-white ml-1" />
+            </div>
+          </div>
+        ) : null}
+
+        {/* Top Floating Controls Bar */}
+        <div className="absolute top-0 inset-x-0 p-4 pt-6 md:pt-4 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center justify-between z-20 pointer-events-auto">
+          {/* Badge Menu Spesial */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md text-white text-xs font-bold border border-white/15 shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            <span>{t('publicMenu', 'specialMenu')}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Audio Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleMute}
+              className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md text-white flex items-center justify-center border border-white/20 active:scale-95 transition-all hover:bg-black/70"
+              aria-label={isMuted ? 'Unmute' : 'Mute'}
+            >
+              {isMuted ? (
+                <VolumeX className="w-4 h-4 text-stone-300" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-white" />
+              )}
+            </button>
+
+            {/* Close Button (X) */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md text-white flex items-center justify-center border border-white/20 active:scale-95 transition-all hover:bg-black/70"
+              aria-label="Tutup"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Floating Menu Name and Price Overlay directly on top of video */}
+        {/* "dengan nama dan harga nya muncul melayang di videonya bro jadi g menghilang harga dan nama menunya" */}
+        <div className="absolute bottom-0 inset-x-0 p-5 pb-8 md:pb-6 bg-gradient-to-t from-black/95 via-black/70 to-transparent z-20 pointer-events-auto">
+          <div className="space-y-1.5">
+            {/* Nama Produk Melayang */}
+            <h2 className="text-white font-extrabold text-xl md:text-2xl leading-snug drop-shadow-md">
+              {product.name}
+            </h2>
+
+            {/* Deskripsi (jika ada) */}
+            {product.description && (
+              <p className="text-stone-200 text-xs md:text-sm leading-relaxed line-clamp-2 drop-shadow">
+                {product.description}
+              </p>
+            )}
+
+            {/* Harga Produk Melayang */}
+            {product.price > 0 && (
+              <div className="pt-2 flex items-baseline gap-2">
+                <span className="text-amber-400 font-black text-2xl md:text-3xl tracking-tight drop-shadow-lg">
+                  {formatPrice(product.price)}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -189,6 +314,7 @@ export default function PublicMenuPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [selectedVideoProduct, setSelectedVideoProduct] = useState<MenuProduct | null>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -326,7 +452,11 @@ export default function PublicMenuPage() {
                 {items.map((product, idx) => (
                   <div key={product.id}>
                     {product.video_url ? (
-                      <VideoProductCard product={product} index={catIndex * 10 + idx} />
+                      <VideoProductCard
+                        product={product}
+                        index={catIndex * 10 + idx}
+                        onOpenVideo={setSelectedVideoProduct}
+                      />
                     ) : (
                       <ProductImageCard product={product} index={catIndex * 10 + idx} />
                     )}
@@ -350,6 +480,14 @@ export default function PublicMenuPage() {
           </p>
         </div>
       </div>
+
+      {/* Full Video Modal — Nama & harga muncul melayang di videonya */}
+      {selectedVideoProduct && (
+        <VideoModal
+          product={selectedVideoProduct}
+          onClose={() => setSelectedVideoProduct(null)}
+        />
+      )}
     </div>
   )
 }

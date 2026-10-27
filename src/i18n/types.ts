@@ -86,6 +86,8 @@ export interface TranslationDictionary {
     emptyMenu: string
     loadError: string
     pricePrefix: string
+    specialMenu: string
+    watchVideo: string
   }
   publicWifi: {
     title: string

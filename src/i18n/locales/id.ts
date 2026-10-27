@@ -84,6 +84,8 @@ export const id: TranslationDictionary = {
     emptyMenu: 'Menu belum tersedia untuk bisnis ini.',
     loadError: 'Menu belum dapat dimuat.',
     pricePrefix: 'Rp',
+    specialMenu: 'Menu Spesial',
+    watchVideo: 'Putar Video',
   },
   publicWifi: {
     title: 'WiFi',
@@ -192,7 +194,7 @@ export const id: TranslationDictionary = {
     availableStatus: 'Menu Tersedia',
     manageCategoriesSubtitle: 'Kelola kelompok menu Anda.',
     manageProductsSubtitle: 'Atur detail menu, harga, dan ketersediaan untuk pelanggan.',
-    videoSpecs: 'MP4 / WebM · Maks 2.5 MB (1–2.5 MB) · Durasi Maks 8 Detik',
+    videoSpecs: 'MP4 / WebM · Maks 5 MB · Durasi Maks 8 Detik',
     videoTooLong: 'Durasi video ({duration} detik) melebihi batas maksimal {max} detik. Silakan potong/trim video Anda terlebih dahulu.',
     videoLimitReached: 'Maksimal 5 menu spesial dengan video telah tercapai ({count}/5). Hapus video dari menu lain jika ingin menggantinya.',
     videoCompressedNotice: 'Video berhasil dikompresi otomatis ({size} MB).',
