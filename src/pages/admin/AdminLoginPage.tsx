@@ -40,24 +40,42 @@ export default function AdminLoginPage() {
       }
 
       // 2. Sign in with owner PIN
+      const pinValue = pin.trim()
       const loginEmail = `${cleanSlug}@smartqr.app`
       const { error } = await supabase.auth.signInWithPassword({
         email: loginEmail,
-        password: pin.trim(),
+        password: pinValue,
       })
 
       if (error) {
-        throw new Error(t('adminLogin', 'invalidPin'))
-      }
-
-      // Pastikan relasi tabel business_members disinkronisasi
-      try {
-        await (supabase as any).rpc('verify_business_pin', {
+        // Fallback: verifikasi PIN via RPC (yang otomatis resinkronisasi auth.users & credentials)
+        const { data: pinOk, error: rpcErr } = await (supabase as any).rpc('verify_business_pin', {
           p_slug: cleanSlug,
-          p_pin: pin.trim(),
+          p_pin: pinValue,
         })
-      } catch {
-        // fallback dijalankan di getMyBusinesses
+
+        if (rpcErr || !pinOk) {
+          throw new Error(t('adminLogin', 'invalidPin'))
+        }
+
+        // Retry login setelah tersinkronisasi
+        const retry = await supabase.auth.signInWithPassword({
+          email: loginEmail,
+          password: pinValue,
+        })
+        if (retry.error) {
+          throw new Error(t('adminLogin', 'invalidPin'))
+        }
+      } else {
+        // Pastikan relasi tabel business_members disinkronisasi
+        try {
+          await (supabase as any).rpc('verify_business_pin', {
+            p_slug: cleanSlug,
+            p_pin: pinValue,
+          })
+        } catch {
+          // fallback dijalankan di getMyBusinesses
+        }
       }
 
       if (rememberMe) {
