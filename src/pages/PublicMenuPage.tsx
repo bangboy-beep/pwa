@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { createClient } from '../lib/supabase/client'
 import { Loading } from '../components/ui/Loading'
-import { AlertCircle, Sparkles, Video as VideoIcon, Play, Pause, Volume2, VolumeX, X } from 'lucide-react'
+import { AlertCircle, Sparkles, Video as VideoIcon, Play, Pause, Volume2, VolumeX, X, ZoomIn } from 'lucide-react'
 import type { Business, MenuCategory, MenuProduct } from '../types'
 import { useLanguage } from '../i18n/LanguageContext'
 import { LanguageToggle } from '../components/ui/LanguageToggle'
@@ -275,31 +275,152 @@ function VideoModal({
 function ProductImageCard({
   product,
   index,
+  onOpenImage,
 }: {
   product: MenuProduct
   index: number
+  onOpenImage: (product: MenuProduct) => void
 }) {
   const { formatPrice } = useLanguage()
+  const imageUrl = product.image_url || getRandomFoodImage(index)
 
   return (
-    <div className="flex items-center gap-4 bg-stone-50 rounded-2xl p-4 hover:bg-stone-100 transition-colors group">
-      <div className="w-20 h-20 shrink-0 rounded-full overflow-hidden bg-stone-200 shadow-sm">
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" loading="lazy" decoding="async" />
-        ) : (
-          <img src={getRandomFoodImage(index)} alt="" className="w-full h-full object-cover transition-transform duration-300" loading="lazy" decoding="async" />
-        )}
+    <div
+      onClick={() => onOpenImage(product)}
+      className="bg-white rounded-3xl border border-stone-100 overflow-hidden shadow-sm hover:shadow-md active:scale-[0.99] transition-all relative group cursor-pointer"
+    >
+      {/* Large Image Container — same height as VideoProductCard */}
+      <div className="relative h-60 bg-stone-100 overflow-hidden">
+        <img
+          src={imageUrl}
+          alt={product.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          loading="lazy"
+          decoding="async"
+        />
+
+        {/* Subtle dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
+
+        {/* Zoom indicator icon top-right */}
+        <div className="absolute top-3 right-3 flex items-center justify-center w-7 h-7 rounded-full bg-black/50 backdrop-blur-md text-white border border-white/10 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+          <ZoomIn className="w-3.5 h-3.5" />
+        </div>
+
+        {/* Tap to view pill bottom-right */}
+        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-semibold border border-white/10 shadow-sm">
+          <ZoomIn className="w-3 h-3" />
+          <span>Lihat</span>
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-stone-900 text-[15px] leading-tight truncate">{product.name}</p>
+
+      {/* Info — centered below image, matching VideoProductCard style */}
+      <div className="p-4 flex flex-col items-center text-center">
+        <p className="font-bold text-stone-900 text-[16px] leading-tight">{product.name}</p>
         {product.description && (
-          <p className="text-stone-500 text-xs mt-0.5 line-clamp-1">{product.description}</p>
+          <p className="text-stone-500 text-xs mt-1.5 line-clamp-2 leading-relaxed w-full">{product.description}</p>
         )}
         {product.price > 0 && (
-          <p className="text-primary-600 font-bold text-[15px] mt-1">
+          <p className="text-primary-600 font-extrabold text-[16px] mt-2">
             {formatPrice(product.price)}
           </p>
         )}
+      </div>
+    </div>
+  )
+}
+
+// Image Modal Fullscreen — Gambar muncul full dengan nama & harga melayang di atas gambar
+function ImageModal({
+  product,
+  onClose,
+}: {
+  product: MenuProduct
+  onClose: () => void
+}) {
+  const { formatPrice } = useLanguage()
+
+  // Lock body scroll saat modal aktif
+  useEffect(() => {
+    const origOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = origOverflow
+    }
+  }, [])
+
+  // ESC key listener untuk tutup modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  const imageUrl = product.image_url || ''
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-0 md:p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      {/* Modal Dialog Card Container */}
+      <div
+        className="relative w-full max-w-md h-full md:h-[92vh] md:max-h-[840px] md:rounded-3xl bg-black overflow-hidden flex flex-col justify-center shadow-2xl border border-white/10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Full Image Element */}
+        <img
+          src={imageUrl}
+          alt={product.name}
+          className="w-full h-full object-cover select-none"
+        />
+
+        {/* Top Floating Controls Bar */}
+        <div className="absolute top-0 inset-x-0 p-4 pt-6 md:pt-4 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex items-center justify-between z-20 pointer-events-auto">
+          {/* Badge */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md text-white text-xs font-bold border border-white/15 shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            <span>Menu</span>
+          </div>
+
+          {/* Close Button (X) */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-md text-white flex items-center justify-center border border-white/20 active:scale-95 transition-all hover:bg-black/70"
+            aria-label="Tutup"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Floating Menu Name and Price Overlay directly on top of image */}
+        <div className="absolute bottom-0 inset-x-0 p-5 pb-8 md:pb-6 bg-gradient-to-t from-black/95 via-black/70 to-transparent z-20 pointer-events-auto">
+          <div className="space-y-1.5">
+            {/* Nama Produk Melayang */}
+            <h2 className="text-white font-extrabold text-xl md:text-2xl leading-snug drop-shadow-md">
+              {product.name}
+            </h2>
+
+            {/* Deskripsi (jika ada) */}
+            {product.description && (
+              <p className="text-stone-200 text-xs md:text-sm leading-relaxed line-clamp-2 drop-shadow">
+                {product.description}
+              </p>
+            )}
+
+            {/* Harga Produk Melayang */}
+            {product.price > 0 && (
+              <div className="pt-2 flex items-baseline gap-2">
+                <span className="text-amber-400 font-black text-2xl md:text-3xl tracking-tight drop-shadow-lg">
+                  {formatPrice(product.price)}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -315,6 +436,7 @@ export default function PublicMenuPage() {
   const [error, setError] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [selectedVideoProduct, setSelectedVideoProduct] = useState<MenuProduct | null>(null)
+  const [selectedImageProduct, setSelectedImageProduct] = useState<MenuProduct | null>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -458,7 +580,7 @@ export default function PublicMenuPage() {
                         onOpenVideo={setSelectedVideoProduct}
                       />
                     ) : (
-                      <ProductImageCard product={product} index={catIndex * 10 + idx} />
+                      <ProductImageCard product={product} index={catIndex * 10 + idx} onOpenImage={setSelectedImageProduct} />
                     )}
                   </div>
                 ))}
@@ -486,6 +608,14 @@ export default function PublicMenuPage() {
         <VideoModal
           product={selectedVideoProduct}
           onClose={() => setSelectedVideoProduct(null)}
+        />
+      )}
+
+      {/* Full Image Modal — Gambar muncul besar melayang dengan nama & harga */}
+      {selectedImageProduct && (
+        <ImageModal
+          product={selectedImageProduct}
+          onClose={() => setSelectedImageProduct(null)}
         />
       )}
     </div>

@@ -272,7 +272,7 @@ export default function MenuPage() {
     // Kompresi otomatis jika file > 5.0 MB
     if (file.size > MAX_VIDEO_SIZE) {
       setIsVideoCompressing(true)
-      setProductVideoWarning('Sedang mengompresi video otomatis agar tajam & optimal (maks. 5.0 MB)...')
+      setProductVideoWarning(`Sedang mengompresi video otomatis (${(file.size / (1024 * 1024)).toFixed(1)} MB → maks. 5.0 MB)...`)
       try {
         const { file: optimized, compressed } = await compressVideoClient(file)
         if (compressed && optimized.size <= MAX_VIDEO_SIZE) {
@@ -283,9 +283,11 @@ export default function MenuPage() {
             })
           )
           setProductVideoWarning(null)
-        } else if (optimized.size > MAX_VIDEO_SIZE) {
-          const validation = validateVideoFile(optimized)
-          setProductFormError(validation.error)
+        } else if (!compressed || optimized.size > MAX_VIDEO_SIZE) {
+          const sizeMb = compressed ? (optimized.size / (1024 * 1024)).toFixed(1) : (file.size / (1024 * 1024)).toFixed(1)
+          setProductFormError(
+            `Video terlalu besar (${sizeMb} MB) setelah kompresi. Gunakan video lebih pendek (maks. 5 detik) atau resolusi lebih rendah. Potong/kompres dulu di galeri HP.`
+          )
           if (videoInputRef.current) videoInputRef.current.value = ''
           setIsVideoCompressing(false)
           return
