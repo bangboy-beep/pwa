@@ -9,6 +9,7 @@ export type BusinessType =
   | 'bar'
   | 'salon'
   | 'barbershop'
+  | 'gym'
   | 'other'
 
 export type UserRole = 'owner' | 'admin' | 'staff'
@@ -35,6 +36,9 @@ export interface Business {
   opening_hours?: Record<string, string[]>
   theme?: BusinessTheme
   status: BusinessStatus
+  trial_ends_at?: string
+  subscription_tier?: 'trial' | 'pro_monthly' | 'business_yearly' | string
+  subscription_ends_at?: string
   created_at: string
   updated_at: string
 }

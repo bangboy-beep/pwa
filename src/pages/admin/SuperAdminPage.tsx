@@ -18,6 +18,9 @@ interface BusinessRow {
   slug: string;
   business_type: string;
   status: string;
+  trial_ends_at?: string | null;
+  subscription_tier?: string | null;
+  subscription_ends_at?: string | null;
   logo_url?: string | null;
 }
 
@@ -31,6 +34,23 @@ export default function SuperAdminPage() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [showAddSheet, setShowAddSheet] = useState(false);
+
+  const handleExtendSubscription = async (bizId: string, tier: string, days: number) => {
+    try {
+      const supabase = createClient();
+      const { error } = await (supabase as any).rpc('update_business_subscription', {
+        p_business_id: bizId,
+        p_tier: tier,
+        p_days: days,
+      });
+      if (error) throw error;
+      toast.success(tier === 'trial' ? `Trial diperpanjang +${days} hari!` : `Langganan aktif +${days} hari!`);
+      await fetchAll();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gagal memperbarui langganan';
+      toast.error(msg);
+    }
+  };
 
   // Edit / Set PIN state
   const [editingBiz, setEditingBiz] = useState<BusinessRow | null>(null);
@@ -402,6 +422,22 @@ export default function SuperAdminPage() {
 
                     {/* Quick action buttons */}
                     <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleExtendSubscription(b.id, 'trial', 14)}
+                        className="h-8 px-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold transition-colors"
+                        title="Perpanjang Trial +14 Hari"
+                      >
+                        +14d Trial
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExtendSubscription(b.id, 'monthly', 30)}
+                        className="h-8 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold transition-colors"
+                        title="Aktivasi Paket Pro +30 Hari"
+                      >
+                        +30d Pro
+                      </button>
                       <button
                         onClick={() => manageBusiness(b)}
                         className="h-8 px-2.5 rounded-xl bg-primary-50 text-primary hover:bg-primary-100 text-xs font-bold flex items-center gap-1 transition-colors"

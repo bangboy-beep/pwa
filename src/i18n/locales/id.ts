@@ -40,6 +40,7 @@ export const id: TranslationDictionary = {
     bar: 'Bar',
     salon: 'Salon',
     barbershop: 'Barbershop',
+    gym: 'Gym & Fitness',
     other: 'Lainnya',
   },
   nav: {

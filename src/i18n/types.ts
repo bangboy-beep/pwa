@@ -42,6 +42,7 @@ export interface TranslationDictionary {
     bar: string
     salon: string
     barbershop: string
+    gym: string
     other: string
   }
   nav: {

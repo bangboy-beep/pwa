@@ -2,11 +2,12 @@
 // Main router with authentication and business context
 
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { LanguageProvider } from './i18n/LanguageContext'
 import { AuthProvider } from './providers/AuthProvider'
 import { BusinessProvider } from './providers/BusinessProvider'
 import { checkAndCleanupWeeklyCache } from './lib/utils/cacheManager'
+import LandingPage from './pages/LandingPage'
 import AdminLoginPage from './pages/admin/AdminLoginPage'
 import SuperAdminLoginPage from './pages/admin/SuperAdminLoginPage'
 import AdminSlugPage from './pages/admin/AdminSlugPage'
@@ -41,7 +42,7 @@ export default function App() {
           <BusinessProvider>
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<Navigate to="/super" replace />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route path="/super/login" element={<SuperAdminLoginPage />} />
             <Route path="/admin/:slug" element={<AdminSlugPage />} />

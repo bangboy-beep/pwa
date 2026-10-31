@@ -7,7 +7,7 @@ import { useParams } from 'react-router-dom'
 import {
   Plus, Edit2, Trash2, AlertCircle, X, Search,
   UtensilsCrossed, ShoppingBag, ImagePlus, Video, VideoOff,
-  Sparkles, Loader2,
+  Sparkles, Loader2, Dumbbell, Hotel, Scissors,
 } from 'lucide-react'
 import { useAuthGuard } from '../hooks/useAuthGuard'
 import { useBusiness } from '../providers/BusinessProvider'
@@ -30,13 +30,43 @@ import type { MenuCategory, MenuProduct } from '../types'
 export default function MenuPage() {
   const { businessId: routeBusinessId } = useParams<{ businessId?: string }>()
   const { businesses, selectedBusiness, setSelectedBusiness, loading: businessLoading } = useBusiness()
-  const { t, formatPrice } = useLanguage()
+  const { t, formatPrice, language } = useLanguage()
   useAuthGuard()
 
   const currentBusiness = routeBusinessId
     ? businesses.find((b) => b.id === routeBusinessId) || selectedBusiness
     : selectedBusiness || businesses[0] || null
   const isStaff = currentBusiness?.role === 'staff'
+
+  const bizNameLower = currentBusiness?.name?.toLowerCase() || ''
+  const bizSlugLower = currentBusiness?.slug?.toLowerCase() || ''
+  const isGym = currentBusiness && (
+    currentBusiness.business_type === 'gym' ||
+    bizNameLower.includes('gym') ||
+    bizNameLower.includes('fitness') ||
+    bizSlugLower.includes('gym') ||
+    bizSlugLower.includes('fitness')
+  )
+  const isHospitality = currentBusiness && (
+    ['hotel', 'villa', 'homestay'].includes(currentBusiness.business_type) ||
+    bizNameLower.includes('hotel') ||
+    bizNameLower.includes('villa') ||
+    bizNameLower.includes('homestay') ||
+    bizNameLower.includes('resort')
+  )
+  const isBeauty = currentBusiness && (
+    ['salon', 'barbershop'].includes(currentBusiness.business_type) ||
+    bizNameLower.includes('salon') ||
+    bizNameLower.includes('barber')
+  )
+
+  const EmptyIcon = isGym
+    ? Dumbbell
+    : isHospitality
+    ? Hotel
+    : isBeauty
+    ? Scissors
+    : UtensilsCrossed
 
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [products, setProducts] = useState<MenuProduct[]>([])
@@ -404,7 +434,15 @@ export default function MenuPage() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
         <input
           type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={t('adminMenu', 'searchPlaceholder')}
+          placeholder={
+            isGym
+              ? (language === 'id' ? 'Cari paket membership & kelas...' : 'Search membership plans & classes...')
+              : isHospitality
+              ? (language === 'id' ? 'Cari layanan & fasilitas...' : 'Search amenities & services...')
+              : isBeauty
+              ? (language === 'id' ? 'Cari treatment & layanan...' : 'Search treatments & services...')
+              : t('adminMenu', 'searchPlaceholder')
+          }
           className="w-full h-12 pl-11 pr-11 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-stone-400"
         />
         {searchQuery && (
@@ -418,10 +456,16 @@ export default function MenuPage() {
       <div className="flex items-center justify-between px-1 text-xs">
         <span className="font-bold text-stone-700 flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          {t('adminMenu', 'specialVideoCounter', { count: String(specialVideoCount) })}
+          {isGym
+            ? (language === 'id' ? `Video Fasilitas & Latihan (${specialVideoCount}/5)` : `Facility & Workout Videos (${specialVideoCount}/5)`)
+            : isHospitality
+            ? (language === 'id' ? `Video Kamar & Fasilitas (${specialVideoCount}/5)` : `Room & Facility Videos (${specialVideoCount}/5)`)
+            : isBeauty
+            ? (language === 'id' ? `Video Hasil Treatment (${specialVideoCount}/5)` : `Treatment Showcase Videos (${specialVideoCount}/5)`)
+            : t('adminMenu', 'specialVideoCounter', { count: String(specialVideoCount) })}
         </span>
         <span className="text-[11px] text-stone-400">
-          Maks. 5 menu video (maks. 5 MB)
+          {language === 'id' ? 'Maks. 5 video (maks. 5 MB)' : 'Max 5 videos (max 5 MB)'}
         </span>
       </div>
 
@@ -429,13 +473,40 @@ export default function MenuPage() {
       {categories.length === 0 ? (
         <div className="rounded-2xl border border-stone-200 p-8 text-center bg-white shadow-sm">
           <div className="w-16 h-16 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4">
-            <UtensilsCrossed className="w-8 h-8 text-primary" />
+            <EmptyIcon className="w-8 h-8 text-primary" />
           </div>
-          <h3 className="text-[15px] font-bold text-stone-900">{t('adminMenu', 'noCategories')}</h3>
-          <p className="text-xs text-stone-500 mt-1 leading-relaxed px-4">{t('adminMenu', 'createCategoryFirst')}</p>
-          {!isStaff && <button onClick={handleOpenAddCategory} className="mt-6 w-full h-11 rounded-xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm">
-            <Plus className="w-5 h-5" /> {t('adminMenu', 'addCategory')}
-          </button>}
+          <h3 className="text-[15px] font-bold text-stone-900">
+            {isGym
+              ? (language === 'id' ? 'Belum ada kategori paket gym' : 'No gym categories yet')
+              : isHospitality
+              ? (language === 'id' ? 'Belum ada direktori layanan hotel' : 'No hotel directories yet')
+              : isBeauty
+              ? (language === 'id' ? 'Belum ada kategori treatment' : 'No treatment categories yet')
+              : t('adminMenu', 'noCategories')}
+          </h3>
+          <p className="text-xs text-stone-500 mt-1 leading-relaxed px-4">
+            {isGym
+              ? (language === 'id' ? 'Silakan buat kategori paket terlebih dahulu (contoh: Membership Bulanan, Personal Trainer, Kelas Yoga).' : 'Please create a category first (e.g. Monthly Memberships, Personal Trainer, Yoga Classes).')
+              : isHospitality
+              ? (language === 'id' ? 'Silakan buat kategori layanan (contoh: Room Service, Fasilitas Hotel, Spa).' : 'Please create a category first (e.g. Room Service, Amenities, Spa).')
+              : isBeauty
+              ? (language === 'id' ? 'Silakan buat kategori treatment (contoh: Haircut, Coloring, Creambath).' : 'Please create a category first (e.g. Haircut, Coloring, Treatments).')
+              : t('adminMenu', 'createCategoryFirst')}
+          </p>
+          {!isStaff && (
+            <button onClick={handleOpenAddCategory} className="mt-6 w-full h-11 rounded-xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm">
+              <Plus className="w-5 h-5" />
+              <span>
+                {isGym
+                  ? (language === 'id' ? 'Tambah Kategori Paket' : 'Add Package Category')
+                  : isHospitality
+                  ? (language === 'id' ? 'Tambah Kategori Layanan' : 'Add Service Category')
+                  : isBeauty
+                  ? (language === 'id' ? 'Tambah Kategori Treatment' : 'Add Treatment Category')
+                  : t('adminMenu', 'addCategory')}
+              </span>
+            </button>
+          )}
         </div>
       ) : filteredCats.length === 0 ? (
         <div className="rounded-2xl border border-stone-200 p-12 text-center text-stone-500 text-sm bg-white shadow-sm font-medium">{t('adminMenu', 'categoryNotFound')}</div>

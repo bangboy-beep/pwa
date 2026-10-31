@@ -1,7 +1,8 @@
 import { NavLink, useParams } from 'react-router-dom';
-import { Home, Utensils, Wifi, Star, QrCode } from 'lucide-react';
+import { Home, Utensils, Wifi, Star, QrCode, Dumbbell, Hotel, Scissors } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { useBusiness } from '../../providers/BusinessProvider';
 
 interface NavItem {
   name: string;
@@ -68,14 +69,53 @@ export function CustomerBottomNav() {
 }
 
 export function AdminBottomNav() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { selectedBusiness } = useBusiness();
+
+  const bizNameLower = selectedBusiness?.name?.toLowerCase() || '';
+  const bizSlugLower = selectedBusiness?.slug?.toLowerCase() || '';
+  const isGym = selectedBusiness && (
+    selectedBusiness.business_type === 'gym' ||
+    bizNameLower.includes('gym') ||
+    bizNameLower.includes('fitness') ||
+    bizSlugLower.includes('gym') ||
+    bizSlugLower.includes('fitness')
+  );
+  const isHospitality = selectedBusiness && (
+    ['hotel', 'villa', 'homestay'].includes(selectedBusiness.business_type) ||
+    bizNameLower.includes('hotel') ||
+    bizNameLower.includes('villa') ||
+    bizNameLower.includes('homestay') ||
+    bizNameLower.includes('resort')
+  );
+  const isBeauty = selectedBusiness && (
+    ['salon', 'barbershop'].includes(selectedBusiness.business_type) ||
+    bizNameLower.includes('salon') ||
+    bizNameLower.includes('barber')
+  );
+
+  const menuLabel = isGym
+    ? (language === 'id' ? 'Paket' : 'Plans')
+    : isHospitality
+    ? (language === 'id' ? 'Katalog' : 'Services')
+    : isBeauty
+    ? (language === 'id' ? 'Layanan' : 'Services')
+    : t('nav', 'menu');
+
+  const MenuIcon = isGym
+    ? Dumbbell
+    : isHospitality
+    ? Hotel
+    : isBeauty
+    ? Scissors
+    : Utensils;
 
   return (
     <NavBar
       className="lg:hidden"
       items={[
         { name: t('nav', 'dashboard'), path: '/admin', icon: Home, end: true },
-        { name: t('nav', 'menu'), path: '/admin/menu', icon: Utensils },
+        { name: menuLabel, path: '/admin/menu', icon: MenuIcon },
         { name: t('nav', 'wifi'), path: '/admin/wifi', icon: Wifi },
         { name: t('nav', 'review'), path: '/admin/review', icon: Star },
         { name: t('nav', 'qrCode'), path: '/admin/qr', icon: QrCode },

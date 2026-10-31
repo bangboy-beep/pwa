@@ -15,6 +15,9 @@ import {
   QrCode,
   Printer,
   QrCode as Logo,
+  Dumbbell,
+  Hotel,
+  Scissors,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '../../hooks/useAuthContext';
@@ -37,9 +40,47 @@ function DrawerContent({ onNavigate }: { onNavigate?: () => void }) {
     navigate('/admin/login');
   };
 
+  const bizNameLower = currentBusiness?.name?.toLowerCase() || '';
+  const bizSlugLower = currentBusiness?.slug?.toLowerCase() || '';
+  const isGym = currentBusiness && (
+    currentBusiness.business_type === 'gym' ||
+    bizNameLower.includes('gym') ||
+    bizNameLower.includes('fitness') ||
+    bizSlugLower.includes('gym') ||
+    bizSlugLower.includes('fitness')
+  );
+  const isHospitality = currentBusiness && (
+    ['hotel', 'villa', 'homestay'].includes(currentBusiness.business_type) ||
+    bizNameLower.includes('hotel') ||
+    bizNameLower.includes('villa') ||
+    bizNameLower.includes('homestay') ||
+    bizNameLower.includes('resort')
+  );
+  const isBeauty = currentBusiness && (
+    ['salon', 'barbershop'].includes(currentBusiness.business_type) ||
+    bizNameLower.includes('salon') ||
+    bizNameLower.includes('barber')
+  );
+
+  const menuLabel = isGym
+    ? (language === 'id' ? 'Paket & Layanan' : 'Plans & Services')
+    : isHospitality
+    ? (language === 'id' ? 'Katalog & Layanan' : 'Directory & Services')
+    : isBeauty
+    ? (language === 'id' ? 'Price List & Layanan' : 'Services & Rates')
+    : t('nav', 'menu');
+
+  const MenuIcon = isGym
+    ? Dumbbell
+    : isHospitality
+    ? Hotel
+    : isBeauty
+    ? Scissors
+    : Utensils;
+
   const navItems = [
     { name: t('nav', 'dashboard'), path: '/admin', icon: Home },
-    { name: t('nav', 'menu'), path: '/admin/menu', icon: Utensils },
+    { name: menuLabel, path: '/admin/menu', icon: MenuIcon },
     { name: t('nav', 'wifi'), path: '/admin/wifi', icon: Wifi },
     { name: t('nav', 'review'), path: '/admin/review', icon: Star },
     { name: t('nav', 'qrCode'), path: '/admin/qr', icon: QrCode },
@@ -67,12 +108,14 @@ function DrawerContent({ onNavigate }: { onNavigate?: () => void }) {
             {currentBusiness.logo_url ? (
               <img src={currentBusiness.logo_url} alt="" className="w-full h-full object-cover" decoding="async" />
             ) : (
-              <BusinessTypeIcon type={currentBusiness.business_type} />
+              <BusinessTypeIcon type={currentBusiness.business_type} fallbackName={currentBusiness.name} />
             )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-ink truncate">{currentBusiness.name}</p>
-            <p className="text-xs text-ink-muted">{getBusinessTypeMeta(currentBusiness.business_type, language).label}</p>
+            <p className="text-xs text-ink-muted">
+              {getBusinessTypeMeta(currentBusiness.business_type, language, currentBusiness.name).label}
+            </p>
           </div>
         </div>
       )}

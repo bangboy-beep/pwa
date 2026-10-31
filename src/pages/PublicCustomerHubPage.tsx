@@ -6,7 +6,7 @@ import { useParams, Link } from 'react-router-dom'
 import { getPublicBusinessBySlug } from '../lib/business/service'
 import { getReviewSettings } from '../lib/review/service'
 import { Loading } from '../components/ui/Loading'
-import { Utensils, Wifi, Star, AlertCircle, ChevronRight } from 'lucide-react'
+import { Utensils, Wifi, Star, AlertCircle, ChevronRight, Hotel, Scissors, Dumbbell } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { PublicBusiness } from '../lib/business/service'
 import { useLanguage } from '../i18n/LanguageContext'
@@ -38,7 +38,7 @@ function ActionContent({ action }: { action: HubAction }) {
 
 export default function PublicCustomerHubPage() {
   const { slug } = useParams<{ slug: string }>()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const [business, setBusiness] = useState<PublicBusiness | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -97,32 +97,88 @@ export default function PublicCustomerHubPage() {
     )
   }
 
+  const bizNameLower = business.name.toLowerCase()
+  const bizSlugLower = business.slug.toLowerCase()
+  const isGym = business.business_type === 'gym' ||
+    bizNameLower.includes('gym') ||
+    bizNameLower.includes('fitness') ||
+    bizSlugLower.includes('gym') ||
+    bizSlugLower.includes('fitness')
+  const isHospitality = ['hotel', 'villa', 'homestay'].includes(business.business_type) ||
+    bizNameLower.includes('hotel') ||
+    bizNameLower.includes('villa') ||
+    bizNameLower.includes('homestay') ||
+    bizNameLower.includes('resort')
+  const isBeauty = ['salon', 'barbershop'].includes(business.business_type) ||
+    bizNameLower.includes('salon') ||
+    bizNameLower.includes('barber')
+
+  const menuTitle = isGym
+    ? (language === 'id' ? 'Paket Membership & Kelas' : 'Membership Plans & Classes')
+    : isHospitality
+    ? (language === 'id' ? 'Layanan Kamar & Fasilitas' : 'Room Service & Directory')
+    : isBeauty
+    ? (language === 'id' ? 'Price List & Layanan' : 'Services & Rates')
+    : t('publicHub', 'viewMenu')
+
+  const menuDesc = isGym
+    ? (language === 'id' ? 'Biaya harian, bulanan & sesi PT' : 'Daily, monthly passes & PT sessions')
+    : isHospitality
+    ? (language === 'id' ? 'Room service, fasilitas & direktori hotel' : 'Room service, amenities & directory')
+    : isBeauty
+    ? (language === 'id' ? 'Daftar treatment & paket perawatan' : 'Treatment list & beauty packages')
+    : t('publicHub', 'viewMenuDesc')
+
   const actions: HubAction[] = [
     {
-      title: t('publicHub', 'viewMenu'),
-      desc: t('publicHub', 'viewMenuDesc'),
-      icon: Utensils,
+      title: menuTitle,
+      desc: menuDesc,
+      icon: isGym ? Dumbbell : isHospitality ? Hotel : isBeauty ? Scissors : Utensils,
       tone: 'bg-primary-100 text-primary-800',
       to: `/m/${slug}`,
     },
     {
-      title: t('publicHub', 'connectWifi'),
-      desc: t('publicHub', 'connectWifiDesc'),
+      title: isGym
+        ? (language === 'id' ? 'WiFi Khusus Member' : 'Member Free WiFi')
+        : isHospitality
+        ? (language === 'id' ? 'WiFi Kamar & Hotel' : 'Hotel Guest WiFi')
+        : t('publicHub', 'connectWifi'),
+      desc: isGym
+        ? (language === 'id' ? '1-Tap connect internet gym' : '1-Tap connect gym internet')
+        : isHospitality
+        ? (language === 'id' ? '1-Tap connect internet kamar' : '1-Tap connect hotel room internet')
+        : t('publicHub', 'connectWifiDesc'),
       icon: Wifi,
       tone: 'bg-sky-100 text-sky-800',
       to: `/w/${slug}`,
     },
     reviewUrl
       ? {
-          title: t('publicHub', 'leaveReview'),
-          desc: t('publicHub', 'leaveReviewDesc'),
+          title: isGym
+            ? (language === 'id' ? 'Beri Ulasan Gym' : 'Review Gym')
+            : isHospitality
+            ? (language === 'id' ? 'Beri Ulasan Hotel' : 'Review Hotel')
+            : t('publicHub', 'leaveReview'),
+          desc: isHospitality
+            ? (language === 'id' ? 'Ulasan Google Maps hotel' : 'Hotel Google Maps review')
+            : isGym
+            ? (language === 'id' ? 'Ulasan Google Maps gym' : 'Gym Google Maps review')
+            : t('publicHub', 'leaveReviewDesc'),
           icon: Star,
           tone: 'bg-amber-100 text-amber-800',
           href: reviewUrl,
         }
       : {
-          title: t('publicHub', 'leaveReview'),
-          desc: t('publicHub', 'leaveReviewDesc'),
+          title: isGym
+            ? (language === 'id' ? 'Beri Ulasan Gym' : 'Review Gym')
+            : isHospitality
+            ? (language === 'id' ? 'Beri Ulasan Hotel' : 'Review Hotel')
+            : t('publicHub', 'leaveReview'),
+          desc: isHospitality
+            ? (language === 'id' ? 'Ulasan Google Maps hotel' : 'Hotel Google Maps review')
+            : isGym
+            ? (language === 'id' ? 'Ulasan Google Maps gym' : 'Gym Google Maps review')
+            : t('publicHub', 'leaveReviewDesc'),
           icon: Star,
           tone: 'bg-amber-100 text-amber-800',
           to: `/r/${slug}`,

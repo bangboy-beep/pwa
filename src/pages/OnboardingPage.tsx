@@ -31,6 +31,7 @@ export default function OnboardingPage() {
     { value: 'bar', label: dict.businessTypes.bar, icon: '🍸' },
     { value: 'salon', label: dict.businessTypes.salon, icon: '💇' },
     { value: 'barbershop', label: dict.businessTypes.barbershop, icon: '💈' },
+    { value: 'gym', label: dict.businessTypes.gym, icon: '🏋️' },
     { value: 'other', label: dict.businessTypes.other, icon: '📋' },
   ]
 

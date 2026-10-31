@@ -8,6 +8,9 @@ import {
   Printer,
   LogOut,
   X,
+  Dumbbell,
+  Hotel,
+  Scissors,
 } from 'lucide-react';
 import { useAuthContext } from '../../hooks/useAuthContext';
 import { useBusiness } from '../../providers/BusinessProvider';
@@ -33,9 +36,47 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
     navigate('/admin/login');
   };
 
+  const bizNameLower = currentBusiness?.name?.toLowerCase() || '';
+  const bizSlugLower = currentBusiness?.slug?.toLowerCase() || '';
+  const isGym = currentBusiness && (
+    currentBusiness.business_type === 'gym' ||
+    bizNameLower.includes('gym') ||
+    bizNameLower.includes('fitness') ||
+    bizSlugLower.includes('gym') ||
+    bizSlugLower.includes('fitness')
+  );
+  const isHospitality = currentBusiness && (
+    ['hotel', 'villa', 'homestay'].includes(currentBusiness.business_type) ||
+    bizNameLower.includes('hotel') ||
+    bizNameLower.includes('villa') ||
+    bizNameLower.includes('homestay') ||
+    bizNameLower.includes('resort')
+  );
+  const isBeauty = currentBusiness && (
+    ['salon', 'barbershop'].includes(currentBusiness.business_type) ||
+    bizNameLower.includes('salon') ||
+    bizNameLower.includes('barber')
+  );
+
+  const menuLabel = isGym
+    ? (language === 'id' ? 'Paket & Layanan' : 'Plans & Services')
+    : isHospitality
+    ? (language === 'id' ? 'Katalog & Layanan' : 'Directory & Services')
+    : isBeauty
+    ? (language === 'id' ? 'Price List & Layanan' : 'Services & Rates')
+    : t('nav', 'menu');
+
+  const MenuIcon = isGym
+    ? Dumbbell
+    : isHospitality
+    ? Hotel
+    : isBeauty
+    ? Scissors
+    : UtensilsCrossed;
+
   const navItems = [
     { name: t('nav', 'dashboard'), path: '/admin', icon: LayoutDashboard },
-    { name: t('nav', 'menu'), path: '/admin/menu', icon: UtensilsCrossed },
+    { name: menuLabel, path: '/admin/menu', icon: MenuIcon },
     { name: t('nav', 'wifi'), path: '/admin/wifi', icon: Wifi },
     { name: t('nav', 'review'), path: '/admin/review', icon: Star },
     { name: t('nav', 'qrCode'), path: '/admin/qr', icon: QrCode },
@@ -84,18 +125,21 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
             <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2.5">{t('nav', 'activeBusiness')}</p>
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center text-base shrink-0">
-                {currentBusiness.business_type === 'cafe' && '☕'}
-                {currentBusiness.business_type === 'restaurant' && '🍽️'}
-                {currentBusiness.business_type === 'hotel' && '🏨'}
-                {currentBusiness.business_type === 'bar' && '🍸'}
-                {currentBusiness.business_type === 'salon' && '💇'}
-                {currentBusiness.business_type === 'barbershop' && '💈'}
-                {currentBusiness.business_type === 'other' && '📋'}
-                {['homestay', 'villa'].includes(currentBusiness.business_type) && '🏠'}
+                {isGym && '🏋️'}
+                {!isGym && currentBusiness.business_type === 'cafe' && '☕'}
+                {!isGym && currentBusiness.business_type === 'restaurant' && '🍽️'}
+                {!isGym && currentBusiness.business_type === 'hotel' && '🏨'}
+                {!isGym && currentBusiness.business_type === 'bar' && '🍸'}
+                {!isGym && currentBusiness.business_type === 'salon' && '💇'}
+                {!isGym && currentBusiness.business_type === 'barbershop' && '💈'}
+                {!isGym && ['homestay', 'villa'].includes(currentBusiness.business_type) && '🏠'}
+                {!isGym && currentBusiness.business_type === 'other' && '📋'}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-stone-900 truncate">{currentBusiness.name}</p>
-                <p className="text-[10px] text-stone-400 capitalize mt-0.5">{getBusinessTypeMeta(currentBusiness.business_type, language).label}</p>
+                <p className="text-[10px] text-stone-400 capitalize mt-0.5">
+                  {getBusinessTypeMeta(currentBusiness.business_type, language, currentBusiness.name).label}
+                </p>
               </div>
             </div>
           </div>

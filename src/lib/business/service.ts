@@ -49,7 +49,7 @@ export async function getMyBusinesses(): Promise<{
         description, address, phone, whatsapp,
         google_maps_url, google_review_url,
         instagram_url, facebook_url, tiktok_url, website_url,
-        opening_hours, theme, status, created_at, updated_at
+        opening_hours, theme, status, trial_ends_at, subscription_tier, subscription_ends_at, created_at, updated_at
       )
     `)
     .eq('user_id', userId)
@@ -70,7 +70,7 @@ export async function getMyBusinesses(): Promise<{
   if (userEmail && userEmail.endsWith('@smartqr.app')) {
     const slug = userEmail.replace('@smartqr.app', '')
     const { data: directBiz } = await (supabase.from('businesses') as any)
-      .select('id, name, slug, business_type, logo_url, cover_url, description, address, phone, whatsapp, google_maps_url, google_review_url, instagram_url, facebook_url, tiktok_url, website_url, opening_hours, theme, status, created_at, updated_at')
+      .select('id, name, slug, business_type, logo_url, cover_url, description, address, phone, whatsapp, google_maps_url, google_review_url, instagram_url, facebook_url, tiktok_url, website_url, opening_hours, theme, status, trial_ends_at, subscription_tier, subscription_ends_at, created_at, updated_at')
       .eq('slug', slug)
       .maybeSingle()
 
@@ -110,7 +110,7 @@ export async function getBusinessBySlug(slug: string): Promise<{
   const supabase = createClient()
   const { data, error } = await supabase
     .from('businesses')
-    .select('id, name, slug, business_type, logo_url, cover_url, description, address, phone, whatsapp, google_maps_url, google_review_url, instagram_url, facebook_url, tiktok_url, website_url, opening_hours, theme, status, created_at, updated_at')
+    .select('id, name, slug, business_type, logo_url, cover_url, description, address, phone, whatsapp, google_maps_url, google_review_url, instagram_url, facebook_url, tiktok_url, website_url, opening_hours, theme, status, trial_ends_at, subscription_tier, subscription_ends_at, created_at, updated_at')
     .eq('slug', slug)
     .single()
 
@@ -124,7 +124,7 @@ export async function getPublicBusinessBySlug(slug: string): Promise<{
   const supabase = createClient()
   const { data, error } = await supabase
     .from('businesses')
-    .select('id, name, slug, business_type, logo_url, cover_url, description, status')
+    .select('id, name, slug, business_type, logo_url, cover_url, description, status, trial_ends_at, subscription_tier, subscription_ends_at')
     .eq('slug', slug)
     .eq('status', 'active')
     .single()
@@ -139,7 +139,7 @@ export async function getBusinessById(id: string): Promise<{
   const supabase = createClient()
   const { data, error } = await supabase
     .from('businesses')
-    .select('id, name, slug, business_type, logo_url, cover_url, description, address, phone, whatsapp, google_maps_url, google_review_url, instagram_url, facebook_url, tiktok_url, website_url, opening_hours, theme, status, created_at, updated_at')
+    .select('id, name, slug, business_type, logo_url, cover_url, description, address, phone, whatsapp, google_maps_url, google_review_url, instagram_url, facebook_url, tiktok_url, website_url, opening_hours, theme, status, trial_ends_at, subscription_tier, subscription_ends_at, created_at, updated_at')
     .eq('id', id)
     .single()
 
@@ -166,12 +166,15 @@ export async function createBusiness(input: {
   error: { message: string } | null
 }> {
   const supabase = createClient()
+  const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
   const { data, error } = await (supabase.from('businesses') as any)
     .insert({
       name: input.name,
       slug: input.slug,
       business_type: input.business_type,
       status: 'active',
+      subscription_tier: 'trial',
+      trial_ends_at: trialEndsAt,
     })
     .select()
     .single()
@@ -195,13 +198,16 @@ export async function createBusinessWithOwner(input: {
 }> {
   const supabase = createClient()
 
-  // 1. Create Business
+  // 1. Create Business with 14-day trial
+  const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
   const { data: businessData, error: bizError } = await (supabase.from('businesses') as any)
     .insert({
       name: input.name,
       slug: input.slug,
       business_type: input.business_type,
       status: 'active',
+      subscription_tier: 'trial',
+      trial_ends_at: trialEndsAt,
     })
     .select()
     .single()
@@ -251,6 +257,58 @@ export async function createBusinessWithOwner(input: {
       ownerPin,
     },
     error: null,
+  }
+}
+
+/**
+ * Self-registration from Landing Page for clients with instant auto-login
+ */
+export async function registerBusinessSelfServe(input: {
+  name: string
+  slug: string
+  business_type: string
+  whatsapp?: string
+  pin: string
+}): Promise<{
+  data: Business | null
+  error: { message: string } | null
+}> {
+  const supabase = createClient()
+  const cleanSlug = input.slug.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '')
+  const ownerEmail = `${cleanSlug}@smartqr.app`
+  const ownerPin = input.pin.trim()
+
+  // Call the SECURITY DEFINER RPC (bypasses RLS safely)
+  try {
+    const { data: rpcData, error: rpcError } = await (supabase as any).rpc('register_business_self_serve', {
+      p_name: input.name.trim(),
+      p_slug: cleanSlug,
+      p_business_type: input.business_type,
+      p_whatsapp: input.whatsapp?.trim() || null,
+      p_pin: ownerPin,
+    })
+
+    if (rpcError) {
+      return { data: null, error: { message: rpcError.message || 'Gagal mendaftar bisnis' } }
+    }
+
+    if (rpcData) {
+      // Auto login with new credentials
+      try {
+        await supabase.auth.signInWithPassword({
+          email: ownerEmail,
+          password: ownerPin,
+        })
+      } catch {
+        // ignore login error
+      }
+      return { data: rpcData as Business, error: null }
+    }
+
+    return { data: null, error: { message: 'Gagal membuat bisnis' } }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Terjadi kesalahan sistem'
+    return { data: null, error: { message: msg } }
   }
 }
 
