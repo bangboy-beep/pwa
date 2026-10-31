@@ -416,16 +416,16 @@ export default function LandingPage() {
       {/* 1. NAVBAR */}
       {/* ============================================================== */}
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-stone-950/80 border-b border-stone-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
           {/* Brand */}
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-400 flex items-center justify-center text-stone-950 shadow-lg shadow-amber-500/25">
-              <QrCode className="w-6 h-6 stroke-[2.5]" />
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-400 flex items-center justify-center text-stone-950 shadow-lg shadow-amber-500/25">
+              <QrCode className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
             </div>
             <div>
-              <span className="text-xl font-extrabold tracking-tight text-white flex items-center gap-1.5">
+              <span className="text-base sm:text-xl font-extrabold tracking-tight text-white flex items-center gap-1 sm:gap-1.5">
                 Smart<span className="text-amber-400">QR</span>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/20">
+                <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/20">
                   PWA
                 </span>
               </span>
@@ -443,17 +443,17 @@ export default function LandingPage() {
           </nav>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-3">
-            <LanguageToggle variant="button" className="bg-stone-900 border-stone-800 text-stone-200" />
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            <LanguageToggle variant="button" className="bg-stone-900 border-stone-800 text-stone-200 text-xs px-2 py-1 sm:px-2.5 sm:py-1.5" />
             <Link
               to="/admin/login"
-              className="px-4 py-2 text-sm font-bold text-stone-200 hover:text-white hover:bg-stone-900 rounded-xl transition-all"
+              className="px-2.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-stone-200 hover:text-white hover:bg-stone-900 rounded-xl transition-all"
             >
               {tr.nav.login}
             </Link>
             <button
               onClick={() => setShowRegisterModal(true)}
-              className="px-5 py-2.5 text-sm font-bold bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 rounded-xl shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center gap-2"
+              className="hidden sm:flex px-4 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-bold bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 rounded-xl shadow-lg shadow-amber-500/20 active:scale-95 transition-all items-center gap-1.5 sm:gap-2 shrink-0"
             >
               <Sparkles className="w-4 h-4" />
               <span>{tr.nav.startTrial}</span>
