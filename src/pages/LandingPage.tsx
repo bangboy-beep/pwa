@@ -21,7 +21,9 @@ import {
   Radio,
   Lock,
   ChevronDown,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  Check
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { registerBusinessSelfServe } from '../lib/business/service'
@@ -281,8 +283,10 @@ export default function LandingPage() {
   const { language } = useLanguage()
   const tr = LANDING_I18N[language] || LANDING_I18N.id
 
-  // State for Registration Modal
+  // State for Registration Modal & QRIS Modal
   const [showRegisterModal, setShowRegisterModal] = useState(false)
+  const [showQrisModal, setShowQrisModal] = useState(false)
+  const [copiedNmid, setCopiedNmid] = useState(false)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly')
   const [activeTabIndustry, setActiveTabIndustry] = useState<'cafe' | 'hotel' | 'salon' | 'gym'>('cafe')
 
@@ -1097,9 +1101,18 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2.5">
-            <span className="px-3 py-1.5 rounded-lg bg-stone-800/90 border border-stone-700 text-xs font-semibold text-stone-200">
-              QRIS: SEHAT PRO, DIGITAL & KREATIF (ID1025418493371)
-            </span>
+            <button
+              type="button"
+              onClick={() => setShowQrisModal(true)}
+              title={language === 'id' ? 'Klik untuk melihat / scan kode QRIS' : 'Click to view / scan QRIS code'}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 hover:border-amber-400 text-xs font-bold text-amber-200 hover:text-white transition-all shadow-sm hover:shadow-amber-500/20 active:scale-95 group cursor-pointer"
+            >
+              <QrCode className="w-4 h-4 text-amber-400 shrink-0 transition-transform group-hover:scale-110" />
+              <span>QRIS: <span className="underline decoration-amber-400/60 underline-offset-2">SEHAT PRO, DIGITAL & KREATIF</span></span>
+              <span className="text-[10px] font-semibold text-amber-300/90 bg-amber-400/15 px-1.5 py-0.5 rounded border border-amber-400/30 group-hover:bg-amber-400/25 transition-colors">
+                {language === 'id' ? 'Lihat QR 🔍' : 'View QR 🔍'}
+              </span>
+            </button>
             <a
               href="https://paypal.me/harwinariyanto1"
               target="_blank"
@@ -1360,6 +1373,135 @@ export default function LandingPage() {
                 )}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+      {/* QRIS Modal */}
+      {showQrisModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+          onClick={() => setShowQrisModal(false)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-3xl bg-stone-900 border border-stone-800 p-6 shadow-2xl text-center overflow-hidden max-h-[92vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-amber-500/10 blur-3xl pointer-events-none rounded-full" />
+
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setShowQrisModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-xl bg-stone-800/80 hover:bg-stone-750 text-stone-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <QrCode className="w-4 h-4" />
+              </div>
+              <h3 className="text-base font-extrabold text-white">
+                {language === 'id' ? 'Pembayaran QRIS Nasional' : 'National QRIS Payment'}
+              </h3>
+            </div>
+            <p className="text-xs text-stone-400 mb-4">
+              {language === 'id'
+                ? 'Scan langsung dari semua m-Banking & e-Wallet Indonesia'
+                : 'Scan directly with any Indonesian mobile banking or e-wallet'}
+            </p>
+
+            {/* QRIS Image Card */}
+            <div className="p-3.5 rounded-2xl bg-white border border-stone-200 inline-block shadow-lg mx-auto mb-4 w-full">
+              <img
+                src="/qris-payment.jpg"
+                alt="QRIS Sehat Pro Digital & Kreatif"
+                className="w-full max-w-[240px] mx-auto h-auto rounded-xl object-contain shadow-sm"
+              />
+              <div className="mt-2.5 pt-2 border-t border-stone-100 text-center">
+                <p className="text-xs font-black text-stone-900 tracking-tight">
+                  SEHAT PRO, DIGITAL & KREATIF
+                </p>
+                <div className="mt-1 flex items-center justify-center gap-1.5">
+                  <span className="text-[10px] text-stone-600 font-mono">
+                    NMID: ID1025418493371
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText('ID1025418493371')
+                      setCopiedNmid(true)
+                      setTimeout(() => setCopiedNmid(false), 2000)
+                    }}
+                    title="Salin NMID"
+                    className="text-[10px] font-bold text-amber-600 hover:text-amber-700 inline-flex items-center gap-0.5 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200"
+                  >
+                    {copiedNmid ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-600" />
+                        <span className="text-emerald-600">Tersalin</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Salin</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Steps */}
+            <div className="text-left p-3.5 rounded-2xl bg-stone-850/90 border border-stone-800 text-xs space-y-1.5 mb-4">
+              <p className="font-bold text-amber-300 flex items-center gap-1.5">
+                <span>💡</span>
+                <span>{language === 'id' ? 'Langkah Pembayaran:' : 'Payment Steps:'}</span>
+              </p>
+              <p className="text-stone-300 leading-relaxed text-[11px]">
+                {language === 'id' ? (
+                  <>
+                    1. Buka <strong>m-Banking</strong> (BCA, Mandiri, BRI, BNI) atau <strong>e-Wallet</strong> (GoPay, OVO, DANA, ShopeePay).<br />
+                    2. Scan kode QRIS di atas dan masukkan nominal paket.<br />
+                    3. Klik tombol WhatsApp di bawah untuk konfirmasi aktivasi instan.
+                  </>
+                ) : (
+                  <>
+                    1. Open any Indonesian <strong>m-Banking</strong> or <strong>e-Wallet</strong>.<br />
+                    2. Scan QRIS code above and enter package amount.<br />
+                    3. Click WhatsApp below for instant confirmation.
+                  </>
+                )}
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <a
+                href="/qris-payment.jpg"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 text-stone-200 hover:text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>{language === 'id' ? 'Buka Gambar' : 'Open Image'}</span>
+              </a>
+              <a
+                href={`https://wa.me/6285854203343?text=${encodeURIComponent(
+                  language === 'id'
+                    ? 'Halo Admin SmartQR, saya ingin konfirmasi pembayaran via QRIS.'
+                    : 'Hello SmartQR Admin, I would like to confirm payment via QRIS.'
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>{language === 'id' ? 'Konfirmasi WA' : 'Confirm via WA'}</span>
+              </a>
+            </div>
           </div>
         </div>
       )}
