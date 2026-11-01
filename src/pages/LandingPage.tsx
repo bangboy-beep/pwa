@@ -20,13 +20,15 @@ import {
   Printer,
   Radio,
   Lock,
-  ChevronDown
+  ChevronDown,
+  ExternalLink
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { registerBusinessSelfServe } from '../lib/business/service'
 import type { BusinessType } from '../types'
 import { useLanguage } from '../i18n/LanguageContext'
 import { LanguageToggle } from '../components/ui/LanguageToggle'
+import { PayPalIcon } from '../components/ui/PayPalIcon'
 
 const LANDING_I18N = {
   id: {
@@ -1094,13 +1096,21 @@ export default function LandingPage() {
               <p className="text-xs text-stone-400">{tr.pricing.secureBarDesc}</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="px-3 py-1 rounded-lg bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200">
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
+            <span className="px-3 py-1.5 rounded-lg bg-stone-800/90 border border-stone-700 text-xs font-semibold text-stone-200">
               QRIS: SEHAT PRO, DIGITAL & KREATIF (ID1025418493371)
             </span>
-            <span className="px-3 py-1 rounded-lg bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200">
-              PayPal: paypal.me/harwinariyanto1 (rwinjember@gmail.com)
-            </span>
+            <a
+              href="https://paypal.me/harwinariyanto1"
+              target="_blank"
+              rel="noopener noreferrer"
+              title={language === 'id' ? 'Klik untuk bayar langsung via PayPal (paypal.me/harwinariyanto1)' : 'Click to pay directly via PayPal (paypal.me/harwinariyanto1)'}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#003087]/25 hover:bg-[#003087]/45 border border-[#0079C1]/50 hover:border-[#0079C1] text-xs font-bold text-sky-100 hover:text-white transition-all shadow-sm hover:shadow-sky-500/20 active:scale-95 group cursor-pointer"
+            >
+              <PayPalIcon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
+              <span>PayPal: <span className="underline decoration-sky-400/60 underline-offset-2">paypal.me/harwinariyanto1</span></span>
+              <ExternalLink className="w-3 h-3 text-sky-400/80 group-hover:text-white transition-colors ml-0.5" />
+            </a>
           </div>
         </div>
       </section>

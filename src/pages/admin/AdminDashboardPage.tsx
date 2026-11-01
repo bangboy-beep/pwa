@@ -19,7 +19,6 @@ import {
   Sparkles,
   Clock,
   MessageCircle,
-  CreditCard,
   Dumbbell,
   Hotel,
   Scissors,
@@ -30,6 +29,7 @@ import { useToast } from '../../hooks/useToast';
 import { Loading } from '../../components/ui/Loading';
 import { getBusinessTypeMeta } from '../../components/ui/BusinessTypeIcon';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { PayPalIcon } from '../../components/ui/PayPalIcon';
 
 export default function AdminDashboardPage() {
   const { selectedBusiness, loading, refetch } = useBusiness();
@@ -225,7 +225,12 @@ export default function AdminDashboardPage() {
           {selectedBusiness.cover_url ? (
             <img src={selectedBusiness.cover_url} alt="" className="w-full h-full object-cover" decoding="async" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-700" />
+            <div className="w-full h-full bg-gradient-to-br from-primary-400 via-primary-500 to-primary-700 flex items-center justify-center p-3">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 backdrop-blur-xs text-white/90 text-[11px] font-medium border border-white/10 shadow-xs">
+                <ImageIcon className="w-3.5 h-3.5 text-white/80" />
+                <span>{t('adminDashboard', 'bannerPlaceholderHint')}</span>
+              </div>
+            </div>
           )}
           <button
             onClick={() => setSheetOpen(true)}
@@ -239,13 +244,17 @@ export default function AdminDashboardPage() {
           <div className="flex items-end gap-3 -mt-9">
             <button
               onClick={() => setSheetOpen(true)}
-              className="relative w-[72px] h-[72px] rounded-[22px] bg-ink text-white border-4 border-white shadow-md overflow-hidden flex items-center justify-center shrink-0"
+              className="relative w-[72px] h-[72px] rounded-[22px] bg-ink text-white border-4 border-white shadow-md overflow-hidden flex flex-col items-center justify-center shrink-0 cursor-pointer active:scale-95 transition-transform"
               aria-label={t('adminDashboard', 'changeLogo')}
+              title={t('adminDashboard', 'logoSizeTip')}
             >
               {selectedBusiness.logo_url ? (
                 <img src={selectedBusiness.logo_url} alt="" className="w-full h-full object-cover" decoding="async" />
               ) : (
-                <span className="text-2xl font-extrabold">{selectedBusiness.name.charAt(0).toUpperCase()}</span>
+                <div className="flex flex-col items-center justify-center">
+                  <span className="text-xl font-extrabold leading-none">{selectedBusiness.name.charAt(0).toUpperCase()}</span>
+                  <span className="text-[9px] font-semibold text-white/70 mt-1">1:1 (500px)</span>
+                </div>
               )}
             </button>
             <div className="flex gap-1.5 pb-1 flex-wrap">
@@ -321,34 +330,52 @@ export default function AdminDashboardPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {(['cover', 'logo'] as const).map((target) => (
                 <button
                   key={target}
                   onClick={() => pickFile(target)}
                   disabled={uploading}
-                  className="w-full flex items-center gap-4 p-3 rounded-2xl hover:bg-surface active:bg-primary-50 transition-colors disabled:opacity-60"
+                  className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl border border-stone-200/90 hover:border-primary-300 hover:bg-primary-50/30 active:bg-primary-50 transition-all disabled:opacity-60 text-left group"
                 >
-                  <span className="w-12 h-12 rounded-2xl bg-primary-100 text-primary-800 flex items-center justify-center shrink-0">
+                  <span className="w-12 h-12 rounded-2xl bg-primary-100 text-primary-800 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                     <ImageIcon className="w-5 h-5" />
                   </span>
-                  <span className="flex-1 text-left min-w-0">
-                    <span className="block text-sm font-bold text-ink">
-                      {uploading && editTarget === target
-                        ? t('adminDashboard', 'uploading')
-                        : target === 'cover'
-                          ? t('adminDashboard', 'changeBanner')
-                          : t('adminDashboard', 'changeLogo')}
+                  <span className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-bold text-ink">
+                        {uploading && editTarget === target
+                          ? t('adminDashboard', 'uploading')
+                          : target === 'cover'
+                            ? t('adminDashboard', 'changeBanner')
+                            : t('adminDashboard', 'changeLogo')}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 font-mono text-[10px] font-bold">
+                        {target === 'cover' ? '1200 × 600 px' : '500 × 500 px'}
+                      </span>
+                    </div>
+                    <span className="block text-xs font-semibold text-primary mt-0.5">
+                      {target === 'cover' ? t('adminDashboard', 'bannerSizeTip') : t('adminDashboard', 'logoSizeTip')}
                     </span>
-                    <span className="block text-xs text-ink-muted">{t('adminDashboard', 'imageFormatTip')}</span>
+                    <span className="block text-[11px] text-ink-muted mt-0.5">{t('adminDashboard', 'imageFormatTip')}</span>
                   </span>
                   {uploading && editTarget === target ? (
-                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                    <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-ink-muted" />
+                    <ChevronRight className="w-5 h-5 text-ink-muted group-hover:translate-x-0.5 transition-transform shrink-0" />
                   )}
                 </button>
               ))}
+
+              <div className="p-3 rounded-2xl bg-surface border border-outline/60 flex items-start gap-2.5 text-xs text-ink-muted mt-3">
+                <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  <strong className="text-ink font-semibold">{language === 'id' ? 'Otomatis Sesuai: ' : 'Auto-Fit & Compress: '}</strong>
+                  {language === 'id'
+                    ? 'Foto yang diunggah akan otomatis disesuaikan dan dikompres oleh sistem agar ringan dan pas di semua layar.'
+                    : 'Uploaded photos are automatically resized and compressed by the system for optimal speed and fit.'}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -437,13 +464,14 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 onClick={() => setPaymentMethod('paypal')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                   paymentMethod === 'paypal'
                     ? 'bg-white text-stone-900 shadow-sm'
                     : 'text-stone-500 hover:text-stone-900'
                 }`}
               >
-                {language === 'id' ? '🌍 PayPal (Internasional)' : '🌍 PayPal (USD / Intl)'}
+                <PayPalIcon className="w-3.5 h-3.5 shrink-0" />
+                <span>{language === 'id' ? 'PayPal (Internasional)' : 'PayPal (USD / Intl)'}</span>
               </button>
             </div>
 
@@ -504,7 +532,7 @@ export default function AdminDashboardPage() {
               <div className="space-y-4 text-center py-2">
                 <div className="p-5 rounded-2xl bg-sky-50 border border-sky-200 text-left space-y-2">
                   <div className="flex items-center gap-2 text-sky-900 font-bold text-xs">
-                    <CreditCard className="w-4 h-4" />
+                    <PayPalIcon className="w-4 h-4 shrink-0" />
                     <span>International Card / PayPal</span>
                   </div>
                   <p className="text-xs text-sky-800">
@@ -528,9 +556,11 @@ export default function AdminDashboardPage() {
                   href="https://paypal.me/harwinariyanto1"
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full py-3.5 rounded-2xl bg-[#0070ba] hover:bg-[#005ea6] text-white font-extrabold text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-2xl bg-[#0070ba] hover:bg-[#005ea6] text-white font-extrabold text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 group"
                 >
+                  <PayPalIcon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" monochrome />
                   <span>{language === 'id' ? 'Buka PayPal (paypal.me/harwinariyanto1)' : 'Open PayPal (paypal.me/harwinariyanto1)'}</span>
+                  <ExternalLink className="w-3.5 h-3.5 opacity-80" />
                 </a>
 
                 <a

@@ -134,6 +134,9 @@ export interface TranslationDictionary {
     changeBanner: string
     uploading: string
     imageFormatTip: string
+    bannerSizeTip: string
+    logoSizeTip: string
+    bannerPlaceholderHint: string
     logoUpdated: string
     bannerUpdated: string
     manageBusiness: string
