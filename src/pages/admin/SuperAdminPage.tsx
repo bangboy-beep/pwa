@@ -392,60 +392,61 @@ export default function SuperAdminPage() {
                   key={b.id}
                   className="bg-white rounded-3xl p-3 shadow-[0_2px_12px_rgba(23,22,31,0.04)] hover:shadow-md transition-shadow flex flex-col justify-between gap-2.5"
                 >
-                  <div className="flex items-center gap-3">
-                    <div
-                      onClick={() => manageBusiness(b)}
-                      className="flex-1 min-w-0 flex items-center gap-3 cursor-pointer group"
-                    >
-                      <span className="w-12 h-12 rounded-2xl bg-primary-100 text-primary-800 flex items-center justify-center shrink-0 overflow-hidden group-hover:scale-105 transition-transform">
-                        {b.logo_url ? (
-                          <img src={b.logo_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                        ) : (
-                          <BusinessTypeIcon type={b.business_type} />
-                        )}
+                  {/* Row 1: Logo + Business Name (full width) */}
+                  <div
+                    onClick={() => manageBusiness(b)}
+                    className="flex items-center gap-3 cursor-pointer group"
+                  >
+                    <span className="w-12 h-12 rounded-2xl bg-primary-100 text-primary-800 flex items-center justify-center shrink-0 overflow-hidden group-hover:scale-105 transition-transform">
+                      {b.logo_url ? (
+                        <img src={b.logo_url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                      ) : (
+                        <BusinessTypeIcon type={b.business_type} />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold text-ink group-hover:text-primary transition-colors" style={{ wordBreak: 'break-word' }}>
+                        {b.name}
                       </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-bold text-ink truncate group-hover:text-primary transition-colors">
-                          {b.name}
-                        </span>
-                        <span className="flex items-center gap-1.5 mt-0.5">
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${b.status === 'active' ? 'bg-emerald-500' : 'bg-stone-400'}`}
-                            aria-hidden="true"
-                          />
-                          <span className="text-xs text-ink-muted truncate">
-                            {getBusinessTypeMeta(b.business_type, language).label} · /{b.slug}
-                          </span>
+                      <span className="flex items-center gap-1.5 mt-0.5">
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${b.status === 'active' ? 'bg-emerald-500' : 'bg-stone-400'}`}
+                          aria-hidden="true"
+                        />
+                        <span className="text-xs text-ink-muted truncate">
+                          {getBusinessTypeMeta(b.business_type, language).label} · /{b.slug}
                         </span>
                       </span>
-                    </div>
+                    </span>
+                  </div>
 
-                    {/* Quick action buttons */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleExtendSubscription(b.id, 'trial', 14)}
-                        className="h-8 px-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold transition-colors"
-                        title="Perpanjang Trial +14 Hari"
-                      >
-                        +14d Trial
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleExtendSubscription(b.id, 'monthly', 30)}
-                        className="h-8 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold transition-colors"
-                        title="Aktivasi Paket Pro +30 Hari"
-                      >
-                        +30d Pro
-                      </button>
-                      <button
-                        onClick={() => manageBusiness(b)}
-                        className="h-8 px-2.5 rounded-xl bg-primary-50 text-primary hover:bg-primary-100 text-xs font-bold flex items-center gap-1 transition-colors"
-                        title="Manage Business"
-                      >
-                        <span>{t('adminDashboard', 'manageBusiness')}</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
+                  {/* Row 2: Quick action buttons */}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handleExtendSubscription(b.id, 'trial', 14)}
+                      className="h-8 px-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold transition-colors"
+                      title="Perpanjang Trial +14 Hari"
+                    >
+                      +14d Trial
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleExtendSubscription(b.id, 'monthly', 30)}
+                      className="h-8 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold transition-colors"
+                      title="Aktivasi Paket Pro +30 Hari"
+                    >
+                      +30d Pro
+                    </button>
+                    <button
+                      onClick={() => manageBusiness(b)}
+                      className="h-8 px-2.5 rounded-xl bg-primary-50 text-primary hover:bg-primary-100 text-xs font-bold flex items-center gap-1 transition-colors"
+                      title="Manage Business"
+                    >
+                      <span>{t('adminDashboard', 'manageBusiness')}</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="flex items-center gap-1 ml-auto">
                       <a
                         href={`/admin/${b.slug}`}
                         target="_blank"

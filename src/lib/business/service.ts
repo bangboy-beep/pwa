@@ -434,6 +434,18 @@ export async function deleteBusiness(
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = createClient()
   try {
+    // Use the RPC that deletes business + members + pins + auth user completely
+    const { error: rpcError } = await (supabase as any).rpc('delete_business_complete', {
+      p_business_id: businessId,
+    })
+
+    if (!rpcError) {
+      return { success: true, error: null }
+    }
+
+    console.warn('RPC delete_business_complete failed, falling back to direct delete:', rpcError.message)
+
+    // Fallback: direct delete from businesses table (CASCADE handles members & pins)
     const { error } = await supabase
       .from('businesses')
       .delete()
@@ -448,4 +460,5 @@ export async function deleteBusiness(
     return { success: false, error: msg }
   }
 }
+
 
