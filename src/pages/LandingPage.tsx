@@ -1117,11 +1117,11 @@ export default function LandingPage() {
               href="https://paypal.me/harwinariyanto1"
               target="_blank"
               rel="noopener noreferrer"
-              title={language === 'id' ? 'Klik untuk bayar langsung via PayPal (paypal.me/harwinariyanto1)' : 'Click to pay directly via PayPal (paypal.me/harwinariyanto1)'}
+              title={language === 'id' ? 'Klik untuk bayar via PayPal' : 'Click to pay via PayPal'}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#003087]/25 hover:bg-[#003087]/45 border border-[#0079C1]/50 hover:border-[#0079C1] text-xs font-bold text-sky-100 hover:text-white transition-all shadow-sm hover:shadow-sky-500/20 active:scale-95 group cursor-pointer"
             >
               <PayPalIcon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
-              <span>PayPal: <span className="underline decoration-sky-400/60 underline-offset-2">paypal.me/harwinariyanto1</span></span>
+              <span>{language === 'id' ? 'Bayar via PayPal' : 'Pay via PayPal'}</span>
               <ExternalLink className="w-3 h-3 text-sky-400/80 group-hover:text-white transition-colors ml-0.5" />
             </a>
           </div>

@@ -439,21 +439,35 @@ export async function deleteBusiness(
       p_business_id: businessId,
     })
 
-    if (!rpcError) {
-      return { success: true, error: null }
+    if (rpcError) {
+      console.warn('RPC delete_business_complete failed, falling back to direct delete:', rpcError.message)
+
+      // Fallback: direct delete from businesses table (CASCADE handles members & pins)
+      const { error } = await supabase
+        .from('businesses')
+        .delete()
+        .eq('id', businessId)
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
     }
 
-    console.warn('RPC delete_business_complete failed, falling back to direct delete:', rpcError.message)
-
-    // Fallback: direct delete from businesses table (CASCADE handles members & pins)
-    const { error } = await supabase
+    // Verify the row is actually gone (RLS can silently block deletes with 0 rows affected)
+    const { data: stillExists } = await supabase
       .from('businesses')
-      .delete()
+      .select('id')
       .eq('id', businessId)
+      .maybeSingle()
 
-    if (error) {
-      return { success: false, error: error.message }
+    if (stillExists) {
+      console.error('Delete verification failed: business row still exists after delete attempt. Likely blocked by RLS.')
+      return {
+        success: false,
+        error: 'Gagal menghapus bisnis — akses ditolak oleh database. Pastikan Anda login sebagai Super Admin.',
+      }
     }
+
     return { success: true, error: null }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Gagal menghapus bisnis'

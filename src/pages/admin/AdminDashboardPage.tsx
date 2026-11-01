@@ -559,7 +559,7 @@ export default function AdminDashboardPage() {
                   className="w-full py-3.5 rounded-2xl bg-[#0070ba] hover:bg-[#005ea6] text-white font-extrabold text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 group"
                 >
                   <PayPalIcon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" monochrome />
-                  <span>{language === 'id' ? 'Buka PayPal (paypal.me/harwinariyanto1)' : 'Open PayPal (paypal.me/harwinariyanto1)'}</span>
+                  <span>{language === 'id' ? 'Bayar dengan PayPal' : 'Pay with PayPal'}</span>
                   <ExternalLink className="w-3.5 h-3.5 opacity-80" />
                 </a>
 

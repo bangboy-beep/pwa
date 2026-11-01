@@ -311,13 +311,10 @@ export default function SuperAdminPage() {
     }
 
     toast.success(`"${deletingBiz.name}" deleted!`);
-    setBusinesses((prev) => prev.filter((b) => b.id !== deletingBiz.id));
-    setPinsMap((prev) => {
-      const updated = { ...prev };
-      delete updated[deletingBiz.id];
-      return updated;
-    });
     setDeletingBiz(null);
+
+    // Refetch from Supabase to ensure UI reflects actual database state
+    await fetchAll();
   };
 
   if (loading) return <Loading />;
