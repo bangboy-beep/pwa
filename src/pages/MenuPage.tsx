@@ -202,7 +202,8 @@ export default function MenuPage() {
         imageUrl = url
       }
 
-      let videoUrl: string | undefined | null = editingProduct?.video_url ?? null
+      // Jika productVideoPreview null (artinya video dihapus/tidak ada), set videoUrl jadi null
+      let videoUrl: string | undefined | null = productVideoPreview ? (editingProduct?.video_url ?? null) : null
       const tempId = editingProduct?.id || 'temp-' + Date.now()
       if (productVideoFile) {
         const { url, error: uploadError } = await uploadProductVideo(
@@ -336,30 +337,33 @@ export default function MenuPage() {
       return
     }
 
-    // Ekstrak poster thumbnail otomatis dari frame video jika belum ada gambar
-    if (!productImageFile && !productImagePreview && !editingProduct?.image_url) {
-      try {
-        const thumb = await extractVideoThumbnail(finalFile)
-        if (thumb) {
-          setProductImageFile(thumb)
-          const reader = new FileReader()
-          reader.onloadend = () => setProductImagePreview(reader.result as string)
-          reader.readAsDataURL(thumb)
-        }
-      } catch (err) {
-        console.warn('Gagal ekstrak thumbnail video:', err)
+    // Selalu ekstrak poster thumbnail otomatis dari video baru agar gambar preview & poster sinkron
+    try {
+      const thumb = await extractVideoThumbnail(finalFile)
+      if (thumb) {
+        setProductImageFile(thumb)
+        const reader = new FileReader()
+        reader.onloadend = () => setProductImagePreview(reader.result as string)
+        reader.readAsDataURL(thumb)
       }
+    } catch (err) {
+      console.warn('Gagal ekstrak thumbnail video:', err)
     }
 
     setProductFormError(null)
     setProductVideoFile(finalFile)
-    // Preview
+    // Preview video baru
+    if (productVideoPreview && productVideoPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(productVideoPreview)
+    }
     const previewUrl = URL.createObjectURL(finalFile)
     setProductVideoPreview(previewUrl)
   }
 
   const handleDeleteVideo = () => {
-    if (productVideoPreview) URL.revokeObjectURL(productVideoPreview)
+    if (productVideoPreview && productVideoPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(productVideoPreview)
+    }
     setProductVideoFile(null)
     setProductVideoPreview(null)
     setProductVideoWarning(null)
@@ -679,7 +683,7 @@ export default function MenuPage() {
               {/* Video overlay indicator */}
               {productVideoPreview && (
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                  <video src={productVideoPreview} className="w-full h-full object-cover" muted loop playsInline preload="metadata" />
+                  <video key={productVideoPreview} src={productVideoPreview} autoPlay className="w-full h-full object-cover" muted loop playsInline preload="auto" />
                   <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/60 text-white text-xs font-bold px-3 py-1.5 rounded-full">
                     <Video className="w-3.5 h-3.5" /> {t('adminMenu', 'uploadVideo')}
                   </div>
@@ -752,7 +756,7 @@ export default function MenuPage() {
                     </span>
                   </div>
                   <div className="relative aspect-video">
-                    <video src={productVideoPreview || editingProduct!.video_url!} className="w-full h-full object-cover" muted loop playsInline controls preload="metadata" />
+                    <video key={productVideoPreview || editingProduct?.video_url || 'video-preview'} src={productVideoPreview || editingProduct!.video_url!} className="w-full h-full object-cover" muted loop playsInline controls preload="auto" />
                   </div>
                   <div className="p-3 flex items-center justify-between">
                     <span className="text-xs text-stone-500 font-medium flex items-center gap-1.5">

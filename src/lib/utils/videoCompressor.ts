@@ -17,7 +17,7 @@ export const MAX_VIDEO_DURATION_SECONDS = 8 // Maksimal 8 detik
 export async function extractVideoThumbnail(file: File): Promise<File | null> {
   return new Promise((resolve) => {
     const video = document.createElement('video')
-    video.preload = 'metadata'
+    video.preload = 'auto'
     video.muted = true
     video.playsInline = true
     const objectUrl = URL.createObjectURL(file)
@@ -31,12 +31,15 @@ export async function extractVideoThumbnail(file: File): Promise<File | null> {
       resolve(result)
     }
 
-    const timeout = setTimeout(() => finish(null), 5000)
+    const timeout = setTimeout(() => finish(null), 6000)
 
-    video.onloadedmetadata = () => {
-      // Ambil frame awal (0.1s atau separuh durasi jika sangat pendek)
-      video.currentTime = Math.min(0.15, (video.duration || 1) / 2)
+    const seekToFrame = () => {
+      const targetTime = Math.min(0.2, (video.duration && video.duration > 0 ? video.duration / 2 : 0.1))
+      video.currentTime = targetTime
     }
+
+    video.onloadeddata = seekToFrame
+    video.onloadedmetadata = seekToFrame
 
     video.onseeked = () => {
       try {
@@ -67,7 +70,15 @@ export async function extractVideoThumbnail(file: File): Promise<File | null> {
               })
               finish(posterFile)
             } else {
-              finish(null)
+              // Fallback to jpeg
+              canvas.toBlob((jpgBlob) => {
+                if (jpgBlob) {
+                  const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || 'video_poster'
+                  finish(new File([jpgBlob], `${baseName}_poster.jpg`, { type: 'image/jpeg', lastModified: Date.now() }))
+                } else {
+                  finish(null)
+                }
+              }, 'image/jpeg', 0.85)
             }
           },
           'image/webp',
@@ -83,6 +94,8 @@ export async function extractVideoThumbnail(file: File): Promise<File | null> {
       clearTimeout(timeout)
       finish(null)
     }
+
+    video.load()
   })
 }
 

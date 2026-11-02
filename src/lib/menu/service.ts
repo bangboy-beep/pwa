@@ -341,16 +341,42 @@ export async function uploadProductVideo(
   const supabase = createClient()
   const fileExt = file.name.split('.').pop()?.toLowerCase() || 'mp4'
   const targetExt = fileExt === 'webm' ? 'webm' : 'mp4'
-  const fileName = `${businessId}/products/${productId}.${targetExt}`
+  // Gunakan nama unik agar URL berbeda (mencegah cache browser/CDN) dan INSERT selalu lolos RLS
+  const uniqueId = _uuidV4()
+  const fileName = `${businessId}/${productId}/${uniqueId}.${targetExt}`
   const contentType = fileExt === 'webm' ? 'video/webm' : 'video/mp4'
 
-  const { data: uploadData, error: uploadError } = await supabase.storage
+  // Coba unggah ke VIDEO_STORAGE_BUCKET ('menu-media')
+  let uploadData: { path: string } | null = null
+  let uploadError: { message: string } | null = null
+  let usedBucket = VIDEO_STORAGE_BUCKET
+
+  const res = await supabase.storage
     .from(VIDEO_STORAGE_BUCKET)
-    .upload(fileName, file, { upsert: true, contentType })
+    .upload(fileName, file, { upsert: false, contentType })
 
-  if (uploadError) return { path: null, url: undefined, error: { message: uploadError.message } }
+  if (res.error) {
+    uploadError = { message: res.error.message }
+    // Jika bucket 'menu-media' belum dibuat di Supabase atau bermasalah policy,
+    // fallback otomatis ke bucket 'menu-images' yang dijamin ada
+    const fallbackRes = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(`videos/${fileName}`, file, { upsert: false, contentType })
 
-  const { data: urlData } = supabase.storage.from(VIDEO_STORAGE_BUCKET).getPublicUrl(fileName)
+    if (!fallbackRes.error && fallbackRes.data) {
+      uploadData = fallbackRes.data
+      uploadError = null
+      usedBucket = STORAGE_BUCKET
+    }
+  } else {
+    uploadData = res.data
+  }
+
+  if (uploadError || !uploadData) {
+    return { path: null, url: undefined, error: { message: uploadError?.message || 'Gagal mengunggah video.' } }
+  }
+
+  const { data: urlData } = supabase.storage.from(usedBucket).getPublicUrl(uploadData.path)
   return { path: uploadData.path, url: urlData.publicUrl, error: null }
 }
 
