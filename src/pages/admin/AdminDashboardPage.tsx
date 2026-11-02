@@ -104,7 +104,8 @@ export default function AdminDashboardPage() {
   }
 
   const status = statusConfig[selectedBusiness.status] ?? statusConfig.active;
-  const isTrial = selectedBusiness.subscription_tier === 'trial' || !selectedBusiness.subscription_tier;
+  const isDemo = selectedBusiness.slug === 'my-coffee' || selectedBusiness.subscription_tier === 'demo' || selectedBusiness.subscription_tier === 'lifetime';
+  const isTrial = !isDemo && (selectedBusiness.subscription_tier === 'trial' || !selectedBusiness.subscription_tier);
   const trialEndsAt = selectedBusiness.trial_ends_at ? new Date(selectedBusiness.trial_ends_at) : null;
   const daysLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 14;
 
@@ -177,7 +178,9 @@ export default function AdminDashboardPage() {
         >
           <Sparkles className="w-3.5 h-3.5 text-primary" />
           <span>
-            {isTrial
+            {isDemo
+              ? (language === 'id' ? 'Status: Demo Resmi (Aktif Selamanya)' : 'Status: Official Demo (Lifetime Active)')
+              : isTrial
               ? (language === 'id' ? 'Status: Trial 14 Hari' : 'Status: 14-Day Free Trial')
               : (language === 'id' ? `Paket: ${selectedBusiness.subscription_tier}` : `Plan: ${selectedBusiness.subscription_tier}`)}
           </span>

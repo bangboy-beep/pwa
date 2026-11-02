@@ -44,7 +44,13 @@ export default function SuperAdminPage() {
         p_days: days,
       });
       if (error) throw error;
-      toast.success(tier === 'trial' ? `Trial diperpanjang +${days} hari!` : `Langganan aktif +${days} hari!`);
+      toast.success(
+        tier === 'demo'
+          ? 'Berhasil dijadikan Akun Demo Permanen (Tanpa Batas Trial)!'
+          : tier === 'trial'
+          ? `Trial diperpanjang +${days} hari!`
+          : `Langganan aktif +${days} hari!`
+      );
       await fetchAll();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Gagal memperbarui langganan';
@@ -412,6 +418,11 @@ export default function SuperAdminPage() {
                         />
                         <span className="text-xs text-ink-muted truncate">
                           {getBusinessTypeMeta(b.business_type, language).label} · /{b.slug}
+                          {(b.slug === 'my-coffee' || b.subscription_tier === 'demo') && (
+                            <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-bold text-[10px]">
+                              DEMO
+                            </span>
+                          )}
                         </span>
                       </span>
                     </span>
@@ -419,6 +430,14 @@ export default function SuperAdminPage() {
 
                   {/* Row 2: Quick action buttons */}
                   <div className="flex items-center gap-1 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handleExtendSubscription(b.id, 'demo', 36500)}
+                      className="h-8 px-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-[11px] font-bold transition-colors"
+                      title="Set sebagai Akun Demo Permanen"
+                    >
+                      Demo
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleExtendSubscription(b.id, 'trial', 14)}

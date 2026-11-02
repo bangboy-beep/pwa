@@ -299,9 +299,9 @@ export default function LandingPage() {
   const [isRegistering, setIsRegistering] = useState(false)
   const [regError, setRegError] = useState<string | null>(null)
 
-  // Demo QR Target
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://smartqr.app'
-  const demoUrl = `${origin}/q/demo-cafe`
+  // Demo QR Target (Khusus link demo resmi: my-coffee)
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://smartqr.biz.id'
+  const demoUrl = `${origin}/q/my-coffee`
 
   // FAQ Accordion State
   const [openFaq, setOpenFaq] = useState<number | null>(0)
@@ -578,7 +578,7 @@ export default function LandingPage() {
                         Demo
                       </div>
                       <p className="text-xs font-semibold opacity-90">{tr.hero.demoWelcome}</p>
-                      <h4 className="text-base font-extrabold text-stone-950">Kopi Senja Utama ☕</h4>
+                      <h4 className="text-base font-extrabold text-stone-950">Cafe Coffee ☕</h4>
                     </div>
 
                     {/* Simulated 3 Main Actions */}
