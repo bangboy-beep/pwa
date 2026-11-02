@@ -183,11 +183,12 @@ function _encodePass(
           clearTimeout(timer)
           const outputMime = recorder.mimeType || 'video/mp4'
           const ext = outputMime.includes('webm') ? 'webm' : 'mp4'
-          const blob = new Blob(chunks, { type: outputMime })
+          const cleanMime = ext === 'webm' ? 'video/webm' : 'video/mp4'
+          const blob = new Blob(chunks, { type: cleanMime })
           if (blob.size < file.size && blob.size > 20000) {
             const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || 'video'
             const compressedFile = new File([blob], `${baseName}_optimized.${ext}`, {
-              type: outputMime,
+              type: cleanMime,
               lastModified: Date.now(),
             })
             finish(compressedFile, true)

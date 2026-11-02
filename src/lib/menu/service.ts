@@ -275,7 +275,8 @@ const VIDEO_STORAGE_BUCKET = 'menu-media'
 export const MAX_VIDEO_SIZE = 5.0 * 1024 * 1024 // 5.0 MB (standar tajam & jernih HD)
 export const MAX_VIDEO_DURATION = 8 // Maksimal 8 detik sesuai standar menu cepat
 export const MAX_SPECIAL_VIDEO_PRODUCTS = 5 // Maksimal 5 menu spesial dengan video
-const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm']
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v', 'video/mov']
+const ALLOWED_VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'm4v']
 
 export interface UploadVideoResult {
   path: string | null
@@ -290,7 +291,22 @@ export interface VideoValidationResult {
 }
 
 export function validateVideoFile(file: File): VideoValidationResult {
-  if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+  const mimeType = (file.type || '').toLowerCase()
+  const fileName = (file.name || '').toLowerCase()
+  const fileExt = fileName.split('.').pop() || ''
+
+  const isValidMime =
+    ALLOWED_VIDEO_TYPES.includes(mimeType) ||
+    mimeType.startsWith('video/mp4') ||
+    mimeType.startsWith('video/webm') ||
+    mimeType.startsWith('video/quicktime') ||
+    mimeType.startsWith('video/x-m4v')
+
+  const isValidExt = ALLOWED_VIDEO_EXTENSIONS.includes(fileExt)
+
+  // Di beberapa OS/browser (misal Windows atau file kiriman chat), file.type bisa kosong ("")
+  // maka kita validasi berdasarkan ekstensi file sebagai fallback yang aman.
+  if (!isValidMime && !isValidExt) {
     return { valid: false, error: 'Format video harus MP4 atau WebM.' }
   }
   if (file.size > MAX_VIDEO_SIZE) {
@@ -324,11 +340,13 @@ export async function uploadProductVideo(
 ): Promise<UploadVideoResult> {
   const supabase = createClient()
   const fileExt = file.name.split('.').pop()?.toLowerCase() || 'mp4'
-  const fileName = `${businessId}/products/${productId}.${fileExt}`
+  const targetExt = fileExt === 'webm' ? 'webm' : 'mp4'
+  const fileName = `${businessId}/products/${productId}.${targetExt}`
+  const contentType = fileExt === 'webm' ? 'video/webm' : 'video/mp4'
 
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from(VIDEO_STORAGE_BUCKET)
-    .upload(fileName, file, { upsert: true })
+    .upload(fileName, file, { upsert: true, contentType })
 
   if (uploadError) return { path: null, url: undefined, error: { message: uploadError.message } }
 

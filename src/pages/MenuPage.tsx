@@ -685,32 +685,34 @@ export default function MenuPage() {
                   </div>
                 </div>
               )}
-              <button onClick={() => setIsProductModalOpen(false)} className="absolute top-3 right-3 p-2 rounded-full bg-black/50 text-white active:bg-black/70 transition-colors">
+              <button onClick={() => setIsProductModalOpen(false)} className="absolute top-3 right-3 p-2 rounded-full bg-black/50 text-white active:bg-black/70 transition-colors z-20">
                 <X className="w-4 h-4" />
               </button>
-              <label className="absolute bottom-3 right-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white shadow-lg cursor-pointer text-xs font-bold text-stone-900 active:bg-stone-50 transition-all border border-stone-100">
-                <ImagePlus className="w-3.5 h-3.5 text-primary" />
-                <span>{productImagePreview || editingProduct?.image_url ? t('adminMenu', 'changeImage') : t('adminMenu', 'uploadImage')}</span>
-                <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleProductImageChange} />
-              </label>
-              <label
-                onClick={(e) => {
-                  if (!editingProduct?.video_url && !productVideoPreview && specialVideoCount >= MAX_SPECIAL_VIDEO_LIMIT) {
-                    e.preventDefault()
-                    setProductFormError(t('adminMenu', 'videoLimitReached', { count: String(specialVideoCount) }))
-                  }
-                }}
-                className={cn(
-                  "absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg cursor-pointer text-xs font-bold text-white transition-all",
-                  !editingProduct?.video_url && !productVideoPreview && specialVideoCount >= MAX_SPECIAL_VIDEO_LIMIT
-                    ? "bg-stone-500 cursor-not-allowed opacity-80"
-                    : "bg-primary active:bg-primary-dark"
-                )}
-              >
-                <Video className="w-3.5 h-3.5" />
-                <span>{productVideoPreview || editingProduct?.video_url ? t('adminMenu', 'changeVideo') : t('adminMenu', 'uploadVideo')}</span>
-                <input ref={videoInputRef} type="file" accept="video/mp4,video/webm" className="hidden" onChange={handleProductVideoChange} />
-              </label>
+              <div className="absolute bottom-3 right-3 flex items-center gap-2 z-10 max-w-[calc(100%-24px)] flex-wrap justify-end">
+                <label className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white shadow-lg cursor-pointer text-xs font-bold text-stone-900 active:bg-stone-50 transition-all border border-stone-100">
+                  <ImagePlus className="w-3.5 h-3.5 text-primary" />
+                  <span>{productImagePreview || editingProduct?.image_url ? t('adminMenu', 'changeImage') : t('adminMenu', 'uploadImage')}</span>
+                  <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleProductImageChange} />
+                </label>
+                <label
+                  onClick={(e) => {
+                    if (!editingProduct?.video_url && !productVideoPreview && specialVideoCount >= MAX_SPECIAL_VIDEO_LIMIT) {
+                      e.preventDefault()
+                      setProductFormError(t('adminMenu', 'videoLimitReached', { count: String(specialVideoCount) }))
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg cursor-pointer text-xs font-bold text-white transition-all",
+                    !editingProduct?.video_url && !productVideoPreview && specialVideoCount >= MAX_SPECIAL_VIDEO_LIMIT
+                      ? "bg-stone-500 cursor-not-allowed opacity-80"
+                      : "bg-primary active:bg-primary-dark"
+                  )}
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  <span>{productVideoPreview || editingProduct?.video_url ? t('adminMenu', 'changeVideo') : t('adminMenu', 'uploadVideo')}</span>
+                  <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/quicktime,video/*,.mp4,.webm,.mov,.m4v" className="hidden" onChange={handleProductVideoChange} />
+                </label>
+              </div>
             </div>
 
             <div className="px-6 pt-5 pb-6">
