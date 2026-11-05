@@ -24,6 +24,7 @@ import { compressImage } from '../lib/utils/imageCompressor'
 import {
   compressVideoClient, extractVideoThumbnail, MAX_SPECIAL_VIDEO_LIMIT,
 } from '../lib/utils/videoCompressor'
+import { clearCachedMenu } from '../lib/cache/menuCache'
 import { useLanguage } from '../i18n/LanguageContext'
 import type { MenuCategory, MenuProduct } from '../types'
 
@@ -145,11 +146,21 @@ export default function MenuPage() {
     try {
       if (editingCategory) {
         const { data, error } = await updateCategory(editingCategory.id, currentBusiness.id, { name: categoryName, description: categoryDesc, sort_order: parseInt(categorySort) || 0, is_active: categoryActive })
-        if (!error && data) { setCategories(p => p.map(c => c.id === data.id ? data : c).sort((a, b) => a.sort_order - b.sort_order)); setIsCategoryModalOpen(false); showToast(t('adminMenu', 'categoryUpdated')) }
+        if (!error && data) {
+          setCategories(p => p.map(c => c.id === data.id ? data : c).sort((a, b) => a.sort_order - b.sort_order))
+          setIsCategoryModalOpen(false)
+          clearCachedMenu(currentBusiness.slug)
+          showToast(t('adminMenu', 'categoryUpdated'))
+        }
         else setCategoryFormError(error?.message || t('common', 'error'))
       } else {
         const { data, error } = await createCategory({ business_id: currentBusiness.id, name: categoryName, description: categoryDesc, sort_order: parseInt(categorySort) || 0, is_active: categoryActive })
-        if (!error && data) { setCategories(p => [...p, data].sort((a, b) => a.sort_order - b.sort_order)); setIsCategoryModalOpen(false); showToast(t('adminMenu', 'categoryCreated')) }
+        if (!error && data) {
+          setCategories(p => [...p, data].sort((a, b) => a.sort_order - b.sort_order))
+          setIsCategoryModalOpen(false)
+          clearCachedMenu(currentBusiness.slug)
+          showToast(t('adminMenu', 'categoryCreated'))
+        }
         else setCategoryFormError(error?.message || t('common', 'error'))
       }
     } catch (err: any) { console.error('[MenuPage] Save category error:', err); setCategoryFormError(err?.message || t('common', 'systemError')) }
@@ -222,6 +233,7 @@ export default function MenuPage() {
         if (!error && data) {
           setProducts(p => p.map(pr => pr.id === data.id ? data : pr).sort((a, b) => a.sort_order - b.sort_order))
           setIsProductModalOpen(false)
+          clearCachedMenu(currentBusiness.slug)
           showToast(t('adminMenu', 'productUpdated'))
         } else setProductFormError(error?.message || t('common', 'error'))
       } else {
@@ -234,6 +246,7 @@ export default function MenuPage() {
         if (!error && data) {
           setProducts(p => [...p, data].sort((a, b) => a.sort_order - b.sort_order))
           setIsProductModalOpen(false)
+          clearCachedMenu(currentBusiness.slug)
           showToast(t('adminMenu', 'productCreated'))
         } else setProductFormError(error?.message || t('common', 'error'))
       }
@@ -375,7 +388,12 @@ export default function MenuPage() {
     try {
       if (deleteConfirm.type === 'category') {
         const { error } = await deleteCategory(deleteConfirm.id, currentBusiness.id)
-        if (!error) { setCategories(p => p.filter(c => c.id !== deleteConfirm.id)); setProducts(p => p.filter(p => p.category_id !== deleteConfirm.id)); showToast(t('adminMenu', 'categoryDeleted')) }
+        if (!error) {
+          setCategories(p => p.filter(c => c.id !== deleteConfirm.id));
+          setProducts(p => p.filter(p => p.category_id !== deleteConfirm.id));
+          clearCachedMenu(currentBusiness.slug);
+          showToast(t('adminMenu', 'categoryDeleted'))
+        }
       } else {
         // Delete video from storage when deleting product
         const prod = products.find(p => p.id === deleteConfirm.id)
@@ -383,7 +401,11 @@ export default function MenuPage() {
           await deleteProductVideo(currentBusiness.id, deleteConfirm.id).catch(() => {})
         }
         const { error } = await deleteProduct(deleteConfirm.id, currentBusiness.id)
-        if (!error) { setProducts(p => p.filter(p => p.id !== deleteConfirm.id)); showToast(t('adminMenu', 'productDeleted')) }
+        if (!error) {
+          setProducts(p => p.filter(p => p.id !== deleteConfirm.id));
+          clearCachedMenu(currentBusiness.slug);
+          showToast(t('adminMenu', 'productDeleted'))
+        }
       }
     } catch (err: any) { console.error('[MenuPage] Delete error:', err) }
     finally { setDeleting(false); setDeleteConfirm(null) }

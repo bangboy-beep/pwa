@@ -351,10 +351,14 @@ export async function setBusinessPin(
   }
 }
 
-export async function getBusinessPins(): Promise<Record<string, string>> {
+export async function getBusinessPins(businessIds?: string[]): Promise<Record<string, string>> {
   const supabase = createClient()
   try {
-    const { data, error } = await (supabase.from('business_pins') as any).select('business_id, pin')
+    let pinQuery = (supabase.from('business_pins') as any).select('business_id, pin')
+    if (businessIds && businessIds.length > 0) {
+      pinQuery = pinQuery.in('business_id', businessIds)
+    }
+    const { data, error } = await pinQuery
     if (error || !data) return {}
     const map: Record<string, string> = {}
     data.forEach((item: { business_id: string; pin: string }) => {

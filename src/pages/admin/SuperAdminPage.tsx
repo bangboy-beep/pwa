@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '../../lib/supabase/client';
 import { Loading } from '../../components/ui/Loading';
-import { Plus, X, ExternalLink, Search, Store, CheckCircle2, ChevronRight, RefreshCw, Copy, Check, Key, KeyRound, Share2, Eye, EyeOff, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, X, ExternalLink, Search, Store, CheckCircle2, ChevronRight, ChevronLeft, RefreshCw, Copy, Check, Key, KeyRound, Share2, Eye, EyeOff, Trash2, AlertTriangle } from 'lucide-react';
 import { createBusinessWithOwner, generateRandomPin, getBusinessPins, setBusinessPin, deleteBusiness } from '../../lib/business/service';
 import { useBusiness } from '../../providers/BusinessProvider';
 import { Input } from '../../components/ui/Input';
@@ -33,6 +33,11 @@ export default function SuperAdminPage() {
   const [revealedPins, setRevealedPins] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [totalCount, setTotalCount] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
   const [showAddSheet, setShowAddSheet] = useState(false);
 
   const handleExtendSubscription = async (bizId: string, tier: string, days: number) => {
@@ -90,17 +95,52 @@ export default function SuperAdminPage() {
     label: dict.businessTypes[value as keyof typeof dict.businessTypes] || value,
   }));
 
-  const fetchAll = async () => {
+  // Debounce query pencarian agar hemat request
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const fetchBusinesses = async (page = currentPage, limit = pageSize, q = debouncedQuery) => {
     try {
+      setLoading(true);
       const supabase = createClient();
-      const [bizRes, pins] = await Promise.all([
-        supabase.from('businesses').select('*').order('created_at', { ascending: false }),
-        getBusinessPins(),
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
+      let queryBuilder = supabase
+        .from('businesses')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
+
+      const cleanQ = q.trim();
+      if (cleanQ) {
+        queryBuilder = queryBuilder.or(`name.ilike.%${cleanQ}%,slug.ilike.%${cleanQ}%`);
+      }
+
+      queryBuilder = queryBuilder.range(from, to);
+
+      const [listRes, activeCountRes] = await Promise.all([
+        queryBuilder,
+        supabase.from('businesses').select('*', { count: 'exact', head: true }).eq('status', 'active'),
       ]);
 
-      if (bizRes.error) throw bizRes.error;
-      setBusinesses((bizRes.data as BusinessRow[]) || []);
-      setPinsMap(pins || {});
+      if (listRes.error) throw listRes.error;
+
+      const loadedBusinesses = (listRes.data as BusinessRow[]) || [];
+      setBusinesses(loadedBusinesses);
+      setTotalCount(listRes.count ?? loadedBusinesses.length);
+      setActiveCount(activeCountRes.count ?? 0);
+
+      // Hanya ambil PIN untuk bisnis di halaman yang sedang aktif
+      const bizIds = loadedBusinesses.map((b) => b.id);
+      if (bizIds.length > 0) {
+        const pins = await getBusinessPins(bizIds);
+        setPinsMap((prev) => ({ ...prev, ...(pins || {}) }));
+      }
     } catch (err) {
       console.error('SuperAdmin Error:', err);
     } finally {
@@ -108,17 +148,14 @@ export default function SuperAdminPage() {
     }
   };
 
+  const fetchAll = () => fetchBusinesses(currentPage, pageSize, debouncedQuery);
+
   useEffect(() => {
-    fetchAll();
-  }, []);
+    fetchBusinesses(currentPage, pageSize, debouncedQuery);
+  }, [currentPage, pageSize, debouncedQuery]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return businesses;
-    return businesses.filter((b) => b.name.toLowerCase().includes(q) || b.slug.toLowerCase().includes(q));
-  }, [businesses, query]);
-
-  const activeCount = businesses.filter((b) => b.status === 'active').length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const filtered = businesses;
 
   const handleNameChange = (value: string) => {
     setName(value);
@@ -323,7 +360,7 @@ export default function SuperAdminPage() {
     await fetchAll();
   };
 
-  if (loading) return <Loading />;
+  if (loading && businesses.length === 0 && !debouncedQuery) return <Loading />;
 
   return (
     <div className="max-w-5xl mx-auto px-4 pt-2 pb-28 space-y-5">
@@ -331,8 +368,8 @@ export default function SuperAdminPage() {
       <section className="grid grid-cols-2 gap-3">
         <div className="rounded-3xl bg-primary text-white p-4">
           <Store className="w-5 h-5 text-white/80" />
-          <p className="mt-3 text-3xl font-extrabold leading-none">{businesses.length}</p>
-          <p className="mt-1 text-xs font-medium text-white/80">{t('superAdmin', 'businessesCount', { count: businesses.length })}</p>
+          <p className="mt-3 text-3xl font-extrabold leading-none">{totalCount}</p>
+          <p className="mt-1 text-xs font-medium text-white/80">{t('superAdmin', 'businessesCount', { count: totalCount })}</p>
         </div>
         <div className="rounded-3xl bg-white p-4 shadow-[0_2px_12px_rgba(23,22,31,0.04)]">
           <CheckCircle2 className="w-5 h-5 text-emerald-600" />
@@ -546,6 +583,82 @@ export default function SuperAdminPage() {
               );
             })}
           </ul>
+        )}
+
+        {/* Pagination Bar */}
+        {totalCount > 0 && (
+          <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-3xl shadow-[0_2px_12px_rgba(23,22,31,0.04)]">
+            {/* Info Range */}
+            <div className="text-xs text-ink-muted">
+              Menampilkan <span className="font-bold text-ink">{(currentPage - 1) * pageSize + 1}</span> -{' '}
+              <span className="font-bold text-ink">{Math.min(currentPage * pageSize, totalCount)}</span> dari{' '}
+              <span className="font-bold text-ink">{totalCount}</span> bisnis
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Page Size Selector */}
+              <div className="flex items-center gap-1.5 text-xs text-ink-muted">
+                <span>Per hal:</span>
+                <div className="flex items-center bg-surface rounded-xl p-0.5 border border-outline/50">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPageSize(20);
+                      setCurrentPage(1);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-colors ${
+                      pageSize === 20 ? 'bg-primary text-white shadow-xs' : 'text-ink-muted hover:text-ink'
+                    }`}
+                  >
+                    20
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPageSize(50);
+                      setCurrentPage(1);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-colors ${
+                      pageSize === 50 ? 'bg-primary text-white shadow-xs' : 'text-ink-muted hover:text-ink'
+                    }`}
+                  >
+                    50
+                  </button>
+                </div>
+              </div>
+
+              {/* Page Nav Buttons */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentPage((p) => Math.max(1, p - 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={currentPage <= 1 || loading}
+                  className="w-8 h-8 rounded-xl bg-surface border border-outline/50 flex items-center justify-center text-ink disabled:opacity-40 disabled:cursor-not-allowed hover:bg-stone-100 active:scale-95 transition-all"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="px-2 text-xs font-bold text-ink">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentPage((p) => Math.min(totalPages, p + 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={currentPage >= totalPages || loading}
+                  className="w-8 h-8 rounded-xl bg-surface border border-outline/50 flex items-center justify-center text-ink disabled:opacity-40 disabled:cursor-not-allowed hover:bg-stone-100 active:scale-95 transition-all"
+                  aria-label="Next page"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </section>
 

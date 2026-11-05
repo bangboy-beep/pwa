@@ -4,12 +4,12 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { createClient } from '../lib/supabase/client'
 import { Loading } from '../components/ui/Loading'
 import { AlertCircle, Sparkles, Video as VideoIcon, Play, Pause, Volume2, VolumeX, X, ZoomIn } from 'lucide-react'
 import type { Business, MenuCategory, MenuProduct } from '../types'
 import { useLanguage } from '../i18n/LanguageContext'
 import { LanguageToggle } from '../components/ui/LanguageToggle'
+import { getCachedMenu, setCachedMenu, fetchPublicMenuSingleQuery } from '../lib/cache/menuCache'
 
 const FOOD_IMAGES = [
   'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&h=200&fit=crop',
@@ -440,33 +440,54 @@ export default function PublicMenuPage() {
 
   useEffect(() => {
     async function loadData() {
-      if (!slug) { setError(t('publicHub', 'invalidSlug')); setLoading(false); return }
-      const supabase = createClient()
+      if (!slug) {
+        setError(t('publicHub', 'invalidSlug'))
+        setLoading(false)
+        return
+      }
+
+      // 1. Cek Client-Side Cache (localStorage) dengan TTL 10 menit
+      const cached = getCachedMenu(slug)
+      if (cached.data) {
+        setBusiness(cached.data.business)
+        setCategories(cached.data.categories)
+        setProducts(cached.data.products)
+        setLoading(false)
+
+        // Jika cache masih fresh (< 10 menit), jangan query database sama sekali!
+        if (!cached.isStale) {
+          return
+        }
+      }
+
+      // 2. Jika cache kosong atau sudah stale (> 10 menit), lakukan 1 KALI SINGLE JOINED QUERY
       try {
-        const { data: bizData, error: bizError } = await supabase
-          .from('businesses')
-          .select('*')
-          .eq('slug', slug)
-          .eq('status', 'active')
-          .single()
-        if (bizError || !bizData) { setError(t('publicMenu', 'notFoundDesc')); setLoading(false); return }
-        setBusiness(bizData as Business)
-        const { data: catData } = await supabase
-          .from('menu_categories')
-          .select('*')
-          .eq('business_id', (bizData as Business).id)
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true })
-        const { data: prodData } = await supabase
-          .from('menu_products')
-          .select('*')
-          .eq('business_id', (bizData as Business).id)
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true })
-        setCategories((catData as MenuCategory[]) || [])
-        setProducts((prodData as MenuProduct[]) || [])
+        const { business: biz, categories: cats, products: prods, error: fetchErr } =
+          await fetchPublicMenuSingleQuery(slug)
+
+        if (fetchErr || !biz) {
+          // Hanya tampilkan error jika belum ada data di cache sama sekali
+          if (!cached.data) {
+            setError(fetchErr || t('publicMenu', 'notFoundDesc'))
+          }
+          return
+        }
+
+        setBusiness(biz)
+        setCategories(cats)
+        setProducts(prods)
+        setError(null)
+
+        // Simpan hasil ke cache client
+        setCachedMenu(slug, {
+          business: biz,
+          categories: cats,
+          products: prods,
+        })
       } catch (err) {
-        setError(err instanceof Error ? err.message : t('common', 'error'))
+        if (!cached.data) {
+          setError(err instanceof Error ? err.message : t('common', 'error'))
+        }
       } finally {
         setLoading(false)
       }
