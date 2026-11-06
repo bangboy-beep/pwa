@@ -650,8 +650,8 @@ export default function AdminDashboardPage() {
                   <MessageCircle className="w-4 h-4" />
                   <span>
                     {language === 'id'
-                      ? 'Kirim Bukti Pembayaran ke WhatsApp (085854203343)'
-                      : 'Send Payment Proof via WhatsApp (085854203343)'}
+                      ? 'Kirim Bukti Pembayaran ke WhatsApp'
+                      : 'Send Payment Proof via WhatsApp'}
                   </span>
                 </a>
               </div>
