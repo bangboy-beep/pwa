@@ -1250,7 +1250,11 @@ export default function LandingPage() {
                 {tr.bottomCta.btnTrial}
               </button>
               <a
-                href="https://wa.me/6285854203343?text=Halo%20Admin%20SmartQR%2C%20saya%20mau%20konsultasi%20untuk%20kafe%2Fhotel%20saya"
+                href={`https://wa.me/6285854203343?text=${encodeURIComponent(
+                  language === 'id'
+                    ? 'Halo Admin SmartQR, saya mau konsultasi untuk kafe/hotel saya.'
+                    : 'Hello SmartQR Admin, I want to consult about SmartQR for my business.'
+                )}`}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-stone-900 border border-stone-800 text-stone-200 font-bold text-sm hover:border-stone-700 active:scale-95 transition-all flex items-center justify-center gap-2"
@@ -1524,13 +1528,13 @@ export default function LandingPage() {
                   <>
                     1. Buka <strong>m-Banking</strong> (BCA, Mandiri, BRI, BNI) atau <strong>e-Wallet</strong> (GoPay, OVO, DANA, ShopeePay).<br />
                     2. Scan kode QRIS di atas (atau unduh gambar untuk di-scan dari galeri HP) dan masukkan nominal paket.<br />
-                    3. Klik tombol WhatsApp di bawah untuk konfirmasi aktivasi instan.
+                    3. Klik tombol WhatsApp di bawah untuk konfirmasi pembayaran & kami bantu settingkan <strong>link Google Review ⭐5</strong> bisnis Anda secara gratis!
                   </>
                 ) : (
                   <>
                     1. Open any Indonesian <strong>m-Banking</strong> or <strong>e-Wallet</strong>.<br />
                     2. Scan QRIS code above (or download image to scan from phone gallery) and enter package amount.<br />
-                    3. Click WhatsApp below for instant confirmation.
+                    3. Click WhatsApp below to confirm payment & we'll set up your <strong>Google Review ⭐5 link</strong> for free!
                   </>
                 )}
               </p>
@@ -1559,8 +1563,8 @@ export default function LandingPage() {
               <a
                 href={`https://wa.me/6285854203343?text=${encodeURIComponent(
                   language === 'id'
-                    ? 'Halo Admin SmartQR, saya ingin konfirmasi pembayaran via QRIS.'
-                    : 'Hello SmartQR Admin, I would like to confirm payment via QRIS.'
+                    ? 'Halo Admin SmartQR, saya ingin konfirmasi pembayaran via QRIS.\n\nNama Bisnis: \nSlug/URL: \nPaket: \n\nMohon bantu settingkan link Google Review bintang 5 untuk bisnis saya.\nNama bisnis di Google Maps: \nKota: '
+                    : 'Hello SmartQR Admin, I would like to confirm payment via QRIS.\n\nBusiness Name: \nSlug/URL: \nPlan: \n\nPlease help set up my Google Review star-5 link.\nBusiness name on Google Maps: \nCity: '
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
