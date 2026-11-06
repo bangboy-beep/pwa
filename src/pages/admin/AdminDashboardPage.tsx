@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'qris' | 'paypal'>('qris');
-  const [paymentCycle, setPaymentCycle] = useState<'monthly' | 'yearly'>('yearly');
+  const [paymentCycle, setPaymentCycle] = useState<'monthly' | 'quarterly' | 'yearly'>('quarterly');
   const [editTarget, setEditTarget] = useState<'logo' | 'cover' | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -109,6 +109,20 @@ export default function AdminDashboardPage() {
   const trialEndsAt = selectedBusiness.trial_ends_at ? new Date(selectedBusiness.trial_ends_at) : null;
   const daysLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 14;
 
+  const subEndsAt = selectedBusiness.subscription_ends_at ? new Date(selectedBusiness.subscription_ends_at) : null;
+  const subDaysLeft = subEndsAt ? Math.max(0, Math.ceil((subEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
+  const isPaidActive = !isDemo && !isTrial && !!selectedBusiness.subscription_tier && selectedBusiness.subscription_tier !== 'trial';
+  const isPaidExpiringSoon = isPaidActive && subDaysLeft <= 7;
+
+  const formatExpiryDate = (d: Date | null) => {
+    if (!d) return '';
+    return d.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
   const bizNameLower = selectedBusiness.name.toLowerCase();
   const bizSlugLower = selectedBusiness.slug.toLowerCase();
   const isGym = selectedBusiness.business_type === 'gym' ||
@@ -130,12 +144,14 @@ export default function AdminDashboardPage() {
     : isHospitality
     ? (language === 'id' ? 'Paket Hotel & Hospitality' : 'Hotel & Hospitality Plan')
     : (language === 'id' ? 'Paket Kafe & Resto' : 'Cafe & Dining Plan');
+
   const planPrice = isHospitality
-    ? (paymentCycle === 'yearly' ? 'Rp 1.428.000 / thn' : 'Rp 149.000 / bln')
-    : (paymentCycle === 'yearly' ? 'Rp 588.000 / thn' : 'Rp 69.000 / bln');
+    ? (paymentCycle === 'yearly' ? 'Rp 1.428.000 / thn' : paymentCycle === 'quarterly' ? 'Rp 399.000 / 3 bln' : 'Rp 149.000 / bln')
+    : (paymentCycle === 'yearly' ? 'Rp 588.000 / thn' : paymentCycle === 'quarterly' ? 'Rp 179.000 / 3 bln' : 'Rp 69.000 / bln');
+
   const planUsd = isHospitality
-    ? (paymentCycle === 'yearly' ? '$99 USD / year' : '$12 USD / month')
-    : (paymentCycle === 'yearly' ? '$45 USD / year' : '$5 USD / month');
+    ? (paymentCycle === 'yearly' ? '$99 USD / year' : paymentCycle === 'quarterly' ? '$32 USD / 3 months' : '$12 USD / month')
+    : (paymentCycle === 'yearly' ? '$45 USD / year' : paymentCycle === 'quarterly' ? '$13 USD / 3 months' : '$5 USD / month');
 
   const dynamicQuickActions = [
     {
@@ -162,10 +178,18 @@ export default function AdminDashboardPage() {
     { name: t('nav', 'qrCode'), desc: t('adminDashboard', 'qrDesc'), path: '/admin/qr', icon: QrCode, tone: 'bg-emerald-100 text-emerald-800' },
   ];
 
+  const cycleLabel = paymentCycle === 'yearly'
+    ? (language === 'id' ? 'Tahunan (Diskon Otomatis 29%)' : 'Yearly (29% Auto Discount)')
+    : paymentCycle === 'quarterly'
+    ? (language === 'id' ? '3 Bulan (Hemat 15%)' : '3 Months (Save 15%)')
+    : (language === 'id' ? 'Bulanan' : 'Monthly');
+
+  const totalBilledText = paymentMethod === 'paypal' ? planUsd : planPrice;
+
   const waText = encodeURIComponent(
     language === 'id'
-      ? `Halo Admin SmartQR, saya ingin konfirmasi pembayaran langganan SmartQR:\n\nBisnis: ${selectedBusiness.name}\nSlug: ${selectedBusiness.slug}\nPaket: ${planName} (${paymentCycle === 'yearly' ? 'Tahunan' : 'Bulanan'})\nMetode: ${paymentMethod.toUpperCase()}`
-      : `Hello SmartQR Admin, I would like to confirm my SmartQR subscription payment:\n\nBusiness: ${selectedBusiness.name}\nSlug: ${selectedBusiness.slug}\nPlan: ${planName} (${paymentCycle === 'yearly' ? 'Yearly' : 'Monthly'})\nMethod: ${paymentMethod.toUpperCase()}`
+      ? `Halo Admin SmartQR, saya ingin konfirmasi pembayaran langganan SmartQR:\n\nBisnis: ${selectedBusiness.name}\nSlug: ${selectedBusiness.slug}\nPaket: ${planName} (${cycleLabel})\nTotal Tagihan: ${totalBilledText}\nMetode: ${paymentMethod === 'paypal' ? 'PayPal (USD)' : 'QRIS / Transfer Bank'}`
+      : `Hello SmartQR Admin, I would like to confirm my SmartQR subscription payment:\n\nBusiness: ${selectedBusiness.name}\nSlug: ${selectedBusiness.slug}\nPlan: ${planName} (${cycleLabel})\nTotal Billed: ${totalBilledText}\nMethod: ${paymentMethod === 'paypal' ? 'PayPal (USD)' : 'QRIS / Bank Transfer'}`
   );
 
   return (
@@ -181,7 +205,11 @@ export default function AdminDashboardPage() {
             {isDemo
               ? (language === 'id' ? 'Status: Demo Resmi (Aktif Selamanya)' : 'Status: Official Demo (Lifetime Active)')
               : isTrial
-              ? (language === 'id' ? 'Status: Trial 14 Hari' : 'Status: 14-Day Free Trial')
+              ? (language === 'id' ? `Trial: Sisa ${daysLeft} Hari` : `Trial: ${daysLeft} Days Left`)
+              : isPaidActive
+              ? (subDaysLeft > 0
+                  ? (language === 'id' ? `Langganan Aktif: Sisa ${subDaysLeft} Hari` : `Plan Active: ${subDaysLeft} Days Left`)
+                  : (language === 'id' ? 'Langganan Telah Berakhir' : 'Subscription Expired'))
               : (language === 'id' ? `Paket: ${selectedBusiness.subscription_tier}` : `Plan: ${selectedBusiness.subscription_tier}`)}
           </span>
         </button>
@@ -218,6 +246,75 @@ export default function AdminDashboardPage() {
           >
             <Sparkles className="w-4 h-4" />
             <span>{language === 'id' ? 'Upgrade Langganan' : 'Upgrade Plan'}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Paid Subscription: Expiring Soon or Expired Warning Banner */}
+      {isPaidActive && isPaidExpiringSoon && (
+        <div className="bg-gradient-to-r from-rose-500 via-amber-500 to-amber-400 rounded-[28px] p-4 sm:p-5 text-stone-950 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-stone-950/15 flex items-center justify-center shrink-0">
+              <Clock className="w-6 h-6 text-stone-950 stroke-[2.5]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-stone-950 text-rose-300 px-2.5 py-0.5 rounded-full">
+                  {subDaysLeft === 0 ? (language === 'id' ? 'EXPIRED' : 'EXPIRED') : (language === 'id' ? 'PERPANJANGAN' : 'RENEWAL')}
+                </span>
+                <span className="text-xs font-black text-stone-950">
+                  {subDaysLeft > 0
+                    ? (language === 'id' ? `Sisa ${subDaysLeft} Hari Lagi (s.d. ${formatExpiryDate(subEndsAt)})` : `${subDaysLeft} Days Left (until ${formatExpiryDate(subEndsAt)})`)
+                    : (language === 'id' ? 'Masa Langganan Telah Berakhir' : 'Subscription Expired')}
+                </span>
+              </div>
+              <p className="text-xs font-medium text-stone-950/85 mt-1 leading-relaxed">
+                {language === 'id'
+                  ? 'Perpanjang langganan sekarang untuk memastikan menu QR meja dan review Google tetap aktif tanpa gangguan.'
+                  : 'Renew your subscription now to keep your table QR menu and Google reviews active without interruption.'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setPaymentModalOpen(true)}
+            className="px-5 py-2.5 rounded-xl bg-stone-950 hover:bg-stone-900 text-amber-300 text-xs font-extrabold shadow-md active:scale-95 transition-all shrink-0 flex items-center justify-center gap-2"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>{language === 'id' ? 'Perpanjang Sekarang' : 'Renew Now'}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Paid Subscription: Healthy Active Info Banner */}
+      {isPaidActive && !isPaidExpiringSoon && (
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 rounded-[28px] p-4 sm:p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+              <Sparkles className="w-6 h-6 text-white stroke-[2.5]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-white text-emerald-900 px-2.5 py-0.5 rounded-full">
+                  {language === 'id' ? 'PRO AKTIF' : 'PRO ACTIVE'}
+                </span>
+                <span className="text-xs font-black text-white">
+                  {language === 'id'
+                    ? `Sisa ${subDaysLeft} Hari Lagi (Aktif s.d. ${formatExpiryDate(subEndsAt)})`
+                    : `${subDaysLeft} Days Left (Active until ${formatExpiryDate(subEndsAt)})`}
+                </span>
+              </div>
+              <p className="text-xs font-medium text-white/90 mt-1 leading-relaxed">
+                {language === 'id'
+                  ? 'Semua fitur QR meja, WiFi otomatis, dan Google Review aktif tanpa batasan kuota.'
+                  : 'All table QR features, auto WiFi, and Google Reviews are running with unlimited scans.'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setPaymentModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-950 text-xs font-extrabold shadow-md active:scale-95 transition-all shrink-0 flex items-center justify-center gap-1.5"
+          >
+            <span>{language === 'id' ? 'Perpanjang / Kelola' : 'Renew / Manage'}</span>
           </button>
         </div>
       )}
@@ -421,34 +518,64 @@ export default function AdminDashboardPage() {
 
             {/* Plan Info Card */}
             <div className="p-4 rounded-2xl bg-surface border border-outline/60 mb-4">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-2.5">
                 <span className="text-xs font-bold text-ink">{planName}</span>
-                <span className="text-xs font-extrabold text-primary">{planPrice}</span>
+                <span className="text-xs font-extrabold text-primary">
+                  {paymentMethod === 'paypal' ? planUsd : planPrice}
+                </span>
               </div>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 <button
                   type="button"
                   onClick={() => setPaymentCycle('monthly')}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`py-2 px-1 rounded-xl text-[11px] font-bold transition-all text-center ${
                     paymentCycle === 'monthly'
                       ? 'bg-primary text-white shadow-sm'
-                      : 'bg-white text-ink-muted border border-outline/60'
+                      : 'bg-white text-ink-muted border border-outline/60 hover:bg-stone-50'
                   }`}
                 >
-                  {language === 'id' ? 'Bulanan' : 'Monthly'}
+                  <div>{language === 'id' ? 'Bulanan' : 'Monthly'}</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentCycle('quarterly')}
+                  className={`py-2 px-1 rounded-xl text-[11px] font-bold transition-all text-center relative ${
+                    paymentCycle === 'quarterly'
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'bg-white text-ink-muted border border-outline/60 hover:bg-stone-50'
+                  }`}
+                >
+                  <span className={`absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase ${
+                    paymentCycle === 'quarterly' ? 'bg-amber-400 text-stone-950' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    -15%
+                  </span>
+                  <div>{language === 'id' ? '3 Bulan' : '3 Months'}</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPaymentCycle('yearly')}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`py-2 px-1 rounded-xl text-[11px] font-bold transition-all text-center relative ${
                     paymentCycle === 'yearly'
                       ? 'bg-primary text-white shadow-sm'
-                      : 'bg-white text-ink-muted border border-outline/60'
+                      : 'bg-white text-ink-muted border border-outline/60 hover:bg-stone-50'
                   }`}
                 >
-                  {language === 'id' ? 'Tahunan (Hemat 2 Bulan)' : 'Yearly (Save 2 Months)'}
+                  <span className={`absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase ${
+                    paymentCycle === 'yearly' ? 'bg-amber-400 text-stone-950' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    -29% 🔥
+                  </span>
+                  <div>{language === 'id' ? 'Tahunan' : 'Yearly'}</div>
                 </button>
               </div>
+              <p className="text-[11px] text-center text-ink-muted mt-2 font-medium">
+                {paymentCycle === 'yearly'
+                  ? (language === 'id' ? '🔥 Hemat hingga 3,5 bulan dengan potongan diskon otomatis!' : '🔥 Save up to 3.5 months with auto discount!')
+                  : paymentCycle === 'quarterly'
+                  ? (language === 'id' ? '✨ Hemat 15% & praktis tanpa perlu transfer tiap bulan' : '✨ Save 15% & convenient 3-month cycle')
+                  : (language === 'id' ? 'Fleksibel bayar per bulan' : 'Flexible monthly billing')}
+              </p>
             </div>
 
             {/* Payment Method Switcher */}

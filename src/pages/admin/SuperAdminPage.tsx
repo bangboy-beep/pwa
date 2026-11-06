@@ -426,6 +426,10 @@ export default function SuperAdminPage() {
             {filtered.map((b) => {
               const currentPin = pinsMap[b.id];
               const isRevealed = !!revealedPins[b.id];
+              const isDemoBiz = b.slug === 'my-coffee' || b.subscription_tier === 'demo' || b.subscription_tier === 'lifetime';
+              const isTrialBiz = !isDemoBiz && (b.subscription_tier === 'trial' || !b.subscription_tier);
+              const trialDays = b.trial_ends_at ? Math.max(0, Math.ceil((new Date(b.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
+              const subDays = b.subscription_ends_at ? Math.max(0, Math.ceil((new Date(b.subscription_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
 
               return (
                 <li
@@ -448,19 +452,29 @@ export default function SuperAdminPage() {
                       <span className="block text-sm font-bold text-ink group-hover:text-primary transition-colors" style={{ wordBreak: 'break-word' }}>
                         {b.name}
                       </span>
-                      <span className="flex items-center gap-1.5 mt-0.5">
+                      <span className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                         <span
                           className={`w-1.5 h-1.5 rounded-full shrink-0 ${b.status === 'active' ? 'bg-emerald-500' : 'bg-stone-400'}`}
                           aria-hidden="true"
                         />
                         <span className="text-xs text-ink-muted truncate">
                           {getBusinessTypeMeta(b.business_type, language).label} · /{b.slug}
-                          {(b.slug === 'my-coffee' || b.subscription_tier === 'demo') && (
-                            <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-bold text-[10px]">
-                              DEMO
-                            </span>
-                          )}
                         </span>
+                        {isDemoBiz && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-bold text-[10px]">
+                            DEMO
+                          </span>
+                        )}
+                        {isTrialBiz && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">
+                            Trial: {trialDays}d
+                          </span>
+                        )}
+                        {!isDemoBiz && !isTrialBiz && (
+                          <span className={`px-1.5 py-0.5 rounded-full font-bold text-[10px] ${subDays > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                            {subDays > 0 ? `Aktif: ${subDays}d` : 'Expired'}
+                          </span>
+                        )}
                       </span>
                     </span>
                   </div>
@@ -487,9 +501,25 @@ export default function SuperAdminPage() {
                       type="button"
                       onClick={() => handleExtendSubscription(b.id, 'monthly', 30)}
                       className="h-8 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold transition-colors"
-                      title="Aktivasi Paket Pro +30 Hari"
+                      title="Aktivasi Paket Pro 1 Bulan (+30 Hari)"
                     >
-                      +30d Pro
+                      +1 Bln
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleExtendSubscription(b.id, 'quarterly', 90)}
+                      className="h-8 px-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 text-[11px] font-bold transition-colors"
+                      title="Aktivasi Paket 3 Bulan (+90 Hari)"
+                    >
+                      +3 Bln
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleExtendSubscription(b.id, 'yearly', 365)}
+                      className="h-8 px-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 text-[11px] font-bold transition-colors"
+                      title="Aktivasi Paket Tahunan (+365 Hari)"
+                    >
+                      +1 Thn
                     </button>
                     <button
                       onClick={() => manageBusiness(b)}

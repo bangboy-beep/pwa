@@ -114,8 +114,10 @@ const LANDING_I18N = {
       title: 'Harga Flat & Transparan Tanpa Biaya Tersembunyi',
       desc: 'Coba gratis 14 hari penuh. Bebas berapa pun jumlah meja di outlet Anda.',
       monthly: 'Bayar Bulanan',
+      quarterly: 'Bayar 3 Bulan',
       yearly: 'Bayar Tahunan',
-      saveBadge: 'Hemat 2 Bulan',
+      saveBadgeQuarterly: 'Hemat 15%',
+      saveBadgeYearly: 'Diskon 29% 🔥',
       card1Title: 'Free Trial',
       card1Subtitle: 'Eksplorasi seluruh fitur tanpa risiko.',
       card1Price: 'Rp 0',
@@ -124,11 +126,13 @@ const LANDING_I18N = {
       card2Badge: 'Paling Populer ⭐',
       card2Title: 'Kafe & Restoran',
       card2Subtitle: 'Solusi lengkap untuk 1 outlet kafe / resto.',
-      card2YearlyNote: 'Ditagih tahunan Rp 588.000 (Hemat 2 bulan)',
+      card2QuarterlyNote: 'Ditagih Rp 179.000 / 3 bulan (Hemat Rp 28.000)',
+      card2YearlyNote: 'Ditagih tahunan Rp 588.000 (Hemat Rp 240.000 / Diskon Otomatis 29%)',
       card2Btn: 'Daftar Sekarang (14 Hari Free)',
       card3Title: 'Hotel & Villa',
       card3Subtitle: 'Direktori kamar, room service & resort.',
-      card3YearlyNote: 'Ditagih tahunan Rp 1.428.000',
+      card3QuarterlyNote: 'Ditagih Rp 399.000 / 3 bulan (Hemat Rp 48.000)',
+      card3YearlyNote: 'Ditagih tahunan Rp 1.428.000 (Hemat Rp 360.000 / Diskon Otomatis 20%)',
       card3Btn: 'Mulai Uji Coba Hotel',
       perMonth: '/ bulan',
       secureBarTitle: 'Metode Pembayaran Aman & Lengkap',
@@ -236,8 +240,10 @@ const LANDING_I18N = {
       title: 'Flat & Transparent Rates Without Hidden Fees',
       desc: 'Full 14-day free trial. Unlimited tables across your entire location.',
       monthly: 'Billed Monthly',
+      quarterly: 'Billed 3 Months',
       yearly: 'Billed Yearly',
-      saveBadge: 'Save 2 Months',
+      saveBadgeQuarterly: 'Save 15%',
+      saveBadgeYearly: '29% OFF 🔥',
       card1Title: 'Free Trial',
       card1Subtitle: 'Explore all features risk-free.',
       card1Price: '$0',
@@ -246,11 +252,13 @@ const LANDING_I18N = {
       card2Badge: 'Most Popular ⭐',
       card2Title: 'Cafe & Restaurant',
       card2Subtitle: 'Complete solution for 1 cafe or restaurant outlet.',
-      card2YearlyNote: 'Billed yearly $45 / year (Save 2 months)',
+      card2QuarterlyNote: 'Billed $13 / 3 months (Save $2)',
+      card2YearlyNote: 'Billed $45 / year (Save $15 / Automatic 29% Discount)',
       card2Btn: 'Register Now (14 Days Free)',
       card3Title: 'Hotel & Villa',
       card3Subtitle: 'Room directory, amenities & resort dining.',
-      card3YearlyNote: 'Billed yearly $99 / year',
+      card3QuarterlyNote: 'Billed $32 / 3 months (Save $4)',
+      card3YearlyNote: 'Billed $99 / year (Save $45 / Automatic 31% Discount)',
       card3Btn: 'Start Hotel Trial',
       perMonth: '/ month',
       secureBarTitle: 'Secure & Comprehensive Payment Methods',
@@ -287,7 +295,7 @@ export default function LandingPage() {
   const [showRegisterModal, setShowRegisterModal] = useState(false)
   const [showQrisModal, setShowQrisModal] = useState(false)
   const [copiedNmid, setCopiedNmid] = useState(false)
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly')
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'quarterly' | 'yearly'>('quarterly')
   const [activeTabIndustry, setActiveTabIndustry] = useState<'cafe' | 'hotel' | 'salon' | 'gym'>('cafe')
 
   // Registration Form State
@@ -953,23 +961,36 @@ export default function LandingPage() {
           </p>
 
           {/* Billing Cycle Toggle */}
-          <div className="mt-8 inline-flex items-center p-1.5 rounded-2xl bg-stone-900 border border-stone-800">
+          <div className="mt-8 inline-flex flex-wrap items-center justify-center p-1.5 rounded-2xl bg-stone-900 border border-stone-800 gap-1">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 billingCycle === 'monthly' ? 'bg-stone-800 text-white shadow-md' : 'text-stone-400 hover:text-white'
               }`}
             >
               {tr.pricing.monthly}
             </button>
             <button
+              onClick={() => setBillingCycle('quarterly')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                billingCycle === 'quarterly' ? 'bg-amber-500 text-stone-950 shadow-md font-extrabold' : 'text-stone-400 hover:text-white'
+              }`}
+            >
+              <span>{tr.pricing.quarterly}</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${billingCycle === 'quarterly' ? 'bg-stone-950/20 text-stone-950' : 'bg-amber-400/20 text-amber-300'}`}>
+                {tr.pricing.saveBadgeQuarterly}
+              </span>
+            </button>
+            <button
               onClick={() => setBillingCycle('yearly')}
-              className={`px-5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 billingCycle === 'yearly' ? 'bg-amber-500 text-stone-950 shadow-md font-extrabold' : 'text-stone-400 hover:text-white'
               }`}
             >
               <span>{tr.pricing.yearly}</span>
-              <span className="px-1.5 py-0.5 rounded-full bg-stone-950/20 text-[10px] font-extrabold">{tr.pricing.saveBadge}</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${billingCycle === 'yearly' ? 'bg-stone-950/20 text-stone-950' : 'bg-amber-400/20 text-amber-300'}`}>
+                {tr.pricing.saveBadgeYearly}
+              </span>
             </button>
           </div>
         </div>
@@ -1025,10 +1046,13 @@ export default function LandingPage() {
               <div className="mt-6 pb-6 border-b border-stone-800">
                 <span className="text-4xl font-extrabold text-white">
                   {language === 'id' 
-                    ? (billingCycle === 'yearly' ? 'Rp 49.000' : 'Rp 69.000')
-                    : (billingCycle === 'yearly' ? '$4 USD' : '$5 USD')}
+                    ? (billingCycle === 'yearly' ? 'Rp 49.000' : billingCycle === 'quarterly' ? 'Rp 59.000' : 'Rp 69.000')
+                    : (billingCycle === 'yearly' ? '$3.75 USD' : billingCycle === 'quarterly' ? '$4.30 USD' : '$5 USD')}
                 </span>
                 <span className="text-xs text-stone-500 ml-1">{tr.pricing.perMonth}</span>
+                {billingCycle === 'quarterly' && (
+                  <p className="text-[11px] text-amber-400 mt-1 font-semibold">{tr.pricing.card2QuarterlyNote}</p>
+                )}
                 {billingCycle === 'yearly' && (
                   <p className="text-[11px] text-amber-400 mt-1 font-semibold">{tr.pricing.card2YearlyNote}</p>
                 )}
@@ -1064,10 +1088,13 @@ export default function LandingPage() {
               <div className="mt-6 pb-6 border-b border-stone-800">
                 <span className="text-4xl font-extrabold text-white">
                   {language === 'id'
-                    ? (billingCycle === 'yearly' ? 'Rp 119.000' : 'Rp 149.000')
-                    : (billingCycle === 'yearly' ? '$9 USD' : '$12 USD')}
+                    ? (billingCycle === 'yearly' ? 'Rp 119.000' : billingCycle === 'quarterly' ? 'Rp 133.000' : 'Rp 149.000')
+                    : (billingCycle === 'yearly' ? '$8.25 USD' : billingCycle === 'quarterly' ? '$10.60 USD' : '$12 USD')}
                 </span>
                 <span className="text-xs text-stone-500 ml-1">{tr.pricing.perMonth}</span>
+                {billingCycle === 'quarterly' && (
+                  <p className="text-[11px] text-sky-400 mt-1 font-semibold">{tr.pricing.card3QuarterlyNote}</p>
+                )}
                 {billingCycle === 'yearly' && (
                   <p className="text-[11px] text-sky-400 mt-1 font-semibold">{tr.pricing.card3YearlyNote}</p>
                 )}
