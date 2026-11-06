@@ -23,8 +23,11 @@ import {
   ChevronDown,
   ExternalLink,
   Copy,
-  Check
+  Check,
+  Download,
+  Loader2
 } from 'lucide-react'
+import qrisPaymentImg from '../assets/qris-payment.jpg'
 import { QRCodeSVG } from 'qrcode.react'
 import { registerBusinessSelfServe } from '../lib/business/service'
 import type { BusinessType } from '../types'
@@ -295,6 +298,7 @@ export default function LandingPage() {
   const [showRegisterModal, setShowRegisterModal] = useState(false)
   const [showQrisModal, setShowQrisModal] = useState(false)
   const [copiedNmid, setCopiedNmid] = useState(false)
+  const [isDownloadingQris, setIsDownloadingQris] = useState(false)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'quarterly' | 'yearly'>('quarterly')
   const [activeTabIndustry, setActiveTabIndustry] = useState<'cafe' | 'hotel' | 'salon' | 'gym'>('cafe')
 
@@ -310,6 +314,34 @@ export default function LandingPage() {
   // Demo QR Target (Khusus link demo resmi: my-coffee)
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://smartqr.biz.id'
   const demoUrl = `${origin}/q/my-coffee`
+
+  // Download QRIS Handler
+  const handleDownloadQris = async () => {
+    setIsDownloadingQris(true)
+    try {
+      const response = await fetch(qrisPaymentImg)
+      if (!response.ok) throw new Error('Network error')
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'QRIS-SmartQR-Sehat-Pro-Digital.jpg'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Download QRIS error:', err)
+      const link = document.createElement('a')
+      link.href = qrisPaymentImg
+      link.download = 'QRIS-SmartQR-Sehat-Pro-Digital.jpg'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } finally {
+      setIsDownloadingQris(false)
+    }
+  }
 
   // FAQ Accordion State
   const [openFaq, setOpenFaq] = useState<number | null>(0)
@@ -1443,7 +1475,7 @@ export default function LandingPage() {
             {/* QRIS Image Card */}
             <div className="p-3.5 rounded-2xl bg-white border border-stone-200 inline-block shadow-lg mx-auto mb-4 w-full">
               <img
-                src="/qris-payment.jpg"
+                src={qrisPaymentImg}
                 alt="QRIS Sehat Pro Digital & Kreatif"
                 className="w-full max-w-[240px] mx-auto h-auto rounded-xl object-contain shadow-sm"
               />
@@ -1491,13 +1523,13 @@ export default function LandingPage() {
                 {language === 'id' ? (
                   <>
                     1. Buka <strong>m-Banking</strong> (BCA, Mandiri, BRI, BNI) atau <strong>e-Wallet</strong> (GoPay, OVO, DANA, ShopeePay).<br />
-                    2. Scan kode QRIS di atas dan masukkan nominal paket.<br />
+                    2. Scan kode QRIS di atas (atau unduh gambar untuk di-scan dari galeri HP) dan masukkan nominal paket.<br />
                     3. Klik tombol WhatsApp di bawah untuk konfirmasi aktivasi instan.
                   </>
                 ) : (
                   <>
                     1. Open any Indonesian <strong>m-Banking</strong> or <strong>e-Wallet</strong>.<br />
-                    2. Scan QRIS code above and enter package amount.<br />
+                    2. Scan QRIS code above (or download image to scan from phone gallery) and enter package amount.<br />
                     3. Click WhatsApp below for instant confirmation.
                   </>
                 )}
@@ -1506,15 +1538,24 @@ export default function LandingPage() {
 
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-2">
-              <a
-                href="/qris-payment.jpg"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 py-2.5 px-3 rounded-xl bg-stone-800 hover:bg-stone-750 border border-stone-700 text-stone-200 hover:text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5"
+              <button
+                type="button"
+                onClick={handleDownloadQris}
+                disabled={isDownloadingQris}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 hover:border-amber-400 text-amber-200 hover:text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
               >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>{language === 'id' ? 'Buka Gambar' : 'Open Image'}</span>
-              </a>
+                {isDownloadingQris ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                    <span>{language === 'id' ? 'Mengunduh...' : 'Downloading...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{language === 'id' ? 'Download QRIS' : 'Download QRIS'}</span>
+                  </>
+                )}
+              </button>
               <a
                 href={`https://wa.me/6285854203343?text=${encodeURIComponent(
                   language === 'id'
