@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Lock, ArrowRight, QrCode, AlertCircle, CheckCircle2, KeyRound, Building2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase/client'
-import { getBusinessBySlug } from '../../lib/business/service'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { useLanguage } from '../../i18n/LanguageContext'
@@ -19,8 +18,8 @@ export default function AdminLoginPage() {
 
   const submitPin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')
-    if (!cleanSlug) {
+    const rawSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')
+    if (!rawSlug) {
       setMessage({ type: 'error', text: t('adminLogin', 'enterSlug') })
       return
     }
@@ -33,24 +32,34 @@ export default function AdminLoginPage() {
     setMessage(null)
 
     try {
-      // 1. Verify business exists
-      const { data: bizData, error: bizError } = await getBusinessBySlug(cleanSlug)
-      if (bizError || !bizData) {
-        throw new Error(`Bisnis "${cleanSlug}" tidak ditemukan. Pastikan slug sudah benar.`)
+      // 1. Fuzzy-lookup bisnis: cocokkan slug meski user lupa tanda hubung
+      //    RPC lookup_business_for_login bisa diakses anon dan normalisasi slug otomatis
+      const { data: lookupRows, error: lookupErr } = await (supabase as any).rpc(
+        'lookup_business_for_login',
+        { p_input: rawSlug }
+      )
+
+      const bizData = lookupRows && lookupRows.length > 0 ? lookupRows[0] : null
+
+      if (lookupErr || !bizData) {
+        throw new Error(`Bisnis "${rawSlug}" tidak ditemukan. Pastikan slug sudah benar.`)
       }
 
-      // 2. Sign in with owner PIN
+      // Gunakan slug CANONICAL dari DB (bukan dari input user), agar email login tepat
+      const canonicalSlug = bizData.slug as string
       const pinValue = pin.trim()
-      const loginEmail = `${cleanSlug}@smartqr.app`
-      const { error } = await supabase.auth.signInWithPassword({
+      const loginEmail = `${canonicalSlug}@smartqr.app`
+
+      // 2. Coba login langsung
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password: pinValue,
       })
 
-      if (error) {
-        // Fallback: verifikasi PIN via RPC (yang otomatis resinkronisasi auth.users & credentials)
+      if (signInErr) {
+        // 3. Fallback: sync auth via verify_business_pin (creates auth.users + identities jika belum ada)
         const { data: pinOk, error: rpcErr } = await (supabase as any).rpc('verify_business_pin', {
-          p_slug: cleanSlug,
+          p_slug: canonicalSlug,
           p_pin: pinValue,
         })
 
@@ -58,31 +67,31 @@ export default function AdminLoginPage() {
           throw new Error(t('adminLogin', 'invalidPin'))
         }
 
-        // Retry login setelah tersinkronisasi
-        const retry = await supabase.auth.signInWithPassword({
+        // 4. Retry setelah sinkronisasi
+        const { error: retryErr } = await supabase.auth.signInWithPassword({
           email: loginEmail,
           password: pinValue,
         })
-        if (retry.error) {
+        if (retryErr) {
           throw new Error(t('adminLogin', 'invalidPin'))
         }
       } else {
-        // Pastikan relasi tabel business_members disinkronisasi
+        // Sinkronisasi membership di background
         try {
           await (supabase as any).rpc('verify_business_pin', {
-            p_slug: cleanSlug,
+            p_slug: canonicalSlug,
             p_pin: pinValue,
           })
         } catch {
-          // fallback dijalankan di getMyBusinesses
+          // aman, akan di-handle oleh getMyBusinesses
         }
       }
 
       if (rememberMe) {
-        localStorage.setItem(`smartqr_pin_${cleanSlug}`, pin.trim())
+        localStorage.setItem(`smartqr_pin_${canonicalSlug}`, pinValue)
       }
 
-      sessionStorage.setItem('smartqr_selected_business_id', bizData.id)
+      sessionStorage.setItem('smartqr_selected_business_id', bizData.business_id)
       window.location.href = '/admin'
     } catch (err: unknown) {
       const text = err instanceof Error ? err.message : t('common', 'systemError')
