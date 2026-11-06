@@ -192,13 +192,13 @@ export default function PublicCustomerHubPage() {
     <div className="min-h-[100dvh] bg-surface">
       <div className="max-w-md mx-auto min-h-[100dvh] flex flex-col">
         {/* Cover */}
-        <div className="relative h-52 shrink-0 bg-primary-100">
+        <div className="relative h-60 sm:h-64 shrink-0 bg-primary-100">
           {business.cover_url ? (
-            <img src={business.cover_url} alt="" className="w-full h-full object-cover" decoding="async" />
+            <img src={business.cover_url} alt="" className="w-full h-full object-cover object-center" decoding="async" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-800" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10" />
 
           {/* Floating Language Toggle */}
           <div className="absolute top-4 right-4 z-10">

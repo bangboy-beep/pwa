@@ -34,14 +34,62 @@ export default function AdminLoginPage() {
     try {
       // 1. Fuzzy-lookup bisnis: cocokkan slug meski user lupa tanda hubung
       //    RPC lookup_business_for_login bisa diakses anon dan normalisasi slug otomatis
+      let bizData: { business_id: string; slug: string; name?: string } | null = null
+      let suggestionSlug: string | null = null
+
       const { data: lookupRows, error: lookupErr } = await (supabase as any).rpc(
         'lookup_business_for_login',
         { p_input: rawSlug }
       )
 
-      const bizData = lookupRows && lookupRows.length > 0 ? lookupRows[0] : null
+      if (!lookupErr && lookupRows && lookupRows.length > 0) {
+        bizData = lookupRows[0]
+      }
 
-      if (lookupErr || !bizData) {
+      // Fallback 1b: Jika tidak ketemu via RPC (misal perbedaan huruf s vs z, atau typo minor),
+      // cari di tabel businesses langsung
+      if (!bizData) {
+        const { data: allBiz } = await supabase
+          .from('businesses')
+          .select('id, name, slug, status')
+
+        const bizList = (allBiz || []) as Array<{ id: string; name: string; slug: string; status: string }>
+
+        if (bizList.length > 0) {
+          const normInput = rawSlug.replace(/-/g, '')
+          const normInputSZ = normInput.replace(/z/g, 's')
+
+          // Cari kecocokan variasi s/z atau nama bisnis
+          const exactFuzzy = bizList.find(b => {
+            const bNorm = (b.slug || '').replace(/-/g, '')
+            const bNormSZ = bNorm.replace(/z/g, 's')
+            const bNameNorm = (b.name || '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/z/g, 's')
+            return bNormSZ === normInputSZ || bNameNorm === normInputSZ
+          })
+
+          if (exactFuzzy) {
+            bizData = {
+              business_id: exactFuzzy.id,
+              slug: exactFuzzy.slug,
+              name: exactFuzzy.name
+            }
+          } else {
+            // Cek apakah ada bisnis yang mirip untuk diberikan saran
+            const closeBiz = bizList.find(b => {
+              const bNorm = (b.slug || '').replace(/-/g, '')
+              return bNorm.includes(normInput) || normInput.includes(bNorm)
+            })
+            if (closeBiz) {
+              suggestionSlug = closeBiz.slug
+            }
+          }
+        }
+      }
+
+      if (!bizData) {
+        if (suggestionSlug) {
+          throw new Error(`Bisnis "${rawSlug}" tidak ditemukan. Apakah maksud Anda: "${suggestionSlug}"?`)
+        }
         throw new Error(`Bisnis "${rawSlug}" tidak ditemukan. Pastikan slug sudah benar.`)
       }
 

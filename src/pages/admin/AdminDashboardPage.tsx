@@ -321,9 +321,9 @@ export default function AdminDashboardPage() {
 
       {/* Profile card */}
       <section className="bg-white rounded-[28px] overflow-hidden shadow-[0_4px_20px_rgba(23,22,31,0.06)]">
-        <div className="relative h-32 bg-primary-100">
+        <div className="relative h-44 sm:h-52 bg-primary-100">
           {selectedBusiness.cover_url ? (
-            <img src={selectedBusiness.cover_url} alt="" className="w-full h-full object-cover" decoding="async" />
+            <img src={selectedBusiness.cover_url} alt="" className="w-full h-full object-cover object-center" decoding="async" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary-400 via-primary-500 to-primary-700 flex items-center justify-center p-3">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 backdrop-blur-xs text-white/90 text-[11px] font-medium border border-white/10 shadow-xs">
@@ -451,7 +451,7 @@ export default function AdminDashboardPage() {
                             : t('adminDashboard', 'changeLogo')}
                       </span>
                       <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 font-mono text-[10px] font-bold">
-                        {target === 'cover' ? '1200 × 600 px' : '500 × 500 px'}
+                        {target === 'cover' ? '1080 × 600 px' : '500 × 500 px'}
                       </span>
                     </div>
                     <span className="block text-xs font-semibold text-primary mt-0.5">

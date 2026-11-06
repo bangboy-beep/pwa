@@ -203,8 +203,9 @@ GRANT EXECUTE ON FUNCTION public.verify_business_pin(TEXT, TEXT) TO authenticate
 -- use the EXACT slug for the auth email (slug@smartqr.app).
 -- Matching order:
 --   a) exact slug match
---   b) slug with hyphens stripped on both sides (e.g. "restolezatos" → "resto-lezatoz")
---   c) slug match ignoring hyphens in DB slug (strips DB slug hyphens then compares)
+--   b) slug with hyphens stripped on both sides (e.g. "restolezatoz" → "resto-lezatoz")
+--   c) phonetic s/z interchange (e.g. "restolezatos" → "resto-lezatoz")
+--   d) stripped business name match (e.g. "resto lezatoz" → "resto-lezatoz")
 -- =============================================
 CREATE OR REPLACE FUNCTION public.lookup_business_for_login(p_input TEXT)
 RETURNS TABLE(
@@ -218,12 +219,14 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_normalized TEXT;
+  v_normalized    TEXT;
+  v_sz_normalized TEXT;
 BEGIN
   -- Normalise input: lowercase, keep only a-z 0-9 and hyphens
-  p_input      := lower(trim(p_input));
-  p_input      := regexp_replace(p_input, '[^a-z0-9\-]', '', 'g');
-  v_normalized := replace(p_input, '-', ''); -- strip hyphens for fuzzy compare
+  p_input         := lower(trim(p_input));
+  p_input         := regexp_replace(p_input, '[^a-z0-9\-]', '', 'g');
+  v_normalized    := replace(p_input, '-', ''); -- strip hyphens for fuzzy compare
+  v_sz_normalized := replace(v_normalized, 'z', 's'); -- normalise s/z variations
 
   RETURN QUERY
   SELECT
@@ -237,11 +240,21 @@ BEGIN
     b.slug = p_input
     OR
     -- b) input (stripped) = stored slug (stripped)
-    --    handles: user types "restolezatos", DB has "resto-lezatoz"
     replace(b.slug, '-', '') = v_normalized
+    OR
+    -- c) phonetic s/z interchange (handles user typing "restolezatos" when DB has "resto-lezatoz")
+    replace(replace(b.slug, '-', ''), 'z', 's') = v_sz_normalized
+    OR
+    -- d) input = business name without spaces
+    replace(replace(lower(regexp_replace(b.name, '[^a-zA-Z0-9]', '', 'g')), 'z', 's'), '-', '') = v_sz_normalized
   ORDER BY
-    -- prefer exact match
-    CASE WHEN b.slug = p_input THEN 0 ELSE 1 END,
+    -- prefer exact match, then stripped match, then s/z match
+    CASE
+      WHEN b.slug = p_input THEN 0
+      WHEN replace(b.slug, '-', '') = v_normalized THEN 1
+      WHEN replace(replace(b.slug, '-', ''), 'z', 's') = v_sz_normalized THEN 2
+      ELSE 3
+    END,
     b.created_at DESC
   LIMIT 1;
 END;
