@@ -135,7 +135,7 @@ export default function MenuPage() {
 
   const showToast = (msg: string) => { setToastMessage(msg); setTimeout(() => setToastMessage(null), 3500) }
 
-  const handleOpenAddCategory = () => { if (isStaff) return; setEditingCategory(null); setCategoryName(''); setCategoryDesc(''); setCategorySort('0'); setCategoryActive(true); setCategoryFormError(null); setIsCategoryModalOpen(true) }
+  const handleOpenAddCategory = () => { if (isStaff) return; setEditingCategory(null); setCategoryName(''); setCategoryDesc(''); setCategorySort(String(categories.length)); setCategoryActive(true); setCategoryFormError(null); setIsCategoryModalOpen(true) }
   const handleOpenEditCategory = (cat: MenuCategory) => { if (isStaff) return; setEditingCategory(cat); setCategoryName(cat.name); setCategoryDesc(cat.description || ''); setCategorySort(String(cat.sort_order)); setCategoryActive(cat.is_active); setCategoryFormError(null); setIsCategoryModalOpen(true) }
 
   const handleSaveCategory = async (e: React.FormEvent) => {
@@ -159,6 +159,7 @@ export default function MenuPage() {
           setCategories(p => [...p, data].sort((a, b) => a.sort_order - b.sort_order))
           setIsCategoryModalOpen(false)
           clearCachedMenu(currentBusiness.slug)
+          setProductCategoryId(data.id)
           showToast(t('adminMenu', 'categoryCreated'))
         }
         else setCategoryFormError(error?.message || t('common', 'error'))
@@ -425,6 +426,46 @@ export default function MenuPage() {
         </div>
       )}
 
+      {/* Header action bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
+            {isGym
+              ? (language === 'id' ? 'Kelola Paket & Kelas' : 'Manage Plans & Classes')
+              : isHospitality
+              ? (language === 'id' ? 'Kelola Katalog & Layanan' : 'Manage Directory & Services')
+              : isBeauty
+              ? (language === 'id' ? 'Kelola Price List & Layanan' : 'Manage Services & Rates')
+              : (language === 'id' ? 'Kelola Menu' : 'Manage Menu')}
+          </h1>
+          <p className="text-xs text-stone-500 mt-0.5 font-medium">
+            {language === 'id'
+              ? 'Atur kategori menu (Makanan, Minuman, Snack, Dessert, dll) dan produk'
+              : 'Organize menu categories (Food, Drinks, Snacks, Desserts, etc.) and items'}
+          </p>
+        </div>
+        {!isStaff && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleOpenAddCategory}
+              className="h-10 px-3.5 rounded-xl border border-stone-300 hover:border-primary text-stone-700 hover:text-primary bg-white text-xs font-bold flex items-center gap-1.5 shadow-xs active:scale-95 transition-all"
+            >
+              <Plus className="w-4 h-4 text-primary" />
+              <span>{t('adminMenu', 'addCategory')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOpenAddProduct()}
+              className="h-10 px-3.5 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-bold flex items-center gap-1.5 shadow-xs active:scale-95 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t('adminMenu', 'addProduct')}</span>
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Category filter tabs — MD3 Filter Chips */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1 -mx-4 px-4">
         <button onClick={() => setSelectedCategoryId('all')}
@@ -453,6 +494,17 @@ export default function MenuPage() {
             </button>
           )
         })}
+        {!isStaff && (
+          <button
+            type="button"
+            onClick={handleOpenAddCategory}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border border-dashed border-primary/60 text-primary bg-primary-50/40 hover:bg-primary-50 active:scale-95 flex items-center gap-1.5 shrink-0"
+            title={t('adminMenu', 'addCategory')}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>{t('adminMenu', 'addCategory')}</span>
+          </button>
+        )}
       </div>
 
       {/* Search bar — MD3 Outlined Search */}
@@ -637,7 +689,7 @@ export default function MenuPage() {
 
       {/* Category Modal */}
       {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm" onClick={() => setIsCategoryModalOpen(false)} />
           <div className="relative w-full max-w-sm bg-white rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-stone-100">
             <div className="px-6 pt-6 pb-6">
@@ -798,7 +850,19 @@ export default function MenuPage() {
 
               <form onSubmit={handleSaveProduct} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-stone-500 mb-1.5 ml-1 uppercase tracking-wider">{t('adminMenu', 'productCategory')} *</label>
+                  <div className="flex items-center justify-between mb-1.5 ml-1">
+                    <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider">{t('adminMenu', 'productCategory')} *</label>
+                    {!isStaff && (
+                      <button
+                        type="button"
+                        onClick={handleOpenAddCategory}
+                        className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>{t('adminMenu', 'addCategory')}</span>
+                      </button>
+                    )}
+                  </div>
                   <div className="relative">
                     <select value={productCategoryId} onChange={(e) => setProductCategoryId(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-outline text-sm bg-transparent focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none" required>
                       {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}

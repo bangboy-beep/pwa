@@ -156,7 +156,7 @@ export const id: TranslationDictionary = {
     editProduct: 'Edit Produk',
     deleteProduct: 'Hapus Produk',
     categoryName: 'Nama Kategori',
-    categoryNamePlaceholder: 'Contoh: Makanan Utama, Kopi, Dessert',
+    categoryNamePlaceholder: 'Contoh: Makanan, Minuman, Snack, Dessert, dll',
     categoryDesc: 'Deskripsi Kategori',
     categoryDescPlaceholder: 'Deskripsi opsional untuk kategori ini',
     productName: 'Nama Produk',

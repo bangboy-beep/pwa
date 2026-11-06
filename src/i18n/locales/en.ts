@@ -156,7 +156,7 @@ export const en: TranslationDictionary = {
     editProduct: 'Edit Item',
     deleteProduct: 'Delete Item',
     categoryName: 'Category Name',
-    categoryNamePlaceholder: 'e.g. Main Course, Coffee, Dessert',
+    categoryNamePlaceholder: 'e.g. Main Course, Drinks, Snacks, Desserts',
     categoryDesc: 'Category Description',
     categoryDescPlaceholder: 'Optional description for this category',
     productName: 'Item Name',
