@@ -198,15 +198,13 @@ export default function TermsOfServicePage() {
           <h2 className="text-base font-bold text-white">{isId ? 'Pertanyaan Terkait Ketentuan Layanan?' : 'Questions About Our Terms?'}</h2>
           <p className="text-xs text-stone-400 leading-relaxed">
             {isId
-              ? 'Tim SmartQR siap membantu Anda. Silakan hubungi kami via WhatsApp resmi di '
-              : 'Our team is here to assist you. Contact us via official WhatsApp at '}
+              ? 'Tim SmartQR siap membantu Anda. Silakan hubungi kami via email resmi di '
+              : 'Our team is here to assist you. Contact us via official email at '}
             <a
-              href="https://wa.me/6285854203343"
-              target="_blank"
-              rel="noreferrer"
+              href="mailto:mantaplah.5758@gmail.com"
               className="text-amber-400 font-bold hover:underline"
             >
-              +62 858-5420-3343
+              mantaplah.5758@gmail.com
             </a>
             {isId ? ' untuk konsultasi atau pertanyaan lebih lanjut.' : ' for further inquiries.'}
           </p>

@@ -190,15 +190,13 @@ export default function PrivacyPolicyPage() {
           <h2 className="text-base font-bold text-white">{isId ? 'Hubungi Tim Privasi Kami' : 'Contact Our Privacy Team'}</h2>
           <p className="text-xs text-stone-400 leading-relaxed">
             {isId
-              ? 'Jika Anda memiliki pertanyaan, keberatan, atau ingin meminta penghapusan data, silakan hubungi tim kami via WhatsApp resmi di '
-              : 'If you have any questions, concerns, or data erasure requests, please contact our team via official WhatsApp at '}
+              ? 'Jika Anda memiliki pertanyaan, keberatan, atau ingin meminta penghapusan data, silakan hubungi tim kami via email resmi di '
+              : 'If you have any questions, concerns, or data erasure requests, please contact our team via official email at '}
             <a
-              href="https://wa.me/6285854203343"
-              target="_blank"
-              rel="noreferrer"
+              href="mailto:mantaplah.5758@gmail.com"
               className="text-amber-400 font-bold hover:underline"
             >
-              +62 858-5420-3343
+              mantaplah.5758@gmail.com
             </a>
             {isId ? ' atau melalui kanal dukungan SmartQR.' : ' or through SmartQR support channels.'}
           </p>

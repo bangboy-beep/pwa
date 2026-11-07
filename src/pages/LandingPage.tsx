@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   QrCode,
@@ -25,7 +25,10 @@ import {
   Copy,
   Check,
   Download,
-  Loader2
+  Loader2,
+  Users,
+  TrendingUp,
+  Clock
 } from 'lucide-react'
 import qrisPaymentImg from '../assets/qris-payment.jpg'
 import { QRCodeSVG } from 'qrcode.react'
@@ -71,6 +74,27 @@ const LANDING_I18N = {
       demoWifiDesc: '1-Klik langsung connect',
       demoReview: 'Beri Ulasan Google',
       demoReviewDesc: 'Review bintang 5',
+    },
+    stats: {
+      trialLabel: 'Bisnis & Outlet Aktif Trial',
+      ratingText: '4.9/5 dari 320+ Pemilik Usaha',
+      liveNotice: '48 bisnis baru mendaftar trial minggu ini',
+      stat1Val: 1284,
+      stat1Suffix: '+',
+      stat1Title: 'Bisnis Aktif Mencoba Trial',
+      stat1Sub: 'Kafe, resto, gym & hotel se-Indonesia',
+      stat2Val: 98,
+      stat2Suffix: '%',
+      stat2Title: 'Tamu Senang Scan 1-Tap',
+      stat2Sub: 'WiFi otomatis tanpa repot tanya waiter',
+      stat3Val: 3.8,
+      stat3Suffix: 'x Lipat',
+      stat3Title: 'Lonjakan Review Google Maps',
+      stat3Sub: 'Bintang 5 otomatis naik berkat booster',
+      stat4Val: 30,
+      stat4Suffix: ' Dtk',
+      stat4Title: 'Aktivasi Instan Tanpa Syarat',
+      stat4Sub: 'Akun & QR langsung aktif tanpa kartu kredit',
     },
     liveDemo: {
       tag: 'Tes Langsung Sekarang',
@@ -198,6 +222,27 @@ const LANDING_I18N = {
       demoReview: 'Leave Google Review',
       demoReviewDesc: '5-Star rating booster',
     },
+    stats: {
+      trialLabel: 'Businesses & Outlets on Free Trial',
+      ratingText: '4.9/5 from 320+ Business Owners',
+      liveNotice: '48 new businesses joined trial this week',
+      stat1Val: 1284,
+      stat1Suffix: '+',
+      stat1Title: 'Active Businesses on Trial',
+      stat1Sub: 'Cafes, restos, gyms & hotels',
+      stat2Val: 98,
+      stat2Suffix: '%',
+      stat2Title: '1-Tap Guest Satisfaction',
+      stat2Sub: 'Instant WiFi without asking waiters',
+      stat3Val: 3.8,
+      stat3Suffix: 'x Boost',
+      stat3Title: 'Google Maps Review Growth',
+      stat3Sub: '5-star reviews climb automatically',
+      stat4Val: 30,
+      stat4Suffix: ' Sec',
+      stat4Title: 'Instant Setup Without Hassle',
+      stat4Sub: 'Ready in 30 seconds, no credit card',
+    },
     liveDemo: {
       tag: 'Try It Right Now',
       title: 'Point Your Phone Camera at This QR Code',
@@ -288,6 +333,56 @@ const LANDING_I18N = {
       btnWa: 'Consult via WhatsApp',
     }
   }
+}
+
+// Komponen Animasi Angka Count-Up Halus
+function AnimatedCounter({
+  end,
+  duration = 1800,
+  decimals = 0,
+  prefix = '',
+  suffix = '',
+}: {
+  end: number
+  duration?: number
+  decimals?: number
+  prefix?: string
+  suffix?: string
+}) {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    let startTimestamp: number | null = null
+    let animationFrameId: number
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1)
+      // Ease out expo for lively deceleration
+      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress)
+      setCount(easeProgress * end)
+
+      if (progress < 1) {
+        animationFrameId = window.requestAnimationFrame(step)
+      }
+    }
+
+    animationFrameId = window.requestAnimationFrame(step)
+    return () => window.cancelAnimationFrame(animationFrameId)
+  }, [end, duration])
+
+  const formatted =
+    decimals > 0
+      ? count.toFixed(decimals)
+      : Math.floor(count).toLocaleString('id-ID')
+
+  return (
+    <span>
+      {prefix}
+      {formatted}
+      {suffix}
+    </span>
+  )
 }
 
 export default function LandingPage() {
@@ -571,8 +666,60 @@ export default function LandingPage() {
           </a>
         </div>
 
+        {/* Social Proof: Trial Users & Ratings Pill */}
+        <div className="mt-7 inline-flex flex-col sm:flex-row items-center gap-3 sm:gap-4 bg-stone-900/80 border border-stone-800/90 rounded-2xl px-4 py-2.5 max-w-xl mx-auto shadow-lg backdrop-blur-md">
+          {/* Avatar stack */}
+          <div className="flex items-center -space-x-2">
+            <img
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&crop=faces"
+              alt="Owner"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full ring-2 ring-stone-900 object-cover"
+            />
+            <img
+              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=faces"
+              alt="Owner"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full ring-2 ring-stone-900 object-cover"
+            />
+            <img
+              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=faces"
+              alt="Owner"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full ring-2 ring-stone-900 object-cover"
+            />
+            <img
+              src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=faces"
+              alt="Owner"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full ring-2 ring-stone-900 object-cover"
+            />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 text-stone-950 text-[10px] font-black flex items-center justify-center ring-2 ring-stone-900">
+              +1k
+            </div>
+          </div>
+
+          {/* Social Proof Text & Star rating */}
+          <div className="text-left flex flex-col items-center sm:items-start">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-200">
+              <span className="font-extrabold text-amber-400 text-sm">
+                <AnimatedCounter end={tr.stats.stat1Val} suffix="+" />
+              </span>
+              <span>{tr.stats.trialLabel}</span>
+              <div className="flex items-center ml-1 text-amber-400">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                ))}
+              </div>
+            </div>
+            <div className="text-[11px] text-stone-400 flex items-center gap-1.5 mt-0.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <span>{tr.stats.liveNotice}</span>
+            </div>
+          </div>
+        </div>
+
         {/* Trust Badges */}
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs font-semibold text-stone-400">
+        <div className="mt-7 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs font-semibold text-stone-400">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span>{tr.hero.trust1}</span>
@@ -588,6 +735,65 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span>{tr.hero.trust4}</span>
+          </div>
+        </div>
+
+        {/* Live Trial Stats Bar (Animasi Angka Bisnis) */}
+        <div className="mt-14 max-w-5xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="p-4 sm:p-5 rounded-2xl bg-stone-900/70 border border-stone-800/80 text-left hover:border-amber-500/40 hover:bg-stone-900/90 transition-all group backdrop-blur-sm shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20 group-hover:scale-105 transition-transform">
+                <Users className="w-4 h-4" />
+              </div>
+              <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              <AnimatedCounter end={tr.stats.stat1Val} suffix={tr.stats.stat1Suffix} />
+            </div>
+            <div className="text-xs sm:text-sm font-bold text-stone-200 mt-1">{tr.stats.stat1Title}</div>
+            <div className="text-[11px] text-stone-400 mt-0.5 leading-relaxed">{tr.stats.stat1Sub}</div>
+          </div>
+
+          <div className="p-4 sm:p-5 rounded-2xl bg-stone-900/70 border border-stone-800/80 text-left hover:border-sky-500/40 hover:bg-stone-900/90 transition-all group backdrop-blur-sm shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center border border-sky-500/20 group-hover:scale-105 transition-transform">
+                <Wifi className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full">1-Tap</span>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              <AnimatedCounter end={tr.stats.stat2Val} suffix={tr.stats.stat2Suffix} />
+            </div>
+            <div className="text-xs sm:text-sm font-bold text-stone-200 mt-1">{tr.stats.stat2Title}</div>
+            <div className="text-[11px] text-stone-400 mt-0.5 leading-relaxed">{tr.stats.stat2Sub}</div>
+          </div>
+
+          <div className="p-4 sm:p-5 rounded-2xl bg-stone-900/70 border border-stone-800/80 text-left hover:border-amber-500/40 hover:bg-stone-900/90 transition-all group backdrop-blur-sm shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20 group-hover:scale-105 transition-transform">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              </div>
+              <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">Google Maps</span>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              <AnimatedCounter end={tr.stats.stat3Val} decimals={1} suffix={` ${tr.stats.stat3Suffix}`} />
+            </div>
+            <div className="text-xs sm:text-sm font-bold text-stone-200 mt-1">{tr.stats.stat3Title}</div>
+            <div className="text-[11px] text-stone-400 mt-0.5 leading-relaxed">{tr.stats.stat3Sub}</div>
+          </div>
+
+          <div className="p-4 sm:p-5 rounded-2xl bg-stone-900/70 border border-stone-800/80 text-left hover:border-emerald-500/40 hover:bg-stone-900/90 transition-all group backdrop-blur-sm shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 group-hover:scale-105 transition-transform">
+                <Clock className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">14 Hari Free</span>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              &lt; <AnimatedCounter end={tr.stats.stat4Val} suffix={tr.stats.stat4Suffix} />
+            </div>
+            <div className="text-xs sm:text-sm font-bold text-stone-200 mt-1">{tr.stats.stat4Title}</div>
+            <div className="text-[11px] text-stone-400 mt-0.5 leading-relaxed">{tr.stats.stat4Sub}</div>
           </div>
         </div>
 
