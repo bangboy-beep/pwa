@@ -233,10 +233,10 @@ export default function AdminDashboardPage() {
                     : (language === 'id' ? 'Masa Trial Berakhir Hari Ini' : 'Trial Expires Today')}
                 </span>
               </div>
-              <p className="text-xs font-medium text-stone-950/85 mt-1 leading-relaxed">
+              <p className="text-xs font-bold text-stone-950 mt-1 leading-relaxed">
                 {language === 'id'
-                  ? 'Nikmati fitur QR meja tanpa batas. Aktifkan paket langganan resmi untuk memastikan QR terus aktif.'
-                  : 'Enjoy unlimited table QR features. Activate your official plan to keep your QR codes active.'}
+                  ? '✨ Cetak QR Meja Sekali untuk Selamanya. Cukup perpanjang langganan, tanpa repot ganti akrilik meja.'
+                  : '✨ Print Table QR Once for a Lifetime. Simply renew your subscription, without replacing acrylic standees.'}
               </p>
             </div>
           </div>
@@ -510,11 +510,26 @@ export default function AdminDashboardPage() {
                 {language === 'id' ? 'Aktivasi Langganan' : 'Activate Subscription'}
               </h3>
             </div>
-            <p className="text-xs text-ink-muted mb-4">
+            <p className="text-xs text-ink-muted mb-3">
               {language === 'id'
                 ? `Pilih periode dan metode pembayaran untuk bisnis ${selectedBusiness.name}`
                 : `Choose billing cycle and payment method for ${selectedBusiness.name}`}
             </p>
+
+            {/* Edukasi QR Meja Permanen */}
+            <div className="mb-4 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5">
+              <span className="text-base leading-none mt-0.5">🛡️</span>
+              <div className="text-xs">
+                <span className="font-extrabold text-amber-950 block">
+                  {language === 'id' ? 'QR Meja Permanen Seumur Hidup' : 'Lifetime Permanent Table QR'}
+                </span>
+                <span className="text-amber-900/90 leading-relaxed text-[11px] block mt-0.5">
+                  {language === 'id'
+                    ? 'Cetak QR Meja Sekali untuk Selamanya. Cukup perpanjang langganan, tanpa repot ganti akrilik meja.'
+                    : 'Print Table QR Once for a Lifetime. Simply renew your subscription, without replacing acrylic standees.'}
+                </span>
+              </div>
+            </div>
 
             {/* Plan Info Card */}
             <div className="p-4 rounded-2xl bg-surface border border-outline/60 mb-4">

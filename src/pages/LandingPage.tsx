@@ -100,8 +100,8 @@ const LANDING_I18N = {
       f3Desc: 'Filter rating cerdas: Ulasan bintang 5 otomatis diarahkan ke Google Maps untuk mendongkrak reputasi. Kritik/rating rendah disaring secara internal.',
       f3Badge: 'Lindungi rating bintang 4.8+',
       f4Title: 'Standee Siap Cetak & NFC',
-      f4Desc: 'Download template akrilik meja resolusi tinggi siap cetak (A6/A5). Langsung bisa ditempelkan chip NFC untuk pengalaman sentuh HP.',
-      f4Badge: 'Tanpa sewa desainer grafis',
+      f4Desc: 'Download template akrilik meja siap cetak (A6/A5). Cetak sekali untuk selamanya: Cukup perpanjang langganan, tanpa repot ganti akrilik meja.',
+      f4Badge: 'QR Permanen Seumur Hidup ✨',
     },
     industry: {
       tag: 'Sistem Adaptif',
@@ -226,8 +226,8 @@ const LANDING_I18N = {
       f3Desc: 'Smart satisfaction shield: 5-star ratings are seamlessly routed to Google Maps. Constructive criticism is handled privately.',
       f3Badge: 'Protect your 4.8+ star rating',
       f4Title: 'Print-Ready Standee & NFC',
-      f4Desc: 'Download high-res acrylic standee designs (A6/A5). Fully compatible with NFC coin tags for tap-to-open experience.',
-      f4Badge: 'No graphic designer needed',
+      f4Desc: 'Download print-ready table acrylic artworks (A6/A5). Print once for a lifetime: Simply renew your plan, without replacing acrylic standees.',
+      f4Badge: 'Lifetime Permanent QR ✨',
     },
     industry: {
       tag: 'Adaptive Architecture',
@@ -308,6 +308,7 @@ export default function LandingPage() {
   const [bizType, setBizType] = useState<BusinessType>('cafe')
   const [bizWhatsapp, setBizWhatsapp] = useState('')
   const [bizPin, setBizPin] = useState('')
+  const [agreeTerms, setAgreeTerms] = useState(false)
   const [isRegistering, setIsRegistering] = useState(false)
   const [regError, setRegError] = useState<string | null>(null)
 
@@ -373,6 +374,14 @@ export default function LandingPage() {
       setRegError(language === 'id' ? 'PIN minimal 4 - 6 digit angka' : 'PIN must be at least 4 - 6 digits')
       return
     }
+    if (!agreeTerms) {
+      setRegError(
+        language === 'id'
+          ? 'Mohon setujui Ketentuan Layanan & Kebijakan Privasi terlebih dahulu.'
+          : 'Please accept the Terms of Service & Privacy Policy before continuing.'
+      )
+      return
+    }
 
     setIsRegistering(true)
     setRegError(null)
@@ -419,6 +428,10 @@ export default function LandingPage() {
       a: 'Bisa banget! Dashboard SmartQR sudah menyediakan fitur generate desain standee akrilik siap cetak ukuran A6 & A5 resolusi tinggi. Anda tinggal download PDF/gambarnya dan bawa ke percetakan terdekat.',
     },
     {
+      q: 'Apakah QR meja harus diganti saat perpanjang langganan?',
+      a: 'TIDAK SAMA SEKALI! Cetak QR meja sekali untuk selamanya. Cukup perpanjang langganan, tanpa repot ganti akrilik meja. Standee, stiker kasir, maupun chip NFC yang sudah Anda pasang tetap aktif selamanya tanpa perlu diganti.',
+    },
+    {
       q: 'Bagaimana jika ingin menambahkan chip NFC?',
       a: 'SmartQR 100% kompatibel dengan NFC! Anda cukup menempelkan stiker chip NFC (NTAG213/215) di balik standee akrilik dan membakar link QR meja Anda. Tamu tinggal menempelkan HP untuk membuka menu.',
     },
@@ -438,6 +451,10 @@ export default function LandingPage() {
     {
       q: 'Can I print my own table QR standees?',
       a: 'Absolutely! The dashboard provides print-ready A6/A5 acrylic standee artwork in high resolution. Download and print locally anytime.',
+    },
+    {
+      q: 'Do I need to replace table QR standees when renewing?',
+      a: 'ABSOLUTELY NOT! Print your table QR once for a lifetime. Simply renew your subscription, without replacing acrylic standees. The acrylic standees, stickers, and NFC tags you set up remain active forever.',
     },
     {
       q: 'Can I add NFC chips to table standees?',
@@ -1150,6 +1167,36 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* Edukasi QR Meja Permanen Seumur Hidup Banner */}
+        <div className="mt-8 p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/5 border border-amber-500/30 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative overflow-hidden shadow-xl shadow-amber-500/5">
+          <div className="flex items-start sm:items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+              <QrCode className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-extrabold uppercase tracking-wider mb-1.5 border border-amber-400/30">
+                ✨ {language === 'id' ? 'Garansi QR Permanen Seumur Hidup' : 'Lifetime Permanent QR Guarantee'}
+              </div>
+              <h4 className="text-base sm:text-lg font-black text-white">
+                {language === 'id'
+                  ? 'Cetak QR Meja Sekali untuk Selamanya'
+                  : 'Print Table QR Once for a Lifetime'}
+              </h4>
+              <p className="text-xs sm:text-sm text-stone-300 mt-1 leading-relaxed">
+                {language === 'id'
+                  ? 'Cukup perpanjang langganan, tanpa repot ganti akrilik meja. Standee, stiker kasir, dan chip NFC yang Anda pasang hari ini tetap aktif selamanya.'
+                  : 'Simply renew your subscription, without replacing acrylic standees. The standees, stickers, and NFC tags placed today stay active forever.'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowRegisterModal(true)}
+            className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-extrabold text-xs shrink-0 transition-all active:scale-95 shadow-md shadow-amber-500/20"
+          >
+            {language === 'id' ? 'Mulai Coba Gratis' : 'Start Free Trial'}
+          </button>
+        </div>
+
         {/* Accepted Payments Bar */}
         <div className="mt-12 p-6 rounded-2xl bg-stone-900/60 border border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex items-center gap-3">
@@ -1283,6 +1330,8 @@ export default function LandingPage() {
             <a href="#fitur" className="hover:text-amber-400">{tr.nav.features}</a>
             <a href="#harga" className="hover:text-amber-400">{tr.nav.pricing}</a>
             <a href="#faq" className="hover:text-amber-400">{tr.nav.faq}</a>
+            <Link to="/terms" className="hover:text-amber-400">{language === 'id' ? 'Ketentuan Layanan' : 'Terms'}</Link>
+            <Link to="/privacy" className="hover:text-amber-400">{language === 'id' ? 'Kebijakan Privasi' : 'Privacy'}</Link>
             <Link to="/admin/login" className="hover:text-amber-400">{language === 'id' ? 'Login Bisnis' : 'Business Login'}</Link>
             <Link to="/super/login" className="hover:text-amber-400 text-stone-600">Super Admin</Link>
           </div>
@@ -1415,6 +1464,68 @@ export default function LandingPage() {
                   />
                   <Lock className="w-4 h-4 text-stone-500 absolute right-4 top-1/2 -translate-y-1/2" />
                 </div>
+              </div>
+
+              {/* Persetujuan Terms & Privacy Policy Checkbox */}
+              <div className="flex items-start gap-3 pt-2">
+                <input
+                  id="reg-agree-terms"
+                  type="checkbox"
+                  required
+                  checked={agreeTerms}
+                  onChange={(e) => setAgreeTerms(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone-700 bg-stone-950 text-amber-500 focus:ring-amber-500 focus:ring-offset-stone-900 accent-amber-500 cursor-pointer"
+                />
+                <label
+                  htmlFor="reg-agree-terms"
+                  className="text-xs text-stone-400 select-none cursor-pointer leading-relaxed"
+                >
+                  {language === 'id' ? (
+                    <>
+                      Saya menyetujui{' '}
+                      <Link
+                        to="/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-amber-400 hover:text-amber-300 underline font-medium"
+                      >
+                        Ketentuan Layanan
+                      </Link>{' '}
+                      dan{' '}
+                      <Link
+                        to="/privacy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-amber-400 hover:text-amber-300 underline font-medium"
+                      >
+                        Kebijakan Privasi
+                      </Link>{' '}
+                      SmartQR.
+                    </>
+                  ) : (
+                    <>
+                      I agree to the SmartQR{' '}
+                      <Link
+                        to="/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-amber-400 hover:text-amber-300 underline font-medium"
+                      >
+                        Terms of Service
+                      </Link>{' '}
+                      and{' '}
+                      <Link
+                        to="/privacy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-amber-400 hover:text-amber-300 underline font-medium"
+                      >
+                        Privacy Policy
+                      </Link>
+                      .
+                    </>
+                  )}
+                </label>
               </div>
 
               {/* Submit CTA */}

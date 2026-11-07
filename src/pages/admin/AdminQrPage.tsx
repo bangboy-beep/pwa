@@ -59,6 +59,19 @@ export default function AdminQrPage() {
 
         <p className="text-xs text-stone-400 mb-2 font-medium">{t('adminQr', 'publicLink')}</p>
         <p className="text-[11px] text-stone-500 font-mono break-all px-3 py-2 bg-stone-50 rounded-xl border border-stone-200">{url}</p>
+
+        {/* Edukasi QR Permanen Seumur Hidup */}
+        <div className="mt-5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-left flex items-start gap-2.5">
+          <span className="text-base leading-none mt-0.5">✨</span>
+          <div className="text-xs">
+            <span className="font-extrabold text-amber-950 block">
+              Cetak QR Meja Sekali untuk Selamanya
+            </span>
+            <span className="text-amber-900/90 text-[11px] leading-relaxed block mt-0.5">
+              Cukup perpanjang langganan, tanpa repot ganti akrilik meja. Standee dan stiker meja yang Anda cetak akan tetap aktif selamanya.
+            </span>
+          </div>
+        </div>
       </section>
 
       {/* Action buttons */}

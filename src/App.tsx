@@ -23,6 +23,8 @@ import ReviewPage from './pages/ReviewPage'
 import AdminQrPage from './pages/admin/AdminQrPage'
 import AdminQrPrintPage from './pages/admin/AdminQrPrintPage'
 import SuperAdminPage from './pages/admin/SuperAdminPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsOfServicePage from './pages/TermsOfServicePage'
 import { SuperAdminGuard } from './components/admin/SuperAdminGuard'
 import { SuperAdminLayout } from './components/admin/SuperAdminLayout'
 import NotFoundPage from './pages/NotFoundPage'
@@ -43,6 +45,10 @@ export default function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
+            <Route path="/terms-of-service" element={<TermsOfServicePage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route path="/super/login" element={<SuperAdminLoginPage />} />
             <Route path="/admin/:slug" element={<AdminSlugPage />} />

@@ -34,9 +34,22 @@ export default function AdminQrPrintPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-xl px-4 pb-6 pt-4">
+      <div className="mx-auto max-w-xl px-4 pb-6 pt-4 space-y-3">
         <div className="rounded-2xl bg-primary-50 border border-primary-100 p-4 text-xs text-stone-600 leading-relaxed">
           {t('adminQrPrint', 'previewNotice')}
+        </div>
+
+        {/* Edukasi QR Permanen */}
+        <div className="rounded-2xl bg-amber-500/10 border border-amber-400/30 p-3.5 text-xs text-amber-950 flex items-start gap-2.5">
+          <span className="text-base leading-none mt-0.5">✨</span>
+          <div>
+            <strong className="block text-amber-950 font-bold">
+              Cetak QR Meja Sekali untuk Selamanya
+            </strong>
+            <span className="text-amber-900/90 text-[11px] block mt-0.5 leading-relaxed">
+              Cukup perpanjang langganan, tanpa repot ganti akrilik meja. Standee yang Anda cetak hari ini tetap dapat digunakan selamanya.
+            </span>
+          </div>
         </div>
       </div>
 

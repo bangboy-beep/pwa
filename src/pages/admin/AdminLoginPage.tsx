@@ -246,13 +246,22 @@ export default function AdminLoginPage() {
           </Button>
         </form>
 
-        <div className="mt-5 pt-4 border-t border-outline text-center">
+        <div className="mt-5 pt-4 border-t border-outline text-center space-y-2">
           <p className="text-xs text-ink-muted">
             {t('adminLogin', 'superAdminText')}{' '}
             <a href="/super/login" className="text-primary font-semibold hover:underline">
               {t('adminLogin', 'superAdminLink')}
             </a>
           </p>
+          <div className="flex items-center justify-center gap-3 text-[11px] text-ink-muted">
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="hover:underline">
+              Terms of Service
+            </a>
+            <span>•</span>
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="hover:underline">
+              Privacy Policy
+            </a>
+          </div>
         </div>
 
         <p className="mt-4 text-center text-xs text-ink-muted">
