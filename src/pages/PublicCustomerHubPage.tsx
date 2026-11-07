@@ -45,31 +45,82 @@ export default function PublicCustomerHubPage() {
   const [reviewUrl, setReviewUrl] = useState('')
 
   useEffect(() => {
+    let isMounted = true
+
     async function loadData() {
       if (!slug) {
         setError(t('publicHub', 'invalidSlug'))
         setLoading(false)
         return
       }
+
+      // 1. Stale-While-Revalidate: baca cache hub lokal jika ada
+      const cacheKey = `smartqr_hub_cache_${slug}`
+      let hasCachedData = false
       try {
-        const { data, error: bizError } = await getPublicBusinessBySlug(slug)
-        if (bizError || !data || data.status !== 'active') {
-          setError(t('publicHub', 'notFoundDesc'))
-          setLoading(false)
-          return
-        }
-        setBusiness(data)
-        const { data: revData } = await getReviewSettings(data.id)
-        if (revData?.google_review_url && revData.is_active) {
-          setReviewUrl(revData.google_review_url)
+        const raw = localStorage.getItem(cacheKey)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (parsed?.business) {
+            setBusiness(parsed.business)
+            if (parsed.reviewUrl) setReviewUrl(parsed.reviewUrl)
+            setLoading(false)
+            hasCachedData = true
+          }
         }
       } catch {
-        setError(t('publicHub', 'loadError'))
+        // Abaikan kegagalan baca cache
+      }
+
+      // 2. Background Fetch: ambil data terbaru dari Supabase
+      try {
+        const { data, error: bizError } = await getPublicBusinessBySlug(slug)
+        if (!isMounted) return
+
+        if (bizError || !data || data.status !== 'active') {
+          if (!hasCachedData) {
+            setError(t('publicHub', 'notFoundDesc'))
+          }
+          return
+        }
+
+        setBusiness(data)
+        let freshReviewUrl = ''
+        const { data: revData } = await getReviewSettings(data.id)
+        if (!isMounted) return
+
+        if (revData?.google_review_url && revData.is_active) {
+          freshReviewUrl = revData.google_review_url
+          setReviewUrl(freshReviewUrl)
+        }
+
+        // Simpan ke cache
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            business: data,
+            reviewUrl: freshReviewUrl,
+            timestamp: Date.now()
+          }))
+        } catch {
+          // Abaikan jika quota localStorage penuh
+        }
+      } catch {
+        if (!isMounted) return
+        if (!hasCachedData) {
+          setError(t('publicHub', 'loadError'))
+        }
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
+
     loadData()
+
+    return () => {
+      isMounted = false
+    }
   }, [slug, t])
 
   if (loading) {

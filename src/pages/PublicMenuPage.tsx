@@ -439,6 +439,8 @@ export default function PublicMenuPage() {
   const [selectedImageProduct, setSelectedImageProduct] = useState<MenuProduct | null>(null)
 
   useEffect(() => {
+    let isMounted = true
+
     async function loadData() {
       if (!slug) {
         setError(t('publicHub', 'invalidSlug'))
@@ -446,53 +448,63 @@ export default function PublicMenuPage() {
         return
       }
 
-      // 1. Cek Client-Side Cache (localStorage) dengan TTL 10 menit
+      // 1. Stale-While-Revalidate: Tampilkan data dari cache (localStorage) seketika jika ada
+      // Membuat halaman langsung terbuka instan (0 ms) tanpa animasi loading
       const cached = getCachedMenu(slug)
+      const hasCachedData = !!cached.data
+
       if (cached.data) {
         setBusiness(cached.data.business)
         setCategories(cached.data.categories)
         setProducts(cached.data.products)
         setLoading(false)
-
-        // Jika cache masih fresh (< 10 menit), jangan query database sama sekali!
-        if (!cached.isStale) {
-          return
-        }
       }
 
-      // 2. Jika cache kosong atau sudah stale (> 10 menit), lakukan 1 KALI SINGLE JOINED QUERY
+      // 2. Background Fetch: Tetap query ke Supabase di latar belakang untuk mendapatkan update terbaru
       try {
         const { business: biz, categories: cats, products: prods, error: fetchErr } =
           await fetchPublicMenuSingleQuery(slug)
 
+        if (!isMounted) return
+
         if (fetchErr || !biz) {
-          // Hanya tampilkan error jika belum ada data di cache sama sekali
-          if (!cached.data) {
+          // Hanya tampilkan error jika belum ada data di cache sama sekali (misal offline saat kunjungan pertama)
+          if (!hasCachedData) {
             setError(fetchErr || t('publicMenu', 'notFoundDesc'))
           }
           return
         }
 
+        // Perbarui state secara halus jika ada perubahan data / harga
         setBusiness(biz)
         setCategories(cats)
         setProducts(prods)
         setError(null)
 
-        // Simpan hasil ke cache client
+        // Simpan hasil terbaru ke cache client
         setCachedMenu(slug, {
           business: biz,
           categories: cats,
           products: prods,
         })
       } catch (err) {
-        if (!cached.data) {
+        if (!isMounted) return
+        // Jika offline atau jaringan terputus, abaikan error jika sudah ada data cache
+        if (!hasCachedData) {
           setError(err instanceof Error ? err.message : t('common', 'error'))
         }
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
+
     loadData()
+
+    return () => {
+      isMounted = false
+    }
   }, [slug, t])
 
   if (loading) {
