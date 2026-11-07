@@ -18,6 +18,7 @@ import { cn } from '../ui/utils';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { LanguageToggle } from '../ui/LanguageToggle';
 import { getBusinessTypeMeta } from '../ui/BusinessTypeIcon';
+import smartQrLogo from '../../assets/smartqr-logo.png';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -102,8 +103,8 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
         {/* Brand */}
         <div className="h-14 flex items-center justify-between px-5 border-b border-stone-100 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-primary-500 flex items-center justify-center shadow-sm">
-              <QrCode className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-white p-0.5 flex items-center justify-center shadow-xs border border-stone-200 overflow-hidden">
+              <img src={smartQrLogo} alt="SmartQR Logo" className="w-full h-full object-contain" />
             </div>
             <span className="font-bold text-base text-stone-900 tracking-tight">SmartQR</span>
           </div>

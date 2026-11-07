@@ -30,6 +30,7 @@ import {
   Clock
 } from 'lucide-react'
 import qrisPaymentImg from '../assets/qris-payment.jpg'
+import smartQrLogo from '../assets/smartqr-logo.png'
 import { QRCodeSVG } from 'qrcode.react'
 import { registerBusinessSelfServe } from '../lib/business/service'
 import type { BusinessType } from '../types'
@@ -575,9 +576,9 @@ export default function LandingPage() {
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-stone-950/80 border-b border-stone-800/80">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
           {/* Brand */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-400 flex items-center justify-center text-stone-950 shadow-lg shadow-amber-500/25">
-              <QrCode className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-white p-0.5 flex items-center justify-center shadow-lg shadow-sky-500/20 border border-sky-400/30 overflow-hidden">
+              <img src={smartQrLogo} alt="SmartQR Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <span className="text-base sm:text-xl font-extrabold tracking-tight text-white flex items-center gap-1 sm:gap-1.5">
@@ -586,7 +587,7 @@ export default function LandingPage() {
                   PWA
                 </span>
               </span>
-              <p className="text-[10px] text-stone-400 hidden sm:block -mt-0.5">Customer Experience Platform</p>
+              <p className="text-[10px] text-stone-400 hidden sm:block -mt-0.5 font-medium tracking-wider">INNOVATE. SCAN. CONNECT.</p>
             </div>
           </div>
 
@@ -1525,8 +1526,8 @@ export default function LandingPage() {
       <footer className="relative z-10 border-t border-stone-900 bg-stone-950 py-12 px-4 sm:px-6 lg:px-8 text-center sm:text-left">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center text-stone-950">
-              <QrCode className="w-5 h-5 stroke-[2.5]" />
+            <div className="w-9 h-9 rounded-xl bg-white p-0.5 flex items-center justify-center shadow-md overflow-hidden border border-stone-800">
+              <img src={smartQrLogo} alt="SmartQR Logo" className="w-full h-full object-contain" />
             </div>
             <span className="font-extrabold text-base text-white">SmartQR PWA Platform</span>
           </div>

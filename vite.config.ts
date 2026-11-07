@@ -39,6 +39,12 @@ export default defineConfig(({ mode }) => {
             type: 'image/svg+xml',
             purpose: 'any',
           },
+          {
+            src: '/smartqr-logo.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable',
+          },
         ],
       },
       workbox: {

@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Lock, ArrowRight, QrCode, AlertCircle, CheckCircle2, KeyRound, Building2 } from 'lucide-react'
+import { Lock, ArrowRight, AlertCircle, CheckCircle2, KeyRound, Building2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase/client'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { LanguageToggle } from '../../components/ui/LanguageToggle'
+import smartQrLogo from '../../assets/smartqr-logo.png'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -160,8 +161,8 @@ export default function AdminLoginPage() {
 
         <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-white/10" aria-hidden="true" />
         <div className="absolute top-24 -left-20 w-48 h-48 rounded-full bg-white/10" aria-hidden="true" />
-        <div className="relative w-16 h-16 rounded-[22px] bg-white flex items-center justify-center shadow-xl shadow-primary-900/30">
-          <QrCode className="w-8 h-8 text-primary" />
+        <div className="relative w-20 h-20 rounded-[24px] bg-white p-1.5 flex items-center justify-center shadow-xl shadow-primary-900/30 overflow-hidden">
+          <img src={smartQrLogo} alt="SmartQR Logo" className="w-full h-full object-contain" />
         </div>
         <h1 className="relative mt-4 text-2xl font-extrabold text-white tracking-tight">{t('adminLogin', 'heroTitle')}</h1>
         <p className="relative mt-1 text-sm text-white/80 font-medium text-balance">
