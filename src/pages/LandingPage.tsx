@@ -27,7 +27,6 @@ import {
   Download,
   Loader2,
   Users,
-  TrendingUp,
   Clock
 } from 'lucide-react'
 import qrisPaymentImg from '../assets/qris-payment.jpg'
