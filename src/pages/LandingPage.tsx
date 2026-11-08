@@ -38,6 +38,10 @@ import { useLanguage } from '../i18n/LanguageContext'
 import { LanguageToggle } from '../components/ui/LanguageToggle'
 import { PayPalIcon } from '../components/ui/PayPalIcon'
 
+// Toggle fitur pembayaran PayPal:
+// Ubah ke `true` jika sewaktu-waktu ingin memunculkan kembali tombol PayPal
+const ENABLE_PAYPAL = false
+
 const LANDING_I18N = {
   id: {
     nav: {
@@ -163,7 +167,9 @@ const LANDING_I18N = {
       card3Btn: 'Mulai Uji Coba Hotel',
       perMonth: '/ bulan',
       secureBarTitle: 'Metode Pembayaran Aman & Lengkap',
-      secureBarDesc: 'Mendukung QRIS (BCA, Mandiri, GoPay, OVO, DANA) & PayPal / Kartu Internasional.',
+      secureBarDesc: ENABLE_PAYPAL
+        ? 'Mendukung QRIS (BCA, Mandiri, GoPay, OVO, DANA) & PayPal / Kartu Internasional.'
+        : 'Mendukung QRIS (BCA, Mandiri, GoPay, OVO, DANA) & Semua E-Wallet.',
     },
     modal: {
       title: 'Daftar Akun Baru',
@@ -310,7 +316,9 @@ const LANDING_I18N = {
       card3Btn: 'Start Hotel Trial',
       perMonth: '/ month',
       secureBarTitle: 'Secure & Comprehensive Payment Methods',
-      secureBarDesc: 'Supports Indonesian QRIS (SEHAT PRO DIGITAL) and International PayPal.',
+      secureBarDesc: ENABLE_PAYPAL
+        ? 'Supports Indonesian QRIS (SEHAT PRO DIGITAL) and International PayPal.'
+        : 'Supports Indonesian QRIS (SEHAT PRO DIGITAL) and All Indonesian E-Wallets.',
     },
     modal: {
       title: 'Register New Account',
@@ -532,7 +540,9 @@ export default function LandingPage() {
     },
     {
       q: 'Setelah masa trial 14 hari selesai, apa yang terjadi?',
-      a: 'Data bisnis dan menu Anda tetap aman tersimpan. Anda cukup memilih paket langganan (Bulanan / Tahunan) via QRIS atau PayPal untuk mengaktifkan kembali akses publik.',
+      a: ENABLE_PAYPAL
+        ? 'Data bisnis dan menu Anda tetap aman tersimpan. Anda cukup memilih paket langganan (Bulanan / Tahunan) via QRIS atau PayPal untuk mengaktifkan kembali akses publik.'
+        : 'Data bisnis dan menu Anda tetap aman tersimpan. Anda cukup memilih paket langganan (Bulanan / Tahunan) via QRIS untuk mengaktifkan kembali akses publik.',
     },
   ] : [
     {
@@ -557,7 +567,9 @@ export default function LandingPage() {
     },
     {
       q: 'What happens when the 14-day trial ends?',
-      a: 'All your menu items and settings remain safe. You can activate monthly or yearly plans anytime via QRIS or PayPal.',
+      a: ENABLE_PAYPAL
+        ? 'All your menu items and settings remain safe. You can activate monthly or yearly plans anytime via QRIS or PayPal.'
+        : 'All your menu items and settings remain safe. You can activate monthly or yearly plans anytime via QRIS.',
     },
   ]
 
@@ -1425,17 +1437,19 @@ export default function LandingPage() {
                 {language === 'id' ? 'Lihat QR 🔍' : 'View QR 🔍'}
               </span>
             </button>
-            <a
-              href="https://paypal.me/harwinariyanto1"
-              target="_blank"
-              rel="noopener noreferrer"
-              title={language === 'id' ? 'Klik untuk bayar via PayPal' : 'Click to pay via PayPal'}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#003087]/25 hover:bg-[#003087]/45 border border-[#0079C1]/50 hover:border-[#0079C1] text-xs font-bold text-sky-100 hover:text-white transition-all shadow-sm hover:shadow-sky-500/20 active:scale-95 group cursor-pointer"
-            >
-              <PayPalIcon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
-              <span>{language === 'id' ? 'Bayar via PayPal' : 'Pay via PayPal'}</span>
-              <ExternalLink className="w-3 h-3 text-sky-400/80 group-hover:text-white transition-colors ml-0.5" />
-            </a>
+            {ENABLE_PAYPAL && (
+              <a
+                href="https://paypal.me/harwinariyanto1"
+                target="_blank"
+                rel="noopener noreferrer"
+                title={language === 'id' ? 'Klik untuk bayar via PayPal' : 'Click to pay via PayPal'}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#003087]/25 hover:bg-[#003087]/45 border border-[#0079C1]/50 hover:border-[#0079C1] text-xs font-bold text-sky-100 hover:text-white transition-all shadow-sm hover:shadow-sky-500/20 active:scale-95 group cursor-pointer"
+              >
+                <PayPalIcon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
+                <span>{language === 'id' ? 'Bayar via PayPal' : 'Pay via PayPal'}</span>
+                <ExternalLink className="w-3 h-3 text-sky-400/80 group-hover:text-white transition-colors ml-0.5" />
+              </a>
+            )}
           </div>
         </div>
       </section>
